@@ -366,25 +366,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Setup instructions
-st.markdown("""
-<div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); backdrop-filter: blur(10px); border: 2px solid rgba(102, 126, 234, 0.4); border-radius: 20px; padding: 25px; margin: 20px 0; color: white;">
-    <h4 style="color: #667eea; margin-top: 0; text-align: center;">⚙️ Configuración Óptima de Visualización</h4>
-    <div style="display: flex; justify-content: space-around; margin: 20px 0;">
-        <div style="text-align: center; flex: 1;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">🖥️</div>
-            <strong style="color: #667eea;">Resolución de PC</strong><br>
-            <span style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">Mínimo 1920x1080 (Full HD)<br>Recomendado: 2560x1440 o superior</span>
-        </div>
-        <div style="text-align: center; flex: 1;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">🌙</div>
-            <strong style="color: #667eea;">Modo Oscuro del Navegador</strong><br>
-            <span style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">Chrome/Edge: Configuración → Apariencia → Tema Oscuro<br>Firefox: Configuración → General → Tema Oscuro</span>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
 # Project motivation
 st.markdown("""
 <div style="background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 20px; padding: 30px; margin: 20px 0; color: white;">
