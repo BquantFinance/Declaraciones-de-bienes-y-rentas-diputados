@@ -5,7 +5,7 @@ import os
 import json
 from pathlib import Path
 import glob
-import base64 # <--- ADDED IMPORT
+import base64
 
 # Page configuration - MUST BE FIRST
 st.set_page_config(
@@ -324,6 +324,69 @@ def get_hemiciclo_seat(deputy_index):
         return files[0]
     return None
 
+def get_party_logo_html(party_name):
+    """
+    Generate HTML for party logo overlay
+    Map party names to logo files
+    """
+    # Map party names to logo files - adjust these paths to match your structure
+    party_logos = {
+        'PSOE': 'logos/psoe.png',
+        'PP': 'logos/pp.png', 
+        'VOX': 'logos/vox.png',
+        'SUMAR': 'logos/sumar.png',
+        'PODEMOS': 'logos/podemos.png',
+        'ERC': 'logos/erc.png',
+        'JUNTS': 'logos/junts.png',
+        'PNV': 'logos/pnv.png',
+        'EH BILDU': 'logos/ehbildu.png',
+        # Add more party mappings as needed
+    }
+    
+    logo_path = party_logos.get(party_name, None)
+    
+    if logo_path and os.path.exists(logo_path):
+        with open(logo_path, "rb") as logo_file:
+            encoded_logo = base64.b64encode(logo_file.read()).decode()
+        return f"""
+        <!-- Party logo overlay -->
+        <div style="
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        ">
+            <img src="data:image/png;base64,{encoded_logo}" 
+                 style="width: 40px; height: 40px; object-fit: contain;">
+        </div>
+        """
+    return ""
+
+def extract_party_from_data(person_data):
+    """
+    Extract party affiliation from person data
+    Adapt this based on your actual data structure
+    """
+    # Check if party is directly available
+    if 'Partido' in person_data:
+        return person_data['Partido']
+    
+    # Try to extract from circunscripción or other fields
+    circ = person_data.get('Circunscripción', '')
+    
+    # This is an example - you'll need to adapt based on your data
+    # You might need to check the JSON structure for party information
+    
+    return ''
+
 # Load JSON data
 def load_json_data():
     try:
@@ -367,6 +430,9 @@ def load_json_data():
                 rustic_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
                 vehicles_count = len(data.get('vehiculos', []))
                 
+                # Try to extract party information if available
+                partido = personal_info.get('partido', '')  # Adjust this field name based on your JSON
+                
                 processed_data.append({
                     'deputy_index': idx,
                     'Nombre': personal_info.get('nombre_y_apellidos', '').upper(),
@@ -374,6 +440,7 @@ def load_json_data():
                     'Circunscripción': personal_info.get('circunscripcion', ''),
                     'Estado Civil': personal_info.get('estado_civil', ''),
                     'Régimen Económico': personal_info.get('regimen_economico_matrimonial', ''),
+                    'Partido': partido,  # Add party field
                     'Ingresos Declarados': total_income,
                     'Activos Líquidos': liquid_assets,
                     'Deudas': total_debt,
@@ -580,75 +647,187 @@ if not df.empty:
                 if selected_name:
                     person_data = df[df['Nombre'] == selected_name].iloc[0]
                     
-                    # --- START OF REPLACED CODE BLOCK ---
-                    
+                    # ENHANCED DEPUTY CARD SECTION
                     # Main container with improved photo layout
                     st.markdown("""
                     <div class="individual-card">
                     """, unsafe_allow_html=True)
                     
-                    # Create a new, aesthetically pleasing layout inspired by the image
-                    photo_col, info_col = st.columns([1, 3])
-
-                    with photo_col:
+                    # Create a refined layout with better proportions
+                    main_col1, main_col2 = st.columns([1.2, 2.8])
+                    
+                    with main_col1:
+                        # Photo and party logo container
                         photo_path = get_deputy_photo(person_data['deputy_index'])
+                        
+                        # Deputy photo with enhanced styling
                         if photo_path:
-                            # Encode the image to base64 to embed it in HTML for precise styling
                             with open(photo_path, "rb") as image_file:
                                 encoded_string = base64.b64encode(image_file.read()).decode()
+                            
+                            # Get party logo if available
+                            party_name = extract_party_from_data(person_data)
+                            party_logo_html = get_party_logo_html(party_name)
+                            
                             st.markdown(
                                 f"""
-                                <div style="display: flex; justify-content: flex-start; align-items: center; height: 100%;">
-                                    <img src="data:image/jpeg;base64,{encoded_string}" 
-                                         style="width: 124px; height: 165px; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                                    <!-- Deputy Photo with enhanced frame -->
+                                    <div style="position: relative;">
+                                        <div style="
+                                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                            padding: 3px;
+                                            border-radius: 15px;
+                                            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+                                        ">
+                                            <img src="data:image/jpeg;base64,{encoded_string}" 
+                                                 style="width: 180px; height: 240px; object-fit: cover; border-radius: 12px; display: block;">
+                                        </div>
+                                        {party_logo_html}
+                                    </div>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
                             )
                         else:
-                            # Re-using your elegant placeholder
+                            # Enhanced placeholder
                             st.markdown("""
-                            <div class="no-photo-placeholder" style="width: 124px; height: 165px; border-radius: 12px;">
-                                <div style="font-size: 3rem; margin-bottom: 10px;">👤</div>
-                                <p style="color: rgba(255, 255, 255, 0.5); margin: 0; font-size: 0.9rem;">Sin foto</p>
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                                <div class="no-photo-placeholder" style="
+                                    width: 186px; 
+                                    height: 246px; 
+                                    border-radius: 15px;
+                                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                                ">
+                                    <div>
+                                        <div style="font-size: 4rem; margin-bottom: 10px; text-align: center;">👤</div>
+                                        <p style="color: rgba(255, 255, 255, 0.5); margin: 0; font-size: 0.9rem;">Sin foto disponible</p>
+                                    </div>
+                                </div>
                             </div>
                             """, unsafe_allow_html=True)
-
-                    with info_col:
+                    
+                    with main_col2:
+                        # Enhanced information display
                         # Prepare hemiciclo seat image if available
                         seat_path = get_hemiciclo_seat(person_data['deputy_index'])
-                        seat_html_block = ""
-                        if seat_path:
-                            with open(seat_path, "rb") as image_file:
-                                encoded_seat_img = base64.b64encode(image_file.read()).decode()
-                            seat_html_block = f"""
-                            <div style="margin-top: 25px;">
-                                 <img src="data:image/gif;base64,{encoded_seat_img}" style="width: 180px; border-radius: 10px; background: rgba(0,0,0,0.2); padding: 5px; margin-bottom: 5px;">
-                                 <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Escaño en el Hemiciclo</p>
-                            </div>
-                            """
                         
-                        # Display all information in a single, styled block that mimics the reference image
-                        st.markdown(
-                            f"""
-                            <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding-left: 15px;">
-                                <h2 style="font-size: 2.1rem; font-weight: 800; color: #E0E7FF; margin-bottom: 20px; line-height: 1.2;">
-                                    {person_data['Nombre']}
-                                </h2>
-                                <div style="font-size: 1rem; color: #B0B9D4; line-height: 1.9;">
-                                    <p style="margin: 0;">📍&nbsp; {person_data['Circunscripción']}</p>
-                                    <p style="margin: 0;">🏛️&nbsp; {person_data['Cargo']}</p>
-                                    <p style="margin: 0;">💑&nbsp; {person_data['Estado Civil']}</p>
+                        # Create sub-columns for better organization
+                        info_col, seat_col = st.columns([1.8, 1])
+                        
+                        with info_col:
+                            # Display deputy information with improved styling
+                            st.markdown(
+                                f"""
+                                <div style="padding-left: 20px;">
+                                    <!-- Name with gradient effect -->
+                                    <h2 style="
+                                        font-size: 2.3rem; 
+                                        font-weight: 900; 
+                                        background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
+                                        -webkit-background-clip: text;
+                                        -webkit-text-fill-color: transparent;
+                                        margin-bottom: 25px; 
+                                        line-height: 1.1;
+                                        letter-spacing: -0.5px;
+                                    ">
+                                        {person_data['Nombre']}
+                                    </h2>
+                                    
+                                    <!-- Information cards -->
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div style="
+                                            background: rgba(102, 126, 234, 0.1);
+                                            border-left: 3px solid #667eea;
+                                            padding: 12px 15px;
+                                            border-radius: 8px;
+                                        ">
+                                            <span style="color: #667eea; font-size: 1.1rem;">📍</span>
+                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
+                                                <strong>{person_data['Circunscripción']}</strong>
+                                            </span>
+                                        </div>
+                                        
+                                        <div style="
+                                            background: rgba(118, 75, 162, 0.1);
+                                            border-left: 3px solid #764ba2;
+                                            padding: 12px 15px;
+                                            border-radius: 8px;
+                                        ">
+                                            <span style="color: #764ba2; font-size: 1.1rem;">🏛️</span>
+                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
+                                                <strong>{person_data['Cargo']}</strong>
+                                            </span>
+                                        </div>
+                                        
+                                        <div style="
+                                            background: rgba(102, 126, 234, 0.08);
+                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
+                                            padding: 12px 15px;
+                                            border-radius: 8px;
+                                        ">
+                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">💑</span>
+                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
+                                                {person_data['Estado Civil']}
+                                            </span>
+                                        </div>
+                                        
+                                        {f'''
+                                        <div style="
+                                            background: rgba(102, 126, 234, 0.08);
+                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
+                                            padding: 12px 15px;
+                                            border-radius: 8px;
+                                        ">
+                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">📜</span>
+                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
+                                                {person_data.get('Régimen Económico', 'No especificado')}
+                                            </span>
+                                        </div>
+                                        ''' if person_data.get('Régimen Económico') else ''}
+                                    </div>
                                 </div>
-                                {seat_html_block}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        
+                        with seat_col:
+                            # Hemiciclo seat visualization with better styling
+                            if seat_path:
+                                with open(seat_path, "rb") as image_file:
+                                    encoded_seat_img = base64.b64encode(image_file.read()).decode()
+                                st.markdown(f"""
+                                <div style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    padding: 20px 10px;
+                                ">
+                                    <div style="
+                                        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+                                        padding: 15px;
+                                        border-radius: 15px;
+                                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                                    ">
+                                        <img src="data:image/gif;base64,{encoded_seat_img}" 
+                                             style="width: 160px; border-radius: 10px;">
+                                    </div>
+                                    <p style="
+                                        color: rgba(255, 255, 255, 0.6); 
+                                        font-size: 0.75rem; 
+                                        text-transform: uppercase; 
+                                        letter-spacing: 1.5px;
+                                        margin-top: 12px;
+                                        font-weight: 600;
+                                    ">Escaño Hemiciclo</p>
+                                </div>
+                                """, unsafe_allow_html=True)
                     
                     st.markdown("</div>", unsafe_allow_html=True)  # Close individual-card div
-
-                    # --- END OF REPLACED CODE BLOCK ---
                     
                     # Separator with gradient
                     st.markdown("""
@@ -854,8 +1033,9 @@ if not df.empty:
         for col in money_cols:
             display_df[col] = display_df[col].apply(lambda x: f'€{x:,.0f}')
         
-        # Remove deputy_index
-        display_df = display_df.drop(columns=['deputy_index'])
+        # Remove deputy_index and Partido columns for display
+        columns_to_display = [col for col in display_df.columns if col not in ['deputy_index', 'Partido']]
+        display_df = display_df[columns_to_display]
         
         # Display with style
         st.dataframe(
