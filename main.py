@@ -227,24 +227,27 @@ if not df.empty:
     tab1, tab2 = st.tabs(["🔍 Análisis Individual", "📊 Tabla de Datos Completa"])
     
     with tab1:
-        st.text_input("🔎 Buscar por nombre:", placeholder="Introduzca el nombre del parlamentario...", key="search_term")
-        
-        search_term = st.session_state.search_term
+        search_term = st.text_input("🔎 Buscar por nombre:", placeholder="Introduzca el nombre del parlamentario...")
         filtered_names = sorted(df[df['Nombre'].str.contains(search_term, case=False, na=False)]['Nombre'].unique()) if search_term else sorted(df['Nombre'].unique())
         
         if filtered_names:
-            st.selectbox("Seleccione parlamentario:", filtered_names, key="selected_name")
-            person_data = df[df['Nombre'] == st.session_state.selected_name].iloc[0]
+            selected_name = st.selectbox("Seleccione parlamentario:", filtered_names)
+            person_data = df[df['Nombre'] == selected_name].iloc[0]
+
+            st.header(person_data['Nombre'])
+            st.divider()
 
             # --- Main Deputy Info Card (Compact Layout) ---
-            left_col, right_col = st.columns([1, 2.5])
+            left_col, right_col = st.columns([1, 3])
 
             with left_col:
                 photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
                 if os.path.exists(photo_path):
-                    st.image(photo_path, use_container_width=True)
+                    # MODIFICATION: Set a fixed width for the image
+                    st.image(photo_path, width=124)
                 else:
-                    st.markdown("<div style='height: 250px; display: flex; align-items: center; justify-content: center; font-size: 4rem; border: 1px solid #444; border-radius: 10px;'>👤</div>", unsafe_allow_html=True)
+                    # MODIFICATION: Adjust placeholder to match the fixed size
+                    st.markdown("<div style='width: 124px; height: 165px; display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 1px solid #444; border-radius: 10px;'>👤</div>", unsafe_allow_html=True)
                 
                 st.divider()
                 st.caption("PARTIDO POLÍTICO")
@@ -253,7 +256,6 @@ if not df.empty:
                     st.image(logo_path, width=80)
 
             with right_col:
-                st.title(person_data['Nombre'])
                 st.markdown(f"📍 **Circunscripción:** {person_data['Circunscripción']}")
                 st.markdown(f"🏛️ **Cargo:** {person_data['Cargo']}")
                 regimen = person_data['Régimen Económico']
@@ -267,7 +269,8 @@ if not df.empty:
                 if seat_gif:
                     st.caption("ESCAÑO EN EL HEMICICLO")
                     st.image(seat_gif, width=150)
-
+            
+            st.divider()
             # --- Financial Details Below the Card ---
             st.subheader("Información Financiera y Patrimonio")
             m_col1, m_col2, m_col3, m_col4 = st.columns(4)
