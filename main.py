@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- YOUR ORIGINAL CSS ---
+# Spectacular dark mode CSS with glassmorphism and gradients
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
@@ -66,11 +66,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- SESSION STATE INITIALIZATION ---
+# Initialize session state
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 
-# --- HELPER FUNCTIONS ---
+# Helper functions
 def parse_money_value(value):
     if value is None or value == '': return 0
     if isinstance(value, (int, float)): return float(value)
@@ -90,13 +90,12 @@ def styled_metric(label, value):
     </div>
     """, unsafe_allow_html=True)
 
-# --- DATA LOADING ---
+# Load JSON data
 @st.cache_data
 def load_json_data():
     try:
         with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
             json_data = json.load(f)
-        
         processed_data = []
         for idx, entry in enumerate(json_data, 1):
             if 'data' in entry and entry['data']:
@@ -131,20 +130,42 @@ def load_json_data():
         st.error(f"Error al procesar el archivo 'all_deputies_merged.json': {e}")
         return pd.DataFrame()
 
-# --- FULL DISCLAIMER PAGE LOGIC ---
+# --- FULL DISCLAIMER PAGE LOGIC (RESTORED FULL TEXT) ---
 if not st.session_state.disclaimer_accepted:
     st.markdown('<div class="hero-section"><h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1><p class="hero-subtitle">XV Legislatura - Congreso de los Diputados</p></div>', unsafe_allow_html=True)
     with st.container():
         st.markdown("## ⚠️ **Descargo de Responsabilidad Legal**")
         st.markdown("---")
         st.markdown("### 📋 Naturaleza de la Aplicación")
-        st.info("**Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** disponible en el portal oficial del Congreso de los Diputados...")
+        st.info("""
+        **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
+        disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+        Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
+        """)
         st.markdown("### 📊 Origen y Precisión de los Datos")
-        st.warning("**Los datos presentados provienen de fuentes públicas oficiales...** la aplicación podría contener errores...")
+        st.warning("""
+        Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
+        procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
+        omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
+        Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
+        originales publicados en el portal web del Congreso de los Diputados.
+        """)
         st.markdown("### ⚖️ Responsabilidad del Usuario")
-        st.write("El uso de esta herramienta es responsabilidad exclusiva del usuario...")
+        st.write("""
+        El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
+        en la interpretación y utilización de los datos aquí presentados.
+        """)
         st.markdown("---")
-        st.markdown('<div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 20px; padding: 25px; margin: 20px 0; border: 2px solid rgba(102, 126, 234, 0.3);"><p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad...</p></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
+                    border-radius: 20px; padding: 25px; margin: 20px 0; 
+                    border: 2px solid rgba(102, 126, 234, 0.3);">
+            <p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">
+                ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad, 
+                y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -155,12 +176,24 @@ if not st.session_state.disclaimer_accepted:
     st.markdown("---")
     st.markdown("<div style='text-align: center; padding: 20px;'><p style='color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;'>Desarrollado con 💜 por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none; font-weight: 600;'>@Gsnchez</a></p></div>", unsafe_allow_html=True)
     
-    # This st.stop() is crucial. It prevents the rest of the app from running.
     st.stop()
 
 # --- MAIN APP UI (Only shows after disclaimer is accepted) ---
 st.markdown('<div class="hero-section"><h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1><p class="hero-subtitle">XV Legislatura - Congreso de los Diputados</p><a href="https://twitter.com/Gsnchez" target="_blank" style="display: inline-block; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 50px; color: white; font-weight: 600; text-decoration: none; transition: all 0.3s ease; position: relative; z-index: 1;">Desarrollado por @Gsnchez ✨</a></div>', unsafe_allow_html=True)
-st.markdown('<div style="background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 20px; padding: 30px; margin: 20px 0; color: white;"><h3 style="color: #667eea; margin-top: 0; text-align: center;">📚 Motivación del Proyecto</h3><p style="line-height: 1.8; text-align: justify;">Este proyecto surge con el propósito fundamental de <strong>democratizar el acceso a la información pública...</strong></p><ul style="line-height: 1.8;"><li><strong>Transparencia:</strong> ...</li><li><strong>Accesibilidad:</strong> ...</li><li><strong>Estructuración:</strong> ...</li></ul></div>', unsafe_allow_html=True)
+st.markdown("""
+<div style="background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 20px; padding: 30px; margin: 20px 0; color: white;">
+    <h3 style="color: #667eea; margin-top: 0; text-align: center;">📚 Motivación del Proyecto</h3>
+    <p style="line-height: 1.8; text-align: justify;">
+        Este proyecto surge con el propósito fundamental de <strong>democratizar el acceso a la información pública</strong> 
+        relativa a las declaraciones de bienes y rentas de los parlamentarios españoles.
+    </p>
+    <ul style="line-height: 1.8;">
+        <li><strong>Transparencia:</strong> Facilitar el escrutinio público de la información patrimonial de los representantes electos.</li>
+        <li><strong>Accesibilidad:</strong> Eliminar las barreras técnicas que dificultan el acceso a estos datos.</li>
+        <li><strong>Estructuración:</strong> Organizar sistemáticamente la información dispersa en múltiples documentos PDF.</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
 df = load_json_data()
 
@@ -175,11 +208,11 @@ if not df.empty:
             selected_name = st.selectbox("Seleccione parlamentario:", filtered_names)
             person_data = df[df['Nombre'] == selected_name].iloc[0]
 
-            # --- Main Deputy Info Section (NEW LAYOUT) ---
+            # --- Main Deputy Info Section ---
             left_col, right_col = st.columns([1, 4])
 
             with left_col:
-                st.header(" ") # Use header as a vertical spacer
+                st.header(" ") 
                 photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
                 if os.path.exists(photo_path):
                     st.image(photo_path, width=124)
@@ -209,7 +242,7 @@ if not df.empty:
             
             st.divider()
             
-            # --- Financial Details Section (NEW LAYOUT) ---
+            # --- Financial Details Section ---
             st.subheader("Información Financiera y Patrimonio")
             
             m_col1, m_col2, m_col3, m_col4 = st.columns(4)
