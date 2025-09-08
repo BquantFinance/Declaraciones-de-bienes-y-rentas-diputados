@@ -581,97 +581,178 @@ if not df.empty:
                 if selected_name:
                     person_data = df[df['Nombre'] == selected_name].iloc[0]
                     
-                    # Main info card with photos
-                    st.markdown('<div class="individual-card">', unsafe_allow_html=True)
-                    
-                    col1, col2, col3, col4, col5 = st.columns([1, 2, 3, 1, 1])
+                    # Main container with official-style layout
+                    col1, col2 = st.columns([1, 3])
                     
                     with col1:
-                        # Deputy photo
-                        photo_path = get_deputy_photo(person_data['deputy_index'])
-                        if photo_path:
-                            st.markdown('<div class="photo-main">', unsafe_allow_html=True)
+                        # Deputy photo - larger and more prominent
+                        photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
+                        if os.path.exists(photo_path):
                             st.image(photo_path, use_column_width=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
                         else:
-                            st.info("📷 Sin foto")
+                            # Placeholder if no photo
+                            st.markdown("""
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 40px; text-align: center;">
+                                <p style="color: rgba(255,255,255,0.5);">📷 Sin foto</p>
+                            </div>
+                            """, unsafe_allow_html=True)
                     
-                    with col3:
-                        # Personal information
+                    with col2:
+                        # Header with name and basic info
                         st.markdown(f"""
-                        <h2 style="color: white; margin-top: 0;">{person_data['Nombre']}</h2>
-                        <p style="color: rgba(255,255,255,0.9); font-size: 1.1rem;">
-                            📍 <strong>{person_data['Circunscripción']}</strong> | 🏛️ {person_data['Cargo']}
-                        </p>
-                        <p style="color: rgba(255,255,255,0.8);">
-                            👤 {person_data['Estado Civil']} | 📋 {person_data['Régimen Económico']}
-                        </p>
+                        <div style="padding: 20px 0;">
+                            <h1 style="color: white; margin: 0; font-size: 2.5rem;">{person_data['Nombre']}</h1>
+                            <p style="color: rgba(255,255,255,0.8); font-size: 1.2rem; margin: 10px 0;">
+                                📍 {person_data['Circunscripción']} | 🏛️ {person_data['Cargo']}
+                            </p>
+                            <p style="color: rgba(255,255,255,0.7); margin: 5px 0;">
+                                {person_data['Estado Civil']} | {person_data['Régimen Económico']}
+                            </p>
+                        </div>
                         """, unsafe_allow_html=True)
+                        
+                        # Party logo and hemiciclo in a row
+                        logo_col, seat_col, empty_col = st.columns([1, 1, 2])
+                        
+                        with logo_col:
+                            # Party logo (PP, PSOE, etc.)
+                            party_logos = {
+                                'PP': 'fotos_diputados/pp_logo.png',
+                                'PSOE': 'fotos_diputados/psoe_logo.png',
+                                'VOX': 'fotos_diputados/vox_logo.png',
+                                'SUMAR': 'fotos_diputados/sumar_logo.png'
+                            }
+                            # You can determine party from constituency or add logic here
+                            for party, logo_path in party_logos.items():
+                                if os.path.exists(logo_path):
+                                    st.image(logo_path, width=80)
+                                    break
+                        
+                        with seat_col:
+                            # Hemiciclo seat visualization
+                            seat_path = get_hemiciclo_seat(person_data['deputy_index'])
+                            if seat_path:
+                                st.image(seat_path, caption="Escaño", width=100)
                     
-                    with col4:
-                        # Party logo
-                        party_logo = get_party_logo(person_data['Circunscripción'], person_data['Nombre'])
-                        if party_logo and os.path.exists(party_logo):
-                            st.image(party_logo, caption="Partido", use_column_width=True)
-                    
-                    with col5:
-                        # Hemiciclo seat
-                        seat_path = get_hemiciclo_seat(person_data['deputy_index'])
-                        if seat_path:
-                            st.image(seat_path, caption="Escaño", use_column_width=True)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # Financial metrics with spectacular design
+                    # Separator
                     st.markdown("---")
-                    st.markdown("### 💰 Información Financiera")
                     
+                    # Financial Information Section - Official Style
+                    st.markdown("""
+                    <h2 style="color: #ffa500; margin: 20px 0;">
+                        🔥 Información Financiera
+                    </h2>
+                    """, unsafe_allow_html=True)
+                    
+                    # Financial metrics in official style cards
                     col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <div class="metric-label">Ingresos Declarados</div>
-                            <div class="metric-value">€{person_data['Ingresos Declarados']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 20px; padding: 25px; text-align: center; min-height: 150px;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">
+                                INGRESOS DECLARADOS
+                            </p>
+                            <h2 style="color: #667eea; font-size: 2rem; margin: 10px 0;">
+                                €{person_data['Ingresos Declarados']:,.0f}
+                            </h2>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col2:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <div class="metric-label">Activos Líquidos</div>
-                            <div class="metric-value">€{person_data['Activos Líquidos']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 20px; padding: 25px; text-align: center; min-height: 150px;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">
+                                ACTIVOS LÍQUIDOS
+                            </p>
+                            <h2 style="color: #667eea; font-size: 2rem; margin: 10px 0;">
+                                €{person_data['Activos Líquidos']:,.0f}
+                            </h2>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col3:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <div class="metric-label">Deudas</div>
-                            <div class="metric-value">€{person_data['Deudas']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 20px; padding: 25px; text-align: center; min-height: 150px;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">
+                                DEUDAS
+                            </p>
+                            <h2 style="color: #667eea; font-size: 2rem; margin: 10px 0;">
+                                €{person_data['Deudas']:,.0f}
+                            </h2>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col4:
+                        net_position = person_data['Posición Neta']
+                        color = "#4CAF50" if net_position >= 0 else "#f44336"
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <div class="metric-label">Posición Neta</div>
-                            <div class="metric-value">€{person_data['Posición Neta']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 20px; padding: 25px; text-align: center; min-height: 150px;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 10px;">
+                                POSICIÓN NETA
+                            </p>
+                            <h2 style="color: {color}; font-size: 2rem; margin: 10px 0;">
+                                €{net_position:,.0f}
+                            </h2>
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Additional metrics
-                    st.markdown("### 🏠 Patrimonio")
+                    # Patrimony Section - Official Style
+                    st.markdown("""
+                    <h2 style="color: #ffa500; margin: 30px 0 20px 0;">
+                        🏠 Patrimonio
+                    </h2>
+                    """, unsafe_allow_html=True)
+                    
                     col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
-                        st.metric("IRPF Pagado", f"€{person_data['IRPF Pagado']:,.0f}")
+                        st.markdown(f"""
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 15px; padding: 20px; text-align: center;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 5px;">
+                                IRPF Pagado
+                            </p>
+                            <h3 style="color: white; margin: 5px 0;">
+                                €{person_data['IRPF Pagado']:,.0f}
+                            </h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     with col2:
-                        st.metric("Propiedades Urbanas", f"{int(person_data['Propiedades Urbanas'])}")
+                        st.markdown(f"""
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 15px; padding: 20px; text-align: center;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 5px;">
+                                Propiedades Urbanas
+                            </p>
+                            <h3 style="color: white; margin: 5px 0;">
+                                {int(person_data['Propiedades Urbanas'])}
+                            </h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     with col3:
-                        st.metric("Propiedades Rústicas", f"{int(person_data['Propiedades Rústicas'])}")
+                        st.markdown(f"""
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 15px; padding: 20px; text-align: center;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 5px;">
+                                Propiedades Rústicas
+                            </p>
+                            <h3 style="color: white; margin: 5px 0;">
+                                {int(person_data['Propiedades Rústicas'])}
+                            </h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
                     with col4:
-                        st.metric("Vehículos", f"{int(person_data['Vehículos'])}")
+                        st.markdown(f"""
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 15px; padding: 20px; text-align: center;">
+                            <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-bottom: 5px;">
+                                Vehículos
+                            </p>
+                            <h3 style="color: white; margin: 5px 0;">
+                                {int(person_data['Vehículos'])}
+                            </h3>
+                        </div>
+                        """, unsafe_allow_html=True)
         
         else:
             # Comparison mode
