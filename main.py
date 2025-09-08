@@ -81,87 +81,102 @@ st.markdown("""
         letter-spacing: 0.5px;
     }
     
-    /* Individual card with glassmorphism */
-    .individual-card {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 25px;
-        padding: 30px;
-        margin: 20px 0;
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
-        transition: all 0.3s ease;
-    }
-    
-    .individual-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Metric containers with animations */
-    .metric-container {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Deputy card styles */
+    .deputy-main-card {
+        background: linear-gradient(135deg, rgba(30, 30, 45, 0.9), rgba(20, 20, 35, 0.95));
+        border: 1px solid rgba(102, 126, 234, 0.3);
         border-radius: 20px;
         padding: 25px;
-        height: 100%;
-        transition: all 0.3s ease;
+        margin: 15px 0;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     }
     
-    .metric-container:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-5px);
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    .deputy-header {
+        display: flex;
+        gap: 30px;
+        align-items: start;
+        margin-bottom: 25px;
     }
     
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .photo-section {
+        flex-shrink: 0;
+        position: relative;
+    }
+    
+    .info-section {
+        flex-grow: 1;
+    }
+    
+    .deputy-name {
+        font-size: 2rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #fff 0%, #E0E7FF 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin: 10px 0;
+        margin: 0 0 15px 0;
+        line-height: 1.1;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(102, 126, 234, 0.08);
+        border-radius: 8px;
+        border-left: 2px solid rgba(102, 126, 234, 0.4);
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+    }
+    
+    .seat-section {
+        flex-shrink: 0;
+        text-align: center;
+    }
+    
+    .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 15px 0;
+    }
+    
+    .metric-card {
+        background: rgba(102, 126, 234, 0.08);
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+        border: 1px solid rgba(102, 126, 234, 0.2);
     }
     
     .metric-label {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-        font-weight: 500;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.65rem;
         text-transform: uppercase;
         letter-spacing: 1px;
+        margin-bottom: 4px;
     }
     
-    /* Photo containers */
-    .deputy-photo-container {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border-radius: 20px;
-        padding: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
+    .metric-value {
+        color: #667eea;
+        font-size: 1.1rem;
+        font-weight: 700;
     }
     
-    .deputy-photo-container:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+    .patrimony-card {
+        background: rgba(255, 193, 7, 0.08);
+        border: 1px solid rgba(255, 193, 7, 0.2);
     }
     
-    .no-photo-placeholder {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-        border-radius: 20px;
-        padding: 60px 20px;
-        text-align: center;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-    }
-    
-    .no-photo-placeholder i {
-        font-size: 4rem;
-        color: rgba(255, 255, 255, 0.3);
-        margin-bottom: 10px;
+    .patrimony-value {
+        color: #ffa500;
     }
     
     /* Comparison card */
@@ -275,17 +290,6 @@ st.markdown("""
         border-radius: 10px;
         margin: 10px 0;
     }
-    
-    /* Animated background elements */
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
-    }
-    
-    .float-animation {
-        animation: float 6s ease-in-out infinite;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -310,10 +314,23 @@ def parse_money_value(value):
         return 0
 
 def get_deputy_photo(deputy_index):
-    """Get the actual deputy photo from fotos_diputados folder"""
-    photo_path = f"fotos_diputados/deputy_{deputy_index:03d}.jpg"
+    """Get the actual deputy photo from deputy_photos folder"""
+    # Changed path to deputy_photos folder
+    photo_path = f"deputy_photos/deputy_{deputy_index:03d}.jpg"
     if os.path.exists(photo_path):
         return photo_path
+    return None
+
+def get_party_logo(deputy_index):
+    """Get the party logo from deputy_photos folder - same naming as photos"""
+    # Party logos have the same naming convention as photos
+    # They appear to be in the same folder
+    logo_path = f"deputy_photos/logo_{deputy_index:03d}.png"
+    # Also check for jpg version
+    if not os.path.exists(logo_path):
+        logo_path = f"deputy_photos/logo_{deputy_index:03d}.jpg"
+    if os.path.exists(logo_path):
+        return logo_path
     return None
 
 def get_hemiciclo_seat(deputy_index):
@@ -323,69 +340,6 @@ def get_hemiciclo_seat(deputy_index):
     if files:
         return files[0]
     return None
-
-def get_party_logo_html(party_name):
-    """
-    Generate HTML for party logo overlay
-    Map party names to logo files
-    """
-    # Map party names to logo files - adjust these paths to match your structure
-    party_logos = {
-        'PSOE': 'logos/psoe.png',
-        'PP': 'logos/pp.png', 
-        'VOX': 'logos/vox.png',
-        'SUMAR': 'logos/sumar.png',
-        'PODEMOS': 'logos/podemos.png',
-        'ERC': 'logos/erc.png',
-        'JUNTS': 'logos/junts.png',
-        'PNV': 'logos/pnv.png',
-        'EH BILDU': 'logos/ehbildu.png',
-        # Add more party mappings as needed
-    }
-    
-    logo_path = party_logos.get(party_name, None)
-    
-    if logo_path and os.path.exists(logo_path):
-        with open(logo_path, "rb") as logo_file:
-            encoded_logo = base64.b64encode(logo_file.read()).decode()
-        return f"""
-        <!-- Party logo overlay -->
-        <div style="
-            position: absolute;
-            bottom: -10px;
-            right: -10px;
-            background: white;
-            border-radius: 50%;
-            padding: 5px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        ">
-            <img src="data:image/png;base64,{encoded_logo}" 
-                 style="width: 40px; height: 40px; object-fit: contain;">
-        </div>
-        """
-    return ""
-
-def extract_party_from_data(person_data):
-    """
-    Extract party affiliation from person data
-    Adapt this based on your actual data structure
-    """
-    # Check if party is directly available
-    if 'Partido' in person_data:
-        return person_data['Partido']
-    
-    # Try to extract from circunscripción or other fields
-    circ = person_data.get('Circunscripción', '')
-    
-    # This is an example - you'll need to adapt based on your data
-    # You might need to check the JSON structure for party information
-    
-    return ''
 
 # Load JSON data
 def load_json_data():
@@ -430,9 +384,6 @@ def load_json_data():
                 rustic_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
                 vehicles_count = len(data.get('vehiculos', []))
                 
-                # Try to extract party information if available
-                partido = personal_info.get('partido', '')  # Adjust this field name based on your JSON
-                
                 processed_data.append({
                     'deputy_index': idx,
                     'Nombre': personal_info.get('nombre_y_apellidos', '').upper(),
@@ -440,7 +391,6 @@ def load_json_data():
                     'Circunscripción': personal_info.get('circunscripcion', ''),
                     'Estado Civil': personal_info.get('estado_civil', ''),
                     'Régimen Económico': personal_info.get('regimen_economico_matrimonial', ''),
-                    'Partido': partido,  # Add party field
                     'Ingresos Declarados': total_income,
                     'Activos Líquidos': liquid_assets,
                     'Deudas': total_debt,
@@ -471,34 +421,14 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # Create a styled container for the disclaimer
-    st.markdown("""
-    <style>
-    .disclaimer-container {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.05), rgba(255, 152, 0, 0.05));
-        border-radius: 20px;
-        padding: 30px;
-        margin: 20px 0;
-    }
-    .stAlert {
-        background: rgba(255, 193, 7, 0.1);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-        border-radius: 15px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
     # Main disclaimer container
     with st.container():
-        # Title with emoji and styling
         st.markdown("## ⚠️ **Descargo de Responsabilidad Legal**")
         st.markdown("---")
         
-        # Create columns for better layout
         col1, col2, col3 = st.columns([0.5, 10, 0.5])
         
         with col2:
-            # First paragraph in a styled container
             with st.container():
                 st.markdown("### 📋 Naturaleza de la Aplicación")
                 st.info("""
@@ -507,7 +437,6 @@ if not st.session_state.disclaimer_accepted:
                 Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
                 """)
             
-            # Second paragraph
             with st.container():
                 st.markdown("### 📊 Origen y Precisión de los Datos")
                 st.warning("""
@@ -518,7 +447,6 @@ if not st.session_state.disclaimer_accepted:
                 originales publicados en el portal web del Congreso de los Diputados.
                 """)
             
-            # Third paragraph
             with st.container():
                 st.markdown("### ⚖️ Responsabilidad del Usuario")
                 st.write("""
@@ -528,7 +456,6 @@ if not st.session_state.disclaimer_accepted:
             
             st.markdown("---")
             
-            # Acceptance notice with special styling
             with st.container():
                 st.markdown("""
                 <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
@@ -541,29 +468,6 @@ if not st.session_state.disclaimer_accepted:
                 </div>
                 """, unsafe_allow_html=True)
     
-    # Separator
-    st.markdown("")
-    
-    # Configuration requirements with better styling
-    with st.container():
-        col1, col2, col3 = st.columns([1, 3, 1])
-        with col2:
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); 
-                        backdrop-filter: blur(10px); 
-                        border: 1px solid rgba(102, 126, 234, 0.3); 
-                        border-radius: 20px; 
-                        padding: 25px; 
-                        margin: 20px 0;">
-                <h3 style="color: #667eea; text-align: center; margin-top: 0;">⚙️ Requisitos de Visualización</h3>
-                <p style="text-align: center; color: white; font-size: 1.05rem;">
-                    Esta aplicación requiere: <strong>Resolución de PC (mínimo 1920x1080)</strong> y <strong>Modo Oscuro del Navegador</strong> 
-                    para una experiencia óptima.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Accept button with spacing
     st.markdown("")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -571,8 +475,6 @@ if not st.session_state.disclaimer_accepted:
             st.session_state.disclaimer_accepted = True
             st.rerun()
     
-    # Beautiful footer
-    st.markdown("")
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; padding: 20px;'>
@@ -582,7 +484,6 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # Stop execution here
     st.stop()
 
 # Main App - Hero Section
@@ -647,275 +548,182 @@ if not df.empty:
                 if selected_name:
                     person_data = df[df['Nombre'] == selected_name].iloc[0]
                     
-                    # ENHANCED DEPUTY CARD SECTION
-                    # Main container with improved photo layout
-                    st.markdown("""
-                    <div class="individual-card">
-                    """, unsafe_allow_html=True)
-                    
-                    # Create a refined layout with better proportions
-                    main_col1, main_col2 = st.columns([1.2, 2.8])
-                    
-                    with main_col1:
-                        # Photo and party logo container
+                    # Create a beautiful, compact card layout
+                    col_main = st.container()
+                    with col_main:
+                        # Get paths for photo and logo
                         photo_path = get_deputy_photo(person_data['deputy_index'])
+                        logo_path = get_party_logo(person_data['deputy_index'])
                         
-                        # Deputy photo with enhanced styling
-                        if photo_path:
+                        # Prepare photo HTML with party logo overlay
+                        if photo_path and os.path.exists(photo_path):
                             with open(photo_path, "rb") as image_file:
-                                encoded_string = base64.b64encode(image_file.read()).decode()
+                                encoded_photo = base64.b64encode(image_file.read()).decode()
                             
-                            # Get party logo if available
-                            party_name = extract_party_from_data(person_data)
-                            party_logo_html = get_party_logo_html(party_name)
-                            
-                            st.markdown(
-                                f"""
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                                    <!-- Deputy Photo with enhanced frame -->
-                                    <div style="position: relative;">
-                                        <div style="
-                                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                            padding: 3px;
-                                            border-radius: 15px;
-                                            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
-                                        ">
-                                            <img src="data:image/jpeg;base64,{encoded_string}" 
-                                                 style="width: 180px; height: 240px; object-fit: cover; border-radius: 12px; display: block;">
-                                        </div>
-                                        {party_logo_html}
-                                    </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        else:
-                            # Enhanced placeholder
-                            st.markdown("""
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                                <div class="no-photo-placeholder" style="
-                                    width: 186px; 
-                                    height: 246px; 
-                                    border-radius: 15px;
-                                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+                            # Check for party logo
+                            logo_html = ""
+                            if logo_path and os.path.exists(logo_path):
+                                with open(logo_path, "rb") as logo_file:
+                                    encoded_logo = base64.b64encode(logo_file.read()).decode()
+                                logo_html = f"""
+                                <div style="
+                                    position: absolute;
+                                    bottom: -8px;
+                                    right: -8px;
+                                    background: white;
+                                    border-radius: 50%;
+                                    padding: 4px;
+                                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                                    width: 40px;
+                                    height: 40px;
                                     display: flex;
                                     align-items: center;
                                     justify-content: center;
-                                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                                 ">
-                                    <div>
-                                        <div style="font-size: 4rem; margin-bottom: 10px; text-align: center;">👤</div>
-                                        <p style="color: rgba(255, 255, 255, 0.5); margin: 0; font-size: 0.9rem;">Sin foto disponible</p>
+                                    <img src="data:image/png;base64,{encoded_logo}" 
+                                         style="width: 32px; height: 32px; object-fit: contain;">
+                                </div>
+                                """
+                            
+                            photo_html = f"""
+                            <div style="position: relative; display: inline-block;">
+                                <div style="
+                                    width: 120px;
+                                    height: 160px;
+                                    border-radius: 12px;
+                                    overflow: hidden;
+                                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+                                    border: 2px solid rgba(102, 126, 234, 0.3);
+                                ">
+                                    <img src="data:image/jpeg;base64,{encoded_photo}" 
+                                         style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                {logo_html}
+                            </div>
+                            """
+                        else:
+                            photo_html = """
+                            <div style="
+                                width: 120px;
+                                height: 160px;
+                                border-radius: 12px;
+                                background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border: 2px solid rgba(102, 126, 234, 0.2);
+                            ">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3rem; opacity: 0.3;">👤</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.5;">Sin foto</div>
+                                </div>
+                            </div>
+                            """
+                        
+                        # Get hemiciclo seat
+                        seat_html = ""
+                        seat_path = get_hemiciclo_seat(person_data['deputy_index'])
+                        if seat_path and os.path.exists(seat_path):
+                            with open(seat_path, "rb") as image_file:
+                                encoded_seat = base64.b64encode(image_file.read()).decode()
+                            seat_html = f"""
+                            <div class="seat-section">
+                                <div style="
+                                    background: rgba(102, 126, 234, 0.1);
+                                    padding: 10px;
+                                    border-radius: 12px;
+                                    border: 1px solid rgba(102, 126, 234, 0.2);
+                                ">
+                                    <img src="data:image/gif;base64,{encoded_seat}" 
+                                         style="width: 140px; border-radius: 8px;">
+                                    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5); margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">
+                                        Escaño Hemiciclo
                                     </div>
                                 </div>
                             </div>
-                            """, unsafe_allow_html=True)
-                    
-                    with main_col2:
-                        # Enhanced information display
-                        # Prepare hemiciclo seat image if available
-                        seat_path = get_hemiciclo_seat(person_data['deputy_index'])
+                            """
                         
-                        # Create sub-columns for better organization
-                        info_col, seat_col = st.columns([1.8, 1])
-                        
-                        with info_col:
-                            # Display deputy information with improved styling
-                            st.markdown(
-                                f"""
-                                <div style="padding-left: 20px;">
-                                    <!-- Name with gradient effect -->
-                                    <h2 style="
-                                        font-size: 2.3rem; 
-                                        font-weight: 900; 
-                                        background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
-                                        -webkit-background-clip: text;
-                                        -webkit-text-fill-color: transparent;
-                                        margin-bottom: 25px; 
-                                        line-height: 1.1;
-                                        letter-spacing: -0.5px;
-                                    ">
-                                        {person_data['Nombre']}
-                                    </h2>
+                        # Build the complete card HTML
+                        st.markdown(f"""
+                        <div class="deputy-main-card">
+                            <div class="deputy-header">
+                                <div class="photo-section">
+                                    {photo_html}
+                                </div>
+                                
+                                <div class="info-section">
+                                    <h2 class="deputy-name">{person_data['Nombre']}</h2>
                                     
-                                    <!-- Information cards -->
-                                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.1);
-                                            border-left: 3px solid #667eea;
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: #667eea; font-size: 1.1rem;">📍</span>
-                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
-                                                <strong>{person_data['Circunscripción']}</strong>
-                                            </span>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span>📍</span>
+                                            <span>{person_data['Circunscripción']}</span>
                                         </div>
-                                        
-                                        <div style="
-                                            background: rgba(118, 75, 162, 0.1);
-                                            border-left: 3px solid #764ba2;
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: #764ba2; font-size: 1.1rem;">🏛️</span>
-                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
-                                                <strong>{person_data['Cargo']}</strong>
-                                            </span>
+                                        <div class="info-item">
+                                            <span>🏛️</span>
+                                            <span>{person_data['Cargo']}</span>
                                         </div>
-                                        
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.08);
-                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">💑</span>
-                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
-                                                {person_data['Estado Civil']}
-                                            </span>
+                                        <div class="info-item">
+                                            <span>💑</span>
+                                            <span>{person_data['Estado Civil']}</span>
                                         </div>
-                                        
-                                        {f'''
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.08);
-                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">📜</span>
-                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
-                                                {person_data.get('Régimen Económico', 'No especificado')}
-                                            </span>
+                                        <div class="info-item">
+                                            <span>📜</span>
+                                            <span>{person_data.get('Régimen Económico', 'No especificado')}</span>
                                         </div>
-                                        ''' if person_data.get('Régimen Económico') else ''}
                                     </div>
                                 </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        
-                        with seat_col:
-                            # Hemiciclo seat visualization with better styling
-                            if seat_path:
-                                with open(seat_path, "rb") as image_file:
-                                    encoded_seat_img = base64.b64encode(image_file.read()).decode()
-                                st.markdown(f"""
-                                <div style="
-                                    display: flex;
-                                    flex-direction: column;
-                                    align-items: center;
-                                    padding: 20px 10px;
-                                ">
-                                    <div style="
-                                        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-                                        padding: 15px;
-                                        border-radius: 15px;
-                                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                                    ">
-                                        <img src="data:image/gif;base64,{encoded_seat_img}" 
-                                             style="width: 160px; border-radius: 10px;">
+                                
+                                {seat_html}
+                            </div>
+                            
+                            <!-- Financial Section -->
+                            <div style="border-top: 1px solid rgba(102, 126, 234, 0.2); padding-top: 15px; margin-top: 20px;">
+                                <h4 style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0 0 12px 0;">💰 Información Financiera</h4>
+                                <div class="metrics-row">
+                                    <div class="metric-card">
+                                        <div class="metric-label">Ingresos</div>
+                                        <div class="metric-value">€{person_data['Ingresos Declarados']:,.0f}</div>
                                     </div>
-                                    <p style="
-                                        color: rgba(255, 255, 255, 0.6); 
-                                        font-size: 0.75rem; 
-                                        text-transform: uppercase; 
-                                        letter-spacing: 1.5px;
-                                        margin-top: 12px;
-                                        font-weight: 600;
-                                    ">Escaño Hemiciclo</p>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Activos</div>
+                                        <div class="metric-value">€{person_data['Activos Líquidos']:,.0f}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Deudas</div>
+                                        <div class="metric-value">€{person_data['Deudas']:,.0f}</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-label">Posición Neta</div>
+                                        <div class="metric-value" style="color: {'#4CAF50' if person_data['Posición Neta'] >= 0 else '#f44336'}">
+                                            €{person_data['Posición Neta']:,.0f}
+                                        </div>
+                                    </div>
                                 </div>
-                                """, unsafe_allow_html=True)
-                    
-                    st.markdown("</div>", unsafe_allow_html=True)  # Close individual-card div
-                    
-                    # Separator with gradient
-                    st.markdown("""
-                    <div style="height: 2px; background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent); margin: 30px 0;"></div>
-                    """, unsafe_allow_html=True)
-                    
-                    # COMPACT Financial Information Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        💰 Información Financiera
-                    </h3>
-                    """, unsafe_allow_html=True)
-                    
-                    # Compact financial metrics in 2 rows
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">INGRESOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Ingresos Declarados']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">ACTIVOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Activos Líquidos']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">DEUDAS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Deudas']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        net_position = person_data['Posición Neta']
-                        color = "#4CAF50" if net_position >= 0 else "#f44336"
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">POSICIÓN NETA</p>
-                            <p style="color: {color}; font-size: 1.2rem; font-weight: bold; margin: 0;">€{net_position:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # COMPACT Patrimony Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        🏠 Patrimonio
-                    </h3>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">IRPF PAGADO</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['IRPF Pagado']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. URBANAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Urbanas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. RÚSTICAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Rústicas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">VEHÍCULOS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Vehículos'])}</p>
+                            </div>
+                            
+                            <!-- Patrimony Section -->
+                            <div style="border-top: 1px solid rgba(255, 193, 7, 0.2); padding-top: 15px; margin-top: 15px;">
+                                <h4 style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0 0 12px 0;">🏠 Patrimonio</h4>
+                                <div class="metrics-row">
+                                    <div class="metric-card patrimony-card">
+                                        <div class="metric-label">IRPF Pagado</div>
+                                        <div class="metric-value patrimony-value">€{person_data['IRPF Pagado']:,.0f}</div>
+                                    </div>
+                                    <div class="metric-card patrimony-card">
+                                        <div class="metric-label">Prop. Urbanas</div>
+                                        <div class="metric-value patrimony-value">{int(person_data['Propiedades Urbanas'])}</div>
+                                    </div>
+                                    <div class="metric-card patrimony-card">
+                                        <div class="metric-label">Prop. Rústicas</div>
+                                        <div class="metric-value patrimony-value">{int(person_data['Propiedades Rústicas'])}</div>
+                                    </div>
+                                    <div class="metric-card patrimony-card">
+                                        <div class="metric-label">Vehículos</div>
+                                        <div class="metric-value patrimony-value">{int(person_data['Vehículos'])}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
         
@@ -1033,8 +841,8 @@ if not df.empty:
         for col in money_cols:
             display_df[col] = display_df[col].apply(lambda x: f'€{x:,.0f}')
         
-        # Remove deputy_index and Partido columns for display
-        columns_to_display = [col for col in display_df.columns if col not in ['deputy_index', 'Partido']]
+        # Remove deputy_index column for display
+        columns_to_display = [col for col in display_df.columns if col != 'deputy_index']
         display_df = display_df[columns_to_display]
         
         # Display with style
