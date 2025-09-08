@@ -703,37 +703,37 @@ if not df.empty:
                     <div style="height: 2px; background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent); margin: 30px 0;"></div>
                     """, unsafe_allow_html=True)
                     
-                    # Financial Information Section
+                    # COMPACT Financial Information Section
                     st.markdown("""
-                    <h2 style="color: white; margin: 30px 0 20px 0; font-size: 2rem; font-weight: 800;">
+                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
                         💰 Información Financiera
-                    </h2>
+                    </h3>
                     """, unsafe_allow_html=True)
                     
-                    # Financial metrics cards with enhanced design
+                    # Compact financial metrics in 2 rows
                     col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <p class="metric-label">INGRESOS DECLARADOS</p>
-                            <div class="metric-value">€{person_data['Ingresos Declarados']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">INGRESOS</p>
+                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Ingresos Declarados']:,.0f}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col2:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <p class="metric-label">ACTIVOS LÍQUIDOS</p>
-                            <div class="metric-value">€{person_data['Activos Líquidos']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">ACTIVOS</p>
+                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Activos Líquidos']:,.0f}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col3:
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <p class="metric-label">DEUDAS</p>
-                            <div class="metric-value">€{person_data['Deudas']:,.0f}</div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">DEUDAS</p>
+                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Deudas']:,.0f}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -741,72 +741,50 @@ if not df.empty:
                         net_position = person_data['Posición Neta']
                         color = "#4CAF50" if net_position >= 0 else "#f44336"
                         st.markdown(f"""
-                        <div class="metric-container">
-                            <p class="metric-label">POSICIÓN NETA</p>
-                            <div class="metric-value" style="background: linear-gradient(135deg, {color}, {color}aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                €{net_position:,.0f}
-                            </div>
+                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">POSICIÓN NETA</p>
+                            <p style="color: {color}; font-size: 1.2rem; font-weight: bold; margin: 0;">€{net_position:,.0f}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Patrimony Section
+                    # COMPACT Patrimony Section
                     st.markdown("""
-                    <h2 style="color: white; margin: 40px 0 20px 0; font-size: 2rem; font-weight: 800;">
+                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
                         🏠 Patrimonio
-                    </h2>
+                    </h3>
                     """, unsafe_allow_html=True)
                     
                     col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
                         st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1)); 
-                                    border-radius: 15px; padding: 20px; text-align: center; min-height: 100px;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">
-                                IRPF PAGADO
-                            </p>
-                            <h3 style="color: #ffa500; margin: 5px 0; font-size: 1.8rem;">
-                                €{person_data['IRPF Pagado']:,.0f}
-                            </h3>
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">IRPF PAGADO</p>
+                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['IRPF Pagado']:,.0f}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col2:
                         st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1)); 
-                                    border-radius: 15px; padding: 20px; text-align: center; min-height: 100px;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">
-                                PROPIEDADES URBANAS
-                            </p>
-                            <h3 style="color: #ffa500; margin: 5px 0; font-size: 1.8rem;">
-                                {int(person_data['Propiedades Urbanas'])}
-                            </h3>
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. URBANAS</p>
+                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Urbanas'])}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col3:
                         st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1)); 
-                                    border-radius: 15px; padding: 20px; text-align: center; min-height: 100px;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">
-                                PROPIEDADES RÚSTICAS
-                            </p>
-                            <h3 style="color: #ffa500; margin: 5px 0; font-size: 1.8rem;">
-                                {int(person_data['Propiedades Rústicas'])}
-                            </h3>
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. RÚSTICAS</p>
+                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Rústicas'])}</p>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col4:
                         st.markdown(f"""
-                        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1)); 
-                                    border-radius: 15px; padding: 20px; text-align: center; min-height: 100px;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">
-                                VEHÍCULOS
-                            </p>
-                            <h3 style="color: #ffa500; margin: 5px 0; font-size: 1.8rem;">
-                                {int(person_data['Vehículos'])}
-                            </h3>
+                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">VEHÍCULOS</p>
+                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Vehículos'])}</p>
                         </div>
                         """, unsafe_allow_html=True)
         
