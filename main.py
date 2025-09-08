@@ -9,6 +9,7 @@ from pathlib import Path
 import requests
 from PIL import Image
 from io import BytesIO
+import json
 
 # Page configuration - MUST BE FIRST
 st.set_page_config(
@@ -18,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dark mode CSS with glassmorphism and gradients
+# Dark mode CSS with glassmorphism and gradients (keeping your existing styles)
 st.markdown("""
 <style>
     /* Import fonts */
@@ -158,6 +159,15 @@ st.markdown("""
         box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
     }
     
+    /* Deputy photo */
+    .deputy-photo {
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        max-width: 200px;
+        width: 100%;
+        height: auto;
+    }
+    
     /* Data tables */
     .dataframe {
         background: rgba(255, 255, 255, 0.03) !important;
@@ -215,6 +225,134 @@ st.markdown("""
 # Initialize session state for disclaimer
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
+
+# Helper function to parse monetary values from string
+def parse_money_value(value):
+    """Convert string money values to float"""
+    if value is None or value == '':
+        return 0
+    if isinstance(value, (int, float)):
+        return float(value)
+    # Remove currency symbols and thousands separators
+    value_str = str(value).replace('€', '').replace('.', '').replace(',', '.')
+    value_str = value_str.strip()
+    try:
+        return float(value_str)
+    except:
+        return 0
+
+# Helper function to get deputy photo
+def get_deputy_photo(deputy_index):
+    """Get the photo path for a deputy based on their index"""
+    # Try different possible paths
+    photo_paths = [
+        f"deputy_photos/deputy_{deputy_index:04d}.jpg",
+        f"deputy_photos/deputy_{deputy_index:04d}.gif",
+        f"fotos_diputados/deputy_{deputy_index:04d}.jpg",
+        f"fotos_diputados/deputy_{deputy_index:04d}.gif",
+    ]
+    
+    for path in photo_paths:
+        if os.path.exists(path):
+            return path
+    return None
+
+# Load data function
+@st.cache_data
+def load_json_data():
+    try:
+        # Load the JSON file
+        with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+        
+        # Process JSON data into a DataFrame
+        processed_data = []
+        
+        for idx, entry in enumerate(json_data, 1):
+            if 'data' in entry and entry['data']:
+                data = entry['data']
+                
+                # Extract personal information
+                personal_info = data.get('informacion_personal', {})
+                
+                # Calculate total income
+                total_income = 0
+                rentas = data.get('rentas_percibidas', {})
+                
+                # Sum all salary perceptions
+                for salary in rentas.get('percepciones_salariales', []):
+                    total_income += parse_money_value(salary.get('euros', 0))
+                
+                # Add dividends
+                for dividend in rentas.get('dividendos_y_participaciones', []):
+                    total_income += parse_money_value(dividend.get('euros', 0))
+                
+                # Add interests
+                for interest in rentas.get('intereses_financieros', []):
+                    total_income += parse_money_value(interest.get('euros', 0))
+                
+                # Add other income
+                for other in rentas.get('otras_rentas', []):
+                    total_income += parse_money_value(other.get('euros', 0))
+                
+                # Calculate liquid assets
+                liquid_assets = 0
+                accounts = data.get('depositos_y_cuentas', {}).get('cuentas', [])
+                for account in accounts:
+                    liquid_assets += parse_money_value(account.get('saldo', 0))
+                
+                # Calculate total debt
+                total_debt = 0
+                debts = data.get('deudas_y_obligaciones', [])
+                for debt in debts:
+                    total_debt += parse_money_value(debt.get('saldo_pendiente', 0))
+                
+                # Net position
+                net_position = liquid_assets - total_debt
+                
+                # Count properties
+                urban_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', []))
+                rustic_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
+                total_properties = urban_properties + rustic_properties
+                
+                # Count vehicles
+                vehicles_count = len(data.get('vehiculos', []))
+                
+                processed_data.append({
+                    'deputy_index': idx,
+                    'name_surname': personal_info.get('nombre_y_apellidos', '').upper(),
+                    'position': personal_info.get('cargo', 'Diputado'),
+                    'constituency': personal_info.get('circunscripcion', ''),
+                    'civil_status': personal_info.get('estado_civil', ''),
+                    'economic_regime': personal_info.get('regimen_economico_matrimonial', ''),
+                    'total_income_declared': total_income,
+                    'total_liquid_assets': liquid_assets,
+                    'total_debt': total_debt,
+                    'net_position': net_position,
+                    'irpf_paid': parse_money_value(data.get('irpf', {}).get('cantidad_pagada', 0)),
+                    'total_properties': total_properties,
+                    'urban_properties': urban_properties,
+                    'rustic_properties': rustic_properties,
+                    'vehicles_count': vehicles_count,
+                    'source_file': entry.get('source_file', ''),
+                    'legislatura': 'XV'  # Assuming all are from XV legislature
+                })
+        
+        df = pd.DataFrame(processed_data)
+        
+        # Clean and standardize data
+        string_cols = ['name_surname', 'position', 'constituency', 'civil_status', 'economic_regime']
+        for col in string_cols:
+            df[col] = df[col].fillna('').str.strip()
+        
+        return df
+        
+    except FileNotFoundError:
+        st.error("No se encuentra el archivo 'all_deputies_merged.json'")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error al procesar el archivo JSON: {str(e)}")
+        return pd.DataFrame()
 
 # Show disclaimer if not accepted
 if not st.session_state.disclaimer_accepted:
@@ -287,74 +425,6 @@ if not st.session_state.disclaimer_accepted:
 
 # Main app continues here if disclaimer is accepted
 
-# Load data function
-@st.cache_data
-def load_data():
-    try:
-        df = pd.read_csv('datos_congreso_estructura_oficial.csv')
-        
-        # Create a mapping for expected columns
-        column_mapping = {}
-        
-        # Try to identify columns by common patterns
-        for col in df.columns:
-            col_lower = col.lower()
-            
-            # Map legislature column
-            if 'legislatura' in col_lower:
-                column_mapping['legislatura'] = col
-            # Map name column  
-            elif 'nombre' in col_lower or 'name' in col_lower:
-                column_mapping['name_surname'] = col
-            # Map position column
-            elif 'cargo' in col_lower or 'position' in col_lower:
-                column_mapping['position'] = col
-            # Map constituency column
-            elif 'circunscripcion' in col_lower or 'constituency' in col_lower:
-                column_mapping['constituency'] = col
-            # Map income columns
-            elif 'total_income' in col_lower or 'ingresos_declarados' in col_lower:
-                column_mapping['total_income_declared'] = col
-            elif 'liquid_assets' in col_lower or 'activos_liquidos' in col_lower:
-                column_mapping['total_liquid_assets'] = col
-            elif 'posicion_neta' in col_lower:
-                column_mapping['posicion_neta_liquida'] = col
-            # Map source file
-            elif 'source' in col_lower or 'archivo' in col_lower:
-                column_mapping['source_file'] = col
-        
-        # Rename columns to standard names
-        df = df.rename(columns=column_mapping)
-        
-        # Ensure required columns exist
-        required_cols = ['name_surname', 'position', 'constituency']
-        for col in required_cols:
-            if col not in df.columns:
-                df[col] = ''
-        
-        # Convert numeric columns safely
-        numeric_cols = ['total_income_declared', 'total_liquid_assets', 'posicion_neta_liquida']
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-            else:
-                df[col] = 0
-        
-        # Clean string columns
-        string_cols = ['name_surname', 'position', 'constituency', 'legislatura']
-        for col in string_cols:
-            if col in df.columns:
-                df[col] = df[col].fillna('').str.strip()
-        
-        return df
-        
-    except FileNotFoundError:
-        st.error("No se encuentra el archivo 'datos_congreso_estructura_oficial.csv'")
-        return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Error al procesar el archivo: {str(e)}")
-        return pd.DataFrame()
-
 # Hero Section
 st.markdown("""
 <div class="hero-section">
@@ -383,29 +453,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load data
-df = load_data()
+df = load_json_data()
 data_loaded = not df.empty
-
-# Filter by legislature if column exists
-if data_loaded and 'legislatura' in df.columns:
-    unique_legs = df['legislatura'].unique()
-    if 'XV' in unique_legs:
-        df = df[df['legislatura'] == 'XV']
-        current_leg = 'XV'
-    else:
-        # Use the first available legislature
-        if len(unique_legs) > 0:
-            current_leg = unique_legs[0]
-            df = df[df['legislatura'] == current_leg]
-        else:
-            current_leg = 'Todas'
 
 if data_loaded:
     # Main navigation
     st.markdown("---")
     mode = st.radio(
         "**Seleccione el modo de visualización:**",
-        ["📊 Resumen Ejecutivo", "🔍 Análisis Individual", "📈 Estadísticas Agregadas"],
+        ["📊 Resumen Ejecutivo", "🔍 Análisis Individual", "📈 Estadísticas Agregadas", "🏠 Análisis Patrimonial"],
         horizontal=True
     )
     
@@ -452,11 +508,12 @@ if data_loaded:
         # Top earners table
         st.markdown("### 💎 Ranking de Mayores Declaraciones Patrimoniales")
         top_earners = df.nlargest(15, 'total_income_declared')[
-            ['name_surname', 'position', 'constituency', 'total_income_declared', 'total_liquid_assets']
+            ['name_surname', 'position', 'constituency', 'total_income_declared', 'total_liquid_assets', 'net_position']
         ].copy()
         top_earners['total_income_declared'] = top_earners['total_income_declared'].apply(lambda x: f'€{x:,.0f}')
         top_earners['total_liquid_assets'] = top_earners['total_liquid_assets'].apply(lambda x: f'€{x:,.0f}')
-        top_earners.columns = ['Nombre', 'Cargo', 'Circunscripción', 'Ingresos', 'Activos']
+        top_earners['net_position'] = top_earners['net_position'].apply(lambda x: f'€{x:,.0f}')
+        top_earners.columns = ['Nombre', 'Cargo', 'Circunscripción', 'Ingresos', 'Activos Líquidos', 'Posición Neta']
         st.dataframe(top_earners, use_container_width=True, hide_index=True)
     
     elif mode == "🔍 Análisis Individual":
@@ -479,43 +536,131 @@ if data_loaded:
         if selected_name:
             person_data = df[df['name_surname'] == selected_name].iloc[0]
             
-            # Display individual information
-            st.markdown(f"""
-            <div class="individual-card">
-                <h2 style="color: white;">{person_data['name_surname']}</h2>
-                <p style="color: rgba(255,255,255,0.8);">📍 {person_data['constituency']} | 🏛️ {person_data['position']}</p>
-                <p style="color: #ffc107; font-weight: bold;">💰 Ingresos: €{person_data['total_income_declared']:,.0f}</p>
-            </div>
-            """, unsafe_allow_html=True)
+            # Display individual information with photo
+            col1, col2 = st.columns([1, 3])
             
-            # Display available data
-            col1, col2 = st.columns(2)
+            with col1:
+                # Try to load and display the photo
+                photo_path = get_deputy_photo(person_data['deputy_index'])
+                if photo_path:
+                    st.image(photo_path, caption=person_data['name_surname'], use_column_width=True)
+                else:
+                    st.info("📷 Foto no disponible")
+            
+            with col2:
+                st.markdown(f"""
+                <div class="individual-card">
+                    <h2 style="color: white;">{person_data['name_surname']}</h2>
+                    <p style="color: rgba(255,255,255,0.8);">📍 {person_data['constituency']} | 🏛️ {person_data['position']}</p>
+                    <p style="color: rgba(255,255,255,0.7);">👤 {person_data['civil_status']} | 📋 {person_data['economic_regime']}</p>
+                    <p style="color: #ffc107; font-weight: bold; font-size: 1.2rem;">💰 Ingresos Declarados: €{person_data['total_income_declared']:,.0f}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Display detailed metrics
+            st.markdown("#### 📊 Resumen Financiero")
+            col1, col2, col3, col4 = st.columns(4)
+            
             with col1:
                 st.metric("Total Ingresos", f"€{person_data['total_income_declared']:,.0f}")
             with col2:
                 st.metric("Activos Líquidos", f"€{person_data['total_liquid_assets']:,.0f}")
+            with col3:
+                st.metric("Deudas", f"€{person_data['total_debt']:,.0f}")
+            with col4:
+                st.metric("Posición Neta", f"€{person_data['net_position']:,.0f}")
+            
+            # Additional details
+            st.markdown("#### 🏘️ Patrimonio")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("IRPF Pagado", f"€{person_data['irpf_paid']:,.0f}")
+            with col2:
+                st.metric("Propiedades", f"{int(person_data['total_properties'])}")
+            with col3:
+                st.metric("Vehículos", f"{int(person_data['vehicles_count'])}")
     
     elif mode == "📈 Estadísticas Agregadas":
         st.markdown("### 📈 Análisis Estadístico Agregado")
         
-        # Group by position
-        position_summary = df.groupby('position').agg({
-            'total_income_declared': ['mean', 'count'],
-            'total_liquid_assets': 'mean'
+        # Group by constituency
+        constituency_summary = df.groupby('constituency').agg({
+            'total_income_declared': ['mean', 'median', 'count'],
+            'total_liquid_assets': 'mean',
+            'net_position': 'mean'
         }).round(0)
         
-        position_summary.columns = ['Ingreso Medio', 'Cantidad', 'Activos Medios']
-        for col in ['Ingreso Medio', 'Activos Medios']:
-            position_summary[col] = position_summary[col].apply(lambda x: f'€{x:,.0f}')
+        constituency_summary.columns = ['Ingreso Medio', 'Ingreso Mediano', 'Cantidad', 'Activos Medios', 'Posición Neta Media']
+        constituency_summary = constituency_summary.sort_values('Ingreso Medio', ascending=False)
         
-        st.dataframe(position_summary, use_container_width=True)
+        for col in ['Ingreso Medio', 'Ingreso Mediano', 'Activos Medios', 'Posición Neta Media']:
+            constituency_summary[col] = constituency_summary[col].apply(lambda x: f'€{x:,.0f}')
+        
+        st.dataframe(constituency_summary, use_container_width=True)
+        
+        # Distribution charts
+        st.markdown("#### 📊 Distribución de Ingresos")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig = px.histogram(df, x='total_income_declared', nbins=30, 
+                              title='Distribución de Ingresos Declarados',
+                              labels={'total_income_declared': 'Ingresos (€)', 'count': 'Frecuencia'})
+            fig.update_layout(template='plotly_dark')
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            fig = px.box(df, y='total_income_declared', 
+                        title='Box Plot de Ingresos',
+                        labels={'total_income_declared': 'Ingresos (€)'})
+            fig.update_layout(template='plotly_dark')
+            st.plotly_chart(fig, use_container_width=True)
+    
+    elif mode == "🏠 Análisis Patrimonial":
+        st.markdown("### 🏠 Análisis del Patrimonio Declarado")
+        
+        # Properties analysis
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 🏘️ Distribución de Propiedades")
+            properties_data = df[['name_surname', 'urban_properties', 'rustic_properties', 'total_properties']].copy()
+            properties_data = properties_data[properties_data['total_properties'] > 0].nlargest(20, 'total_properties')
+            
+            fig = px.bar(properties_data, x='name_surname', y=['urban_properties', 'rustic_properties'],
+                        title='Top 20 - Mayor Número de Propiedades',
+                        labels={'value': 'Número de Propiedades', 'name_surname': 'Parlamentario'})
+            fig.update_layout(template='plotly_dark', xaxis_tickangle=-45, height=400)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.markdown("#### 🚗 Análisis de Vehículos")
+            vehicles_data = df[df['vehicles_count'] > 0].groupby('vehicles_count').size().reset_index(name='count')
+            
+            fig = px.pie(vehicles_data, values='count', names='vehicles_count',
+                        title='Distribución por Número de Vehículos')
+            fig.update_layout(template='plotly_dark')
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Debt analysis
+        st.markdown("#### 💳 Análisis de Endeudamiento")
+        debt_data = df[df['total_debt'] > 0].nlargest(15, 'total_debt')[['name_surname', 'total_debt', 'total_liquid_assets', 'net_position']]
+        debt_data_display = debt_data.copy()
+        debt_data_display['total_debt'] = debt_data_display['total_debt'].apply(lambda x: f'€{x:,.0f}')
+        debt_data_display['total_liquid_assets'] = debt_data_display['total_liquid_assets'].apply(lambda x: f'€{x:,.0f}')
+        debt_data_display['net_position'] = debt_data_display['net_position'].apply(lambda x: f'€{x:,.0f}')
+        debt_data_display.columns = ['Nombre', 'Deuda Total', 'Activos Líquidos', 'Posición Neta']
+        
+        st.dataframe(debt_data_display, use_container_width=True, hide_index=True)
         
         # Export button
         csv = df.to_csv(index=False)
         st.download_button(
-            label="⬇️ Descargar datos (CSV)",
+            label="⬇️ Descargar datos completos (CSV)",
             data=csv,
-            file_name='declaraciones_bienes_rentas.csv',
+            file_name='declaraciones_bienes_rentas_xv_legislatura.csv',
             mime='text/csv'
         )
 
@@ -525,7 +670,7 @@ else:
     
     No se ha podido acceder al archivo de datos necesario para el funcionamiento de la aplicación.
     
-    Por favor, verifique que el archivo 'datos_congreso_estructura_oficial.csv' se encuentra en el directorio correspondiente.
+    Por favor, verifique que el archivo 'all_deputies_merged.json' se encuentra en el directorio correspondiente.
     """)
 
 # Footer
