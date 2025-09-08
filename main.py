@@ -17,12 +17,12 @@ st.set_page_config(
 # Spectacular dark mode CSS with glassmorphism and gradients
 st.markdown("""
 <style>
-    /* Import fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     
     /* Dark mode base */
     .stApp {
         background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         font-family: 'Inter', sans-serif;
     }
     
@@ -95,72 +95,6 @@ st.markdown("""
     .individual-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Metric containers with animations */
-    .metric-container {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 25px;
-        height: 100%;
-        transition: all 0.3s ease;
-    }
-    
-    .metric-container:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-5px);
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 10px 0;
-    }
-    
-    .metric-label {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* Photo containers */
-    .deputy-photo-container {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border-radius: 20px;
-        padding: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-    
-    .deputy-photo-container:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .no-photo-placeholder {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-        border-radius: 20px;
-        padding: 60px 20px;
-        text-align: center;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-    }
-    
-    .no-photo-placeholder i {
-        font-size: 4rem;
-        color: rgba(255, 255, 255, 0.3);
-        margin-bottom: 10px;
     }
     
     /* Comparison card */
@@ -273,17 +207,6 @@ st.markdown("""
         padding: 15px;
         border-radius: 10px;
         margin: 10px 0;
-    }
-    
-    /* Animated background elements */
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
-    }
-    
-    .float-animation {
-        animation: float 6s ease-in-out infinite;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -403,108 +326,56 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # Create a styled container for the disclaimer
-    st.markdown("""
-    <style>
-    .disclaimer-container {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.05), rgba(255, 152, 0, 0.05));
-        border-radius: 20px;
-        padding: 30px;
-        margin: 20px 0;
-    }
-    .stAlert {
-        background: rgba(255, 193, 7, 0.1);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-        border-radius: 15px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Main disclaimer container
-    with st.container():
-        # Title with emoji and styling
+    with st.container(border=True):
         st.markdown("## ⚠️ **Descargo de Responsabilidad Legal**")
         st.markdown("---")
         
-        # Create columns for better layout
         col1, col2, col3 = st.columns([0.5, 10, 0.5])
         
         with col2:
-            # First paragraph in a styled container
-            with st.container():
-                st.markdown("### 📋 Naturaleza de la Aplicación")
-                st.info("""
-                **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
-                disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
-                Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
-                """)
+            st.markdown("### 📋 Naturaleza de la Aplicación")
+            st.info("""
+            **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
+            disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+            Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
+            """)
             
-            # Second paragraph
-            with st.container():
-                st.markdown("### 📊 Origen y Precisión de los Datos")
-                st.warning("""
-                Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
-                procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
-                omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
-                Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
-                originales publicados en el portal web del Congreso de los Diputados.
-                """)
+            st.markdown("### 📊 Origen y Precisión de los Datos")
+            st.warning("""
+            Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
+            procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
+            omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
+            Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
+            originales publicados en el portal web del Congreso de los Diputados.
+            """)
             
-            # Third paragraph
-            with st.container():
-                st.markdown("### ⚖️ Responsabilidad del Usuario")
-                st.write("""
-                El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
-                en la interpretación y utilización de los datos aquí presentados.
-                """)
+            st.markdown("### ⚖️ Responsabilidad del Usuario")
+            st.write("""
+            El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
+            en la interpretación y utilización de los datos aquí presentados.
+            """)
             
             st.markdown("---")
             
-            # Acceptance notice with special styling
-            with st.container():
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
-                            border-radius: 20px; padding: 25px; margin: 20px 0; 
-                            border: 2px solid rgba(102, 126, 234, 0.3);">
-                    <p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">
-                        ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad, 
-                        y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Separator
-    st.markdown("")
-    
-    # Configuration requirements with better styling
-    with st.container():
-        col1, col2, col3 = st.columns([1, 3, 1])
-        with col2:
             st.markdown("""
-            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); 
-                        backdrop-filter: blur(10px); 
-                        border: 1px solid rgba(102, 126, 234, 0.3); 
-                        border-radius: 20px; 
-                        padding: 25px; 
-                        margin: 20px 0;">
-                <h3 style="color: #667eea; text-align: center; margin-top: 0;">⚙️ Requisitos de Visualización</h3>
-                <p style="text-align: center; color: white; font-size: 1.05rem;">
-                    Esta aplicación requiere: <strong>Resolución de PC (mínimo 1920x1080)</strong> y <strong>Modo Oscuro del Navegador</strong> 
-                    para una experiencia óptima.
+            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
+                        border-radius: 20px; padding: 25px; margin: 20px 0; 
+                        border: 2px solid rgba(102, 126, 234, 0.3);">
+                <p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">
+                    ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad, 
+                    y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
                 </p>
             </div>
             """, unsafe_allow_html=True)
     
-    # Accept button with spacing
     st.markdown("")
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("✅ **Aceptar y Continuar**", use_container_width=True, type="primary"):
             st.session_state.disclaimer_accepted = True
             st.rerun()
     
-    # Beautiful footer
-    st.markdown("")
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; padding: 20px;'>
@@ -514,7 +385,6 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # Stop execution here
     st.stop()
 
 # Main App - Hero Section
@@ -579,214 +449,78 @@ if not df.empty:
                 if selected_name:
                     person_data = df[df['Nombre'] == selected_name].iloc[0]
                     
-                    # Main container with improved photo layout
-                    st.markdown("""
-                    <div class="individual-card">
-                    """, unsafe_allow_html=True)
-                    
-                    # Create main layout with better proportions
-                    photo_col, info_col = st.columns([1.2, 2.8])
-                    
-                    with photo_col:
-                        # Deputy photo container with better styling
-                        photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
+                    # Using st.container(border=True) to create a native card
+                    with st.container(border=True):
+                        # Main layout for photo and personal info
+                        photo_col, info_col = st.columns([1, 2])
                         
-                        if os.path.exists(photo_path):
-                            # Display photo with improved styling
-                            st.markdown('<div class="deputy-photo-container">', unsafe_allow_html=True)
-                            st.image(photo_path, use_container_width=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
-                        else:
-                            # Enhanced placeholder for missing photo
-                            st.markdown("""
-                            <div class="no-photo-placeholder">
-                                <div style="font-size: 4rem; margin-bottom: 10px;">👤</div>
-                                <p style="color: rgba(255, 255, 255, 0.5); margin: 0;">Sin foto disponible</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        
-                        # Party logos section - improved detection logic
-                        st.markdown("<div style='margin-top: 20px;'>", unsafe_allow_html=True)
-                        
-                        # Determine party from constituency or name patterns
-                        party = None
-                        circunscripcion = person_data.get('Circunscripción', '').upper()
-                        nombre = person_data.get('Nombre', '').upper()
-                        
-                        # Simple party detection logic (you can enhance this based on your data)
-                        party_patterns = {
-                            'PP': ['POPULAR', 'PP'],
-                            'PSOE': ['SOCIALISTA', 'PSOE', 'PSC'],
-                            'VOX': ['VOX'],
-                            'SUMAR': ['SUMAR', 'PODEMOS', 'UNIDAS']
-                        }
-                        
-                        for party_name, patterns in party_patterns.items():
-                            for pattern in patterns:
-                                if pattern in circunscripcion or pattern in nombre:
-                                    party = party_name
-                                    break
-                            if party:
-                                break
-                        
-                        # Display party logo if found
-                        if party:
-                            party_logo_mapping = {
-                                'PP': 'pp_logo.png',
-                                'PSOE': 'psoe_logo.png',
-                                'VOX': 'vox_logo.png',
-                                'SUMAR': 'sumar_logo.png'
-                            }
+                        with photo_col:
+                            # Display Deputy Photo from 'fotos_diputados' folder
+                            photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
+                            if os.path.exists(photo_path):
+                                st.image(photo_path, use_container_width=True)
+                            else:
+                                # Native placeholder for missing photo
+                                with st.container(height=250, border=True):
+                                    st.markdown("<div style='text-align: center; padding-top: 50px; font-size: 4rem;'>👤</div>", unsafe_allow_html=True)
+                                    st.caption("Sin foto disponible")
+
+                            st.divider()
                             
-                            logo_filename = party_logo_mapping.get(party)
-                            if logo_filename:
-                                # Party logos are in deputy_photos folder
-                                possible_paths = [
-                                    f"deputy_photos/{logo_filename}",
-                                    f"fotos_diputados/{logo_filename}",
-                                    f"{logo_filename}"
-                                ]
-                                
-                                for logo_path in possible_paths:
-                                    if os.path.exists(logo_path):
-                                        st.markdown("""
-                                        <div style="text-align: center; margin-top: 15px;">
-                                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">PARTIDO</p>
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                        st.image(logo_path, width=120)
-                                        break
+                            # Display the deputy's specific party logo
+                            st.caption("PARTIDO POLÍTICO")
+                            
+                            # Construct the path to the logo in 'deputy_photos'
+                            # The filename format is deputy_xxxx.jpg (4-digit padding)
+                            logo_path = f"deputy_photos/deputy_{person_data['deputy_index']:04d}.jpg"
+                            
+                            # Check if the specific logo file exists and display it
+                            if os.path.exists(logo_path):
+                                st.image(logo_path, width=120)
+                            else:
+                                st.caption("Logo no disponible")
+
+                        with info_col:
+                            # Display Personal Info
+                            st.header(person_data['Nombre'])
+                            st.write(f"📍 **Circunscripción:** {person_data['Circunscripción']}")
+                            st.write(f"🏛️ **Cargo:** {person_data['Cargo']}")
+                            
+                            regimen = person_data['Régimen Económico']
+                            estado_civil_text = f"💑 **Estado Civil:** {person_data['Estado Civil']}"
+                            if regimen and regimen.lower() not in ['no procede', '']:
+                                estado_civil_text += f" ({regimen})"
+                            st.write(estado_civil_text)
+                            
+                            st.divider()
+
+                            # Hemiciclo seat visualization
+                            seat_gif = get_hemiciclo_seat(person_data['deputy_index'])
+                            if seat_gif:
+                                st.caption("ESCAÑO EN EL HEMICICLO")
+                                st.image(seat_gif, width=200)
+
+                        st.divider()
+
+                        # Financial Metrics Section
+                        st.subheader("💰 Información Financiera")
+                        m_col1, m_col2, m_col3, m_col4 = st.columns(4)
                         
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    with info_col:
-                        # Header with enhanced styling
-                        st.markdown(f"""
-                        <div style="padding: 10px 20px;">
-                            <h1 style="color: white; margin: 0 0 15px 0; font-size: 2.8rem; font-weight: 900; 
-                                       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                       -webkit-background-clip: text;
-                                       -webkit-text-fill-color: transparent;">
-                                {person_data['Nombre']}
-                            </h1>
-                            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.3rem; margin: 0 0 10px 0; font-weight: 600;">
-                                    📍 {person_data['Circunscripción']}
-                                </p>
-                                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; margin: 0 0 10px 0;">
-                                    🏛️ {person_data['Cargo']}
-                                </p>
-                                <p style="color: rgba(255, 255, 255, 0.7); font-size: 1rem; margin: 0;">
-                                    💑 {person_data['Estado Civil']} 
-                                    {' | ' + person_data['Régimen Económico'] if person_data['Régimen Económico'] else ''}
-                                </p>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Hemiciclo seat visualization if available
-                        seat_pattern = f"hemiciclo/hemi_{person_data['deputy_index']:04d}_*.gif"
-                        seat_files = glob.glob(seat_pattern)
-                        
-                        if seat_files:
-                            st.markdown("""
-                            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 15px; text-align: center;">
-                                <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">ESCAÑO EN EL HEMICICLO</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            st.image(seat_files[0], width=200)
-                    
-                    st.markdown("</div>", unsafe_allow_html=True)  # Close individual-card div
-                    
-                    # Separator with gradient
-                    st.markdown("""
-                    <div style="height: 2px; background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent); margin: 30px 0;"></div>
-                    """, unsafe_allow_html=True)
-                    
-                    # COMPACT Financial Information Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        💰 Información Financiera
-                    </h3>
-                    """, unsafe_allow_html=True)
-                    
-                    # Compact financial metrics in 2 rows
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">INGRESOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Ingresos Declarados']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">ACTIVOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Activos Líquidos']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">DEUDAS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Deudas']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
                         net_position = person_data['Posición Neta']
-                        color = "#4CAF50" if net_position >= 0 else "#f44336"
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">POSICIÓN NETA</p>
-                            <p style="color: {color}; font-size: 1.2rem; font-weight: bold; margin: 0;">€{net_position:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # COMPACT Patrimony Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        🏠 Patrimonio
-                    </h3>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">IRPF PAGADO</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['IRPF Pagado']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. URBANAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Urbanas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. RÚSTICAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Rústicas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">VEHÍCULOS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Vehículos'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        delta_color = "normal" if net_position >= 0 else "inverse"
+
+                        m_col1.metric(label="Ingresos Declarados", value=f"€{person_data['Ingresos Declarados']:,.0f}")
+                        m_col2.metric(label="Activos Líquidos", value=f"€{person_data['Activos Líquidos']:,.0f}")
+                        m_col3.metric(label="Deudas", value=f"€{person_data['Deudas']:,.0f}")
+                        m_col4.metric(label="Posición Neta", value=f"€{net_position:,.0f}", delta_color=delta_color)
+                        
+                        st.subheader("🏠 Patrimonio y Obligaciones")
+                        p_col1, p_col2, p_col3, p_col4 = st.columns(4)
+
+                        p_col1.metric(label="IRPF Pagado", value=f"€{person_data['IRPF Pagado']:,.0f}")
+                        p_col2.metric(label="Prop. Urbanas", value=int(person_data['Propiedades Urbanas']))
+                        p_col3.metric(label="Prop. Rústicas", value=int(person_data['Propiedades Rústicas']))
+                        p_col4.metric(label="Vehículos", value=int(person_data['Vehículos']))
         
         else:
             # Comparison mode
@@ -812,7 +546,6 @@ if not df.empty:
                 
                 st.markdown('<h2 class="vs-header">VS</h2>', unsafe_allow_html=True)
                 
-                # Comparison metrics
                 metrics = [
                     ('Ingresos Declarados', '€'),
                     ('Activos Líquidos', '€'),
