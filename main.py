@@ -449,6 +449,22 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Project motivation
+st.markdown("""
+<div style="background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 20px; padding: 30px; margin: 20px 0; color: white;">
+    <h3 style="color: #667eea; margin-top: 0; text-align: center;">📚 Motivación del Proyecto</h3>
+    <p style="line-height: 1.8; text-align: justify;">
+        Este proyecto surge con el propósito fundamental de <strong>democratizar el acceso a la información pública</strong> 
+        relativa a las declaraciones de bienes y rentas de los parlamentarios españoles.
+    </p>
+    <ul style="line-height: 1.8;">
+        <li><strong>Transparencia:</strong> Facilitar el escrutinio público de la información patrimonial de los representantes electos.</li>
+        <li><strong>Accesibilidad:</strong> Eliminar las barreras técnicas que dificultan el acceso a estos datos.</li>
+        <li><strong>Estructuración:</strong> Organizar sistemáticamente la información dispersa en múltiples documentos PDF.</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
+
 # Load data
 df = load_json_data()
 
