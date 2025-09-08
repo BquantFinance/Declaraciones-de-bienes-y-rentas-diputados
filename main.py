@@ -301,20 +301,22 @@ def parse_money_value(value):
         return 0
 
 def get_deputy_photo(deputy_index):
-    """Get the actual deputy photo"""
-    photo_path = f"deputy_photos/deputy_{deputy_index:03d}.jpg"
+    """Get the actual deputy photo from fotos_diputados folder"""
+    photo_path = f"fotos_diputados/deputy_{deputy_index:03d}.jpg"
     if os.path.exists(photo_path):
         return photo_path
     return None
 
 def get_party_logo(constituency, name):
-    """Determine party from constituency/name and get logo"""
+    """Determine party from constituency/name and get logo from separate folder"""
+    # Party logos should be in a different folder, not in fotos_diputados
     party_logos = {
-        'PP': 'fotos_diputados/pp_logo.png',
-        'PSOE': 'fotos_diputados/psoe_logo.png',
-        'VOX': 'fotos_diputados/vox_logo.png',
-        'SUMAR': 'fotos_diputados/sumar_logo.png'
+        'PP': 'party_logos/pp_logo.png',
+        'PSOE': 'party_logos/psoe_logo.png',
+        'VOX': 'party_logos/vox_logo.png',
+        'SUMAR': 'party_logos/sumar_logo.png'
     }
+    # Add logic to determine party from name/constituency
     return None
 
 def get_hemiciclo_seat(deputy_index):
