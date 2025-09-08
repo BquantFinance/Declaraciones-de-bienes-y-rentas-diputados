@@ -153,6 +153,15 @@ def get_hemiciclo_seat(deputy_index):
     files = glob.glob(f"hemiciclo/hemi_{deputy_index:04d}_*.gif")
     return files[0] if files else None
 
+def styled_metric(label, value):
+    """Creates a styled metric similar to the target screenshot."""
+    st.markdown(f"""
+    <div style="text-align: left;">
+        <p style="font-size: 0.8rem; color: #a0a0a0; margin: 0; line-height: 1;">{label}</p>
+        <p style="font-size: 1.5rem; font-weight: 600; margin: 0; line-height: 1.2;">{value}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
 # Load JSON data
 @st.cache_data
 def load_json_data():
@@ -234,28 +243,24 @@ if not df.empty:
             selected_name = st.selectbox("Seleccione parlamentario:", filtered_names)
             person_data = df[df['Nombre'] == selected_name].iloc[0]
 
-            st.header(person_data['Nombre'])
-            st.divider()
-
-            # --- Main Deputy Info Card (Compact Layout) ---
-            left_col, right_col = st.columns([1, 3])
+            # --- Main Deputy Info Section ---
+            left_col, right_col = st.columns([1, 4])
 
             with left_col:
+                st.header("") # Spacer
                 photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
                 if os.path.exists(photo_path):
-                    # MODIFICATION: Set a fixed width for the image
                     st.image(photo_path, width=124)
-                else:
-                    # MODIFICATION: Adjust placeholder to match the fixed size
-                    st.markdown("<div style='width: 124px; height: 165px; display: flex; align-items: center; justify-content: center; font-size: 3rem; border: 1px solid #444; border-radius: 10px;'>👤</div>", unsafe_allow_html=True)
                 
                 st.divider()
                 st.caption("PARTIDO POLÍTICO")
                 logo_path = f"deputy_photos/deputy_{person_data['deputy_index']:04d}.jpg"
                 if os.path.exists(logo_path):
                     st.image(logo_path, width=80)
-
+            
             with right_col:
+                st.header(person_data['Nombre'])
+                st.divider()
                 st.markdown(f"📍 **Circunscripción:** {person_data['Circunscripción']}")
                 st.markdown(f"🏛️ **Cargo:** {person_data['Cargo']}")
                 regimen = person_data['Régimen Económico']
@@ -271,20 +276,31 @@ if not df.empty:
                     st.image(seat_gif, width=150)
             
             st.divider()
-            # --- Financial Details Below the Card ---
-            st.subheader("Información Financiera y Patrimonio")
-            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
-            net_position = person_data['Posición Neta']
-            m_col1.metric("Ingresos", f"€{person_data['Ingresos Declarados']:,.0f}")
-            m_col2.metric("Activos", f"€{person_data['Activos Líquidos']:,.0f}")
-            m_col3.metric("Deudas", f"€{person_data['Deudas']:,.0f}")
-            m_col4.metric("Posición Neta", f"€{net_position:,.0f}", delta_color="normal" if net_position >= 0 else "inverse")
             
+            # --- Financial Details Section ---
+            st.subheader("Información Financiera y Patrimonio")
+            
+            # First row of financial metrics
+            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+            with m_col1:
+                styled_metric("Ingresos", f"€{person_data['Ingresos Declarados']:,.0f}")
+            with m_col2:
+                styled_metric("Activos", f"€{person_data['Activos Líquidos']:,.0f}")
+            with m_col3:
+                styled_metric("Deudas", f"€{person_data['Deudas']:,.0f}")
+            with m_col4:
+                styled_metric("Posición Neta", f"€{person_data['Posición Neta']:,.0f}")
+
+            # Second row of patrimony metrics
             p_col1, p_col2, p_col3, p_col4 = st.columns(4)
-            p_col1.metric("IRPF Pagado", f"€{person_data['IRPF Pagado']:,.0f}")
-            p_col2.metric("Prop. Urbanas", int(person_data['Propiedades Urbanas']))
-            p_col3.metric("Prop. Rústicas", int(person_data['Propiedades Rústicas']))
-            p_col4.metric("Vehículos", int(person_data['Vehículos']))
+            with p_col1:
+                styled_metric("IRPF Pagado", f"€{person_data['IRPF Pagado']:,.0f}")
+            with p_col2:
+                styled_metric("Prop. Urbanas", f"{int(person_data['Propiedades Urbanas'])}")
+            with p_col3:
+                styled_metric("Prop. Rústicas", f"{int(person_data['Propiedades Rústicas'])}")
+            with p_col4:
+                styled_metric("Vehículos", f"{int(person_data['Vehículos'])}")
 
     with tab2:
         st.header("Tabla de Datos Completa")
