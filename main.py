@@ -340,8 +340,7 @@ def get_hemiciclo_seat(deputy_index):
         return files[0]
     return None
 
-# Load JSON data
-@st.cache_data
+# Load JSON data - without cache decorator to avoid tokenization issues
 def load_json_data():
     try:
         with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
