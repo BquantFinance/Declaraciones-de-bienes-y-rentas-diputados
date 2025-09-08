@@ -31,18 +31,6 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Disclaimer with glassmorphism */
-    .disclaimer-glass {
-        background: rgba(255, 193, 7, 0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 193, 7, 0.2);
-        border-radius: 20px;
-        padding: 25px;
-        margin: 20px 0;
-        color: #ffc107;
-        box-shadow: 0 8px 32px 0 rgba(255, 193, 7, 0.1);
-    }
-    
     /* Hero section */
     .hero-section {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -292,7 +280,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
+# Initialize session state for disclaimer
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 if 'comparison_mode' not in st.session_state:
@@ -321,15 +309,12 @@ def get_deputy_photo(deputy_index):
 
 def get_party_logo(constituency, name):
     """Determine party from constituency/name and get logo"""
-    # You can implement party detection logic here
-    # For now, returning a placeholder path
     party_logos = {
         'PP': 'fotos_diputados/pp_logo.png',
         'PSOE': 'fotos_diputados/psoe_logo.png',
         'VOX': 'fotos_diputados/vox_logo.png',
         'SUMAR': 'fotos_diputados/sumar_logo.png'
     }
-    # Add logic to determine party from name/constituency
     return None
 
 def get_hemiciclo_seat(deputy_index):
@@ -340,7 +325,7 @@ def get_hemiciclo_seat(deputy_index):
         return files[0]
     return None
 
-# Load JSON data - without cache decorator to avoid tokenization issues
+# Load JSON data
 def load_json_data():
     try:
         with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
@@ -410,8 +395,9 @@ def load_json_data():
         st.error(f"Error al procesar el archivo: {str(e)}")
         return pd.DataFrame()
 
-# Disclaimer with spectacular design
+# Show disclaimer if not accepted - USING NATIVE STREAMLIT COMPONENTS
 if not st.session_state.disclaimer_accepted:
+    # Hero Section HTML
     st.markdown("""
     <div class="hero-section">
         <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
@@ -419,23 +405,52 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <div class="disclaimer-glass">
-        <h2 style="color: #ffc107; text-align: center; margin-bottom: 20px;">⚠️ Descargo de Responsabilidad</h2>
-        <p style="line-height: 1.8;">
-            Esta aplicación es una herramienta independiente de visualización de información pública.
-            No tiene vinculación con el Congreso de los Diputados. Los datos pueden contener errores.
-            Para información oficial, consulte el portal del Congreso de los Diputados.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # DISCLAIMER USING NATIVE STREAMLIT - NO HTML
+    st.header("⚠️ Descargo de Responsabilidad Legal")
     
+    st.write("""
+    **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
+    disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+    Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
+    """)
+    
+    st.write("""
+    Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
+    procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
+    omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
+    Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
+    originales publicados en el portal web del Congreso de los Diputados.
+    """)
+    
+    st.write("""
+    El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
+    en la interpretación y utilización de los datos aquí presentados.
+    """)
+    
+    st.info("""
+    Al hacer clic en "Aceptar y Continuar", usted reconoce haber leído y comprendido este descargo de responsabilidad, 
+    y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
+    """)
+    
+    # Configuration requirements - NATIVE STREAMLIT
+    st.subheader("⚙️ Requisitos de Visualización")
+    st.write("""
+    Esta aplicación requiere: **Resolución de PC (mínimo 1920x1080)** y **Modo Oscuro del Navegador** 
+    para una experiencia óptima.
+    """)
+    
+    # Accept button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("✅ Aceptar y Continuar", use_container_width=True, type="primary"):
             st.session_state.disclaimer_accepted = True
             st.rerun()
     
+    # Footer
+    st.markdown("---")
+    st.caption("Desarrollado por [@Gsnchez](https://twitter.com/Gsnchez)")
+    
+    # Stop execution here
     st.stop()
 
 # Main App - Hero Section
