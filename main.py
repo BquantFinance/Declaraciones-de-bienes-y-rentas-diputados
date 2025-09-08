@@ -395,7 +395,7 @@ def load_json_data():
         st.error(f"Error al procesar el archivo: {str(e)}")
         return pd.DataFrame()
 
-# Show disclaimer if not accepted - USING NATIVE STREAMLIT COMPONENTS
+# Show disclaimer if not accepted - USING NATIVE STREAMLIT COMPONENTS WITH BEAUTIFUL STYLING
 if not st.session_state.disclaimer_accepted:
     # Hero Section HTML
     st.markdown("""
@@ -405,50 +405,116 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # DISCLAIMER USING NATIVE STREAMLIT - NO HTML
-    st.header("⚠️ Descargo de Responsabilidad Legal")
+    # Create a styled container for the disclaimer
+    st.markdown("""
+    <style>
+    .disclaimer-container {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.05), rgba(255, 152, 0, 0.05));
+        border-radius: 20px;
+        padding: 30px;
+        margin: 20px 0;
+    }
+    .stAlert {
+        background: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
-    st.write("""
-    **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
-    disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
-    Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
-    """)
+    # Main disclaimer container
+    with st.container():
+        # Title with emoji and styling
+        st.markdown("## ⚠️ **Descargo de Responsabilidad Legal**")
+        st.markdown("---")
+        
+        # Create columns for better layout
+        col1, col2, col3 = st.columns([0.5, 10, 0.5])
+        
+        with col2:
+            # First paragraph in a styled container
+            with st.container():
+                st.markdown("### 📋 Naturaleza de la Aplicación")
+                st.info("""
+                **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
+                disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+                Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
+                """)
+            
+            # Second paragraph
+            with st.container():
+                st.markdown("### 📊 Origen y Precisión de los Datos")
+                st.warning("""
+                Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
+                procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
+                omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
+                Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
+                originales publicados en el portal web del Congreso de los Diputados.
+                """)
+            
+            # Third paragraph
+            with st.container():
+                st.markdown("### ⚖️ Responsabilidad del Usuario")
+                st.write("""
+                El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
+                en la interpretación y utilización de los datos aquí presentados.
+                """)
+            
+            st.markdown("---")
+            
+            # Acceptance notice with special styling
+            with st.container():
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
+                            border-radius: 20px; padding: 25px; margin: 20px 0; 
+                            border: 2px solid rgba(102, 126, 234, 0.3);">
+                    <p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">
+                        ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad, 
+                        y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
     
-    st.write("""
-    Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
-    procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
-    omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
-    Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
-    originales publicados en el portal web del Congreso de los Diputados.
-    """)
+    # Separator
+    st.markdown("")
     
-    st.write("""
-    El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
-    en la interpretación y utilización de los datos aquí presentados.
-    """)
+    # Configuration requirements with better styling
+    with st.container():
+        col1, col2, col3 = st.columns([1, 3, 1])
+        with col2:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); 
+                        backdrop-filter: blur(10px); 
+                        border: 1px solid rgba(102, 126, 234, 0.3); 
+                        border-radius: 20px; 
+                        padding: 25px; 
+                        margin: 20px 0;">
+                <h3 style="color: #667eea; text-align: center; margin-top: 0;">⚙️ Requisitos de Visualización</h3>
+                <p style="text-align: center; color: white; font-size: 1.05rem;">
+                    Esta aplicación requiere: <strong>Resolución de PC (mínimo 1920x1080)</strong> y <strong>Modo Oscuro del Navegador</strong> 
+                    para una experiencia óptima.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
     
-    st.info("""
-    Al hacer clic en "Aceptar y Continuar", usted reconoce haber leído y comprendido este descargo de responsabilidad, 
-    y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
-    """)
-    
-    # Configuration requirements - NATIVE STREAMLIT
-    st.subheader("⚙️ Requisitos de Visualización")
-    st.write("""
-    Esta aplicación requiere: **Resolución de PC (mínimo 1920x1080)** y **Modo Oscuro del Navegador** 
-    para una experiencia óptima.
-    """)
-    
-    # Accept button
+    # Accept button with spacing
+    st.markdown("")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("✅ Aceptar y Continuar", use_container_width=True, type="primary"):
+        if st.button("✅ **Aceptar y Continuar**", use_container_width=True, type="primary"):
             st.session_state.disclaimer_accepted = True
             st.rerun()
     
-    # Footer
+    # Beautiful footer
+    st.markdown("")
     st.markdown("---")
-    st.caption("Desarrollado por [@Gsnchez](https://twitter.com/Gsnchez)")
+    st.markdown("""
+    <div style='text-align: center; padding: 20px;'>
+        <p style='color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;'>
+            Desarrollado con 💜 por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none; font-weight: 600;'>@Gsnchez</a>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Stop execution here
     st.stop()
