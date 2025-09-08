@@ -5,6 +5,7 @@ import os
 import json
 from pathlib import Path
 import glob
+import base64 # <--- ADDED IMPORT
 
 # Page configuration - MUST BE FIRST
 st.set_page_config(
@@ -579,124 +580,75 @@ if not df.empty:
                 if selected_name:
                     person_data = df[df['Nombre'] == selected_name].iloc[0]
                     
+                    # --- START OF REPLACED CODE BLOCK ---
+                    
                     # Main container with improved photo layout
                     st.markdown("""
                     <div class="individual-card">
                     """, unsafe_allow_html=True)
                     
-                    # Create main layout with better proportions
-                    photo_col, info_col = st.columns([1.2, 2.8])
-                    
+                    # Create a new, aesthetically pleasing layout inspired by the image
+                    photo_col, info_col = st.columns([1, 3])
+
                     with photo_col:
-                        # Deputy photo container with better styling
-                        photo_path = f"fotos_diputados/deputy_{person_data['deputy_index']:03d}.jpg"
-                        
-                        if os.path.exists(photo_path):
-                            # Display photo with improved styling
-                            st.markdown('<div class="deputy-photo-container">', unsafe_allow_html=True)
-                            st.image(photo_path, use_container_width=True)
-                            st.markdown('</div>', unsafe_allow_html=True)
+                        photo_path = get_deputy_photo(person_data['deputy_index'])
+                        if photo_path:
+                            # Encode the image to base64 to embed it in HTML for precise styling
+                            with open(photo_path, "rb") as image_file:
+                                encoded_string = base64.b64encode(image_file.read()).decode()
+                            st.markdown(
+                                f"""
+                                <div style="display: flex; justify-content: flex-start; align-items: center; height: 100%;">
+                                    <img src="data:image/jpeg;base64,{encoded_string}" 
+                                         style="width: 124px; height: 165px; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
                         else:
-                            # Enhanced placeholder for missing photo
+                            # Re-using your elegant placeholder
                             st.markdown("""
-                            <div class="no-photo-placeholder">
-                                <div style="font-size: 4rem; margin-bottom: 10px;">👤</div>
-                                <p style="color: rgba(255, 255, 255, 0.5); margin: 0;">Sin foto disponible</p>
+                            <div class="no-photo-placeholder" style="width: 124px; height: 165px; border-radius: 12px;">
+                                <div style="font-size: 3rem; margin-bottom: 10px;">👤</div>
+                                <p style="color: rgba(255, 255, 255, 0.5); margin: 0; font-size: 0.9rem;">Sin foto</p>
                             </div>
                             """, unsafe_allow_html=True)
-                        
-                        # Party logos section - improved detection logic
-                        st.markdown("<div style='margin-top: 20px;'>", unsafe_allow_html=True)
-                        
-                        # Determine party from constituency or name patterns
-                        party = None
-                        circunscripcion = person_data.get('Circunscripción', '').upper()
-                        nombre = person_data.get('Nombre', '').upper()
-                        
-                        # Simple party detection logic (you can enhance this based on your data)
-                        party_patterns = {
-                            'PP': ['POPULAR', 'PP'],
-                            'PSOE': ['SOCIALISTA', 'PSOE', 'PSC'],
-                            'VOX': ['VOX'],
-                            'SUMAR': ['SUMAR', 'PODEMOS', 'UNIDAS']
-                        }
-                        
-                        for party_name, patterns in party_patterns.items():
-                            for pattern in patterns:
-                                if pattern in circunscripcion or pattern in nombre:
-                                    party = party_name
-                                    break
-                            if party:
-                                break
-                        
-                        # Display party logo if found
-                        if party:
-                            party_logo_mapping = {
-                                'PP': 'pp_logo.png',
-                                'PSOE': 'psoe_logo.png',
-                                'VOX': 'vox_logo.png',
-                                'SUMAR': 'sumar_logo.png'
-                            }
-                            
-                            logo_filename = party_logo_mapping.get(party)
-                            if logo_filename:
-                                # Party logos are in deputy_photos folder
-                                possible_paths = [
-                                    f"deputy_photos/{logo_filename}",
-                                    f"fotos_diputados/{logo_filename}",
-                                    f"{logo_filename}"
-                                ]
-                                
-                                for logo_path in possible_paths:
-                                    if os.path.exists(logo_path):
-                                        st.markdown("""
-                                        <div style="text-align: center; margin-top: 15px;">
-                                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">PARTIDO</p>
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                        st.image(logo_path, width=120)
-                                        break
-                        
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    
+
                     with info_col:
-                        # Header with enhanced styling
-                        st.markdown(f"""
-                        <div style="padding: 10px 20px;">
-                            <h1 style="color: white; margin: 0 0 15px 0; font-size: 2.8rem; font-weight: 900; 
-                                       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                       -webkit-background-clip: text;
-                                       -webkit-text-fill-color: transparent;">
-                                {person_data['Nombre']}
-                            </h1>
-                            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.3rem; margin: 0 0 10px 0; font-weight: 600;">
-                                    📍 {person_data['Circunscripción']}
-                                </p>
-                                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; margin: 0 0 10px 0;">
-                                    🏛️ {person_data['Cargo']}
-                                </p>
-                                <p style="color: rgba(255, 255, 255, 0.7); font-size: 1rem; margin: 0;">
-                                    💑 {person_data['Estado Civil']} 
-                                    {' | ' + person_data['Régimen Económico'] if person_data['Régimen Económico'] else ''}
-                                </p>
+                        # Prepare hemiciclo seat image if available
+                        seat_path = get_hemiciclo_seat(person_data['deputy_index'])
+                        seat_html_block = ""
+                        if seat_path:
+                            with open(seat_path, "rb") as image_file:
+                                encoded_seat_img = base64.b64encode(image_file.read()).decode()
+                            seat_html_block = f"""
+                            <div style="margin-top: 25px;">
+                                 <img src="data:image/gif;base64,{encoded_seat_img}" style="width: 180px; border-radius: 10px; background: rgba(0,0,0,0.2); padding: 5px; margin-bottom: 5px;">
+                                 <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Escaño en el Hemiciclo</p>
                             </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                            """
                         
-                        # Hemiciclo seat visualization if available
-                        seat_pattern = f"hemiciclo/hemi_{person_data['deputy_index']:04d}_*.gif"
-                        seat_files = glob.glob(seat_pattern)
-                        
-                        if seat_files:
-                            st.markdown("""
-                            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 15px; text-align: center;">
-                                <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; margin-bottom: 10px;">ESCAÑO EN EL HEMICICLO</p>
+                        # Display all information in a single, styled block that mimics the reference image
+                        st.markdown(
+                            f"""
+                            <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; padding-left: 15px;">
+                                <h2 style="font-size: 2.1rem; font-weight: 800; color: #E0E7FF; margin-bottom: 20px; line-height: 1.2;">
+                                    {person_data['Nombre']}
+                                </h2>
+                                <div style="font-size: 1rem; color: #B0B9D4; line-height: 1.9;">
+                                    <p style="margin: 0;">📍&nbsp; {person_data['Circunscripción']}</p>
+                                    <p style="margin: 0;">🏛️&nbsp; {person_data['Cargo']}</p>
+                                    <p style="margin: 0;">💑&nbsp; {person_data['Estado Civil']}</p>
+                                </div>
+                                {seat_html_block}
                             </div>
-                            """, unsafe_allow_html=True)
-                            st.image(seat_files[0], width=200)
+                            """,
+                            unsafe_allow_html=True
+                        )
                     
                     st.markdown("</div>", unsafe_allow_html=True)  # Close individual-card div
+
+                    # --- END OF REPLACED CODE BLOCK ---
                     
                     # Separator with gradient
                     st.markdown("""
