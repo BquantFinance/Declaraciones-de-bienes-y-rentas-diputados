@@ -1,775 +1,737 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import os
 import json
-from pathlib import Path
-import glob
-import base64
+from datetime import datetime
+import plotly.express as px
+import plotly.graph_objects as go
 
-# Page configuration - MUST BE FIRST
+# Page configuration
 st.set_page_config(
-    page_title="Declaraciones de Bienes y Rentas | XV Legislatura",
+    page_title="📋 Deputies Financial Disclosure Explorer",
     page_icon="🏛️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# Enhanced dark mode CSS
+# Custom CSS for better styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-    
-    .stApp {
-        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
-        font-family: 'Inter', sans-serif;
-        color: #e0e0e0;
-    }
-    
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 40px 30px;
-        border-radius: 20px;
-        margin-bottom: 25px;
-        text-align: center;
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .hero-section::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
-        animation: rotate 20s linear infinite;
-    }
-    
-    @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    .hero-title {
-        color: white;
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .hero-subtitle {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1rem;
-        font-weight: 400;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .individual-card {
-        background: rgba(30, 30, 45, 0.6);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(102, 126, 234, 0.15);
-        border-radius: 16px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
-    }
-    
-    .individual-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
-        border-color: rgba(102, 126, 234, 0.3);
-    }
-    
-    .info-card {
-        background: rgba(40, 40, 55, 0.4);
-        border-left: 3px solid #667eea;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 8px 0;
-        color: #e0e0e0;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-    }
-    
-    .info-card:hover {
-        background: rgba(50, 50, 65, 0.5);
-        transform: translateX(3px);
-    }
-    
-    .info-card strong {
-        color: #a0b0ff;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        background: rgba(30, 30, 45, 0.4);
-        border-radius: 12px;
-        padding: 4px;
-        gap: 4px;
-        border: 1px solid rgba(102, 126, 234, 0.1);
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        color: rgba(224, 224, 224, 0.7);
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-    }
-    
-    .stTabs [data-baseweb="tab"][aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(102, 126, 234, 0.1);
-        color: white;
-    }
-    
-    .stButton button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
-    
-    .stButton button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stSelectbox > div > div,
-    .stTextInput > div > div {
-        background: rgba(30, 30, 45, 0.5);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 8px;
-        color: #e0e0e0;
-    }
-    
-    .stSelectbox > div > div:hover,
-    .stTextInput > div > div:hover {
-        border-color: rgba(102, 126, 234, 0.4);
-    }
-    
-    .dataframe {
-        background: rgba(30, 30, 45, 0.4) !important;
-        border: 1px solid rgba(102, 126, 234, 0.1) !important;
-        color: #e0e0e0 !important;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    
-    .dataframe thead th {
-        background: rgba(102, 126, 234, 0.15) !important;
-        color: white !important;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-    }
-    
-    .dataframe tbody tr:hover {
-        background: rgba(102, 126, 234, 0.08) !important;
-    }
-    
-    h1, h2, h3, h4 {
-        color: #e0e0e0 !important;
-        font-weight: 700 !important;
-    }
-    
-    .comparison-card {
-        background: rgba(30, 30, 45, 0.5);
-        border: 1px solid rgba(102, 126, 234, 0.15);
-        border-radius: 12px;
-        padding: 15px;
-        margin: 10px 0;
-    }
-    
-    .vs-header {
-        text-align: center;
-        font-size: 1.8rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin: 20px 0;
+        text-align: center;
+        padding: 1rem 0;
     }
-    
-    .stCheckbox label {
-        color: #e0e0e0 !important;
-    }
-    
-    ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(30, 30, 45, 0.3);
+    .info-card {
+        background-color: #f0f2f6;
+        padding: 1rem;
         border-radius: 10px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #667eea;
     }
-    
-    ::-webkit-scrollbar-thumb {
-        background: rgba(102, 126, 234, 0.5);
+    .section-header {
+        color: #667eea;
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 0.3rem;
+    }
+    .metric-card {
+        background: white;
+        padding: 1rem;
         border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(102, 126, 234, 0.7);
+    .deputy-name {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1e3a8a;
+        margin-bottom: 0.5rem;
+    }
+    .property-item {
+        background: #f0fdf4;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #10b981;
+    }
+    .debt-item {
+        background: #fef2f2;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #ef4444;
+    }
+    .income-item {
+        background: #fefce8;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #eab308;
+    }
+    .account-item {
+        background: #eff6ff;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #3b82f6;
+    }
+    .vehicle-item {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #6b7280;
+    }
+    .stock-item {
+        background: #faf5ff;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.8rem 0;
+        border-left: 4px solid #a855f7;
+    }
+    .item-counter {
+        background: #667eea;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 15px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-left: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
-if 'disclaimer_accepted' not in st.session_state:
-    st.session_state.disclaimer_accepted = False
-if 'comparison_mode' not in st.session_state:
-    st.session_state.comparison_mode = False
-
-# Helper functions
-def get_deputy_photo(deputy_index):
-    """Get deputy photo from fotos_diputados folder using cod_parlamentario"""
-    # Try with 3 digits first
-    photo_path = f"fotos_diputados/deputy_{deputy_index:03d}.jpg"
-    if os.path.exists(photo_path):
-        return photo_path
-    # Try with 4 digits
-    photo_path = f"fotos_diputados/deputy_{deputy_index:04d}.jpg"
-    if os.path.exists(photo_path):
-        return photo_path
-    return None
-
-def get_party_logo(logo_index):
-    """Get party logo from deputy_photos folder using original deputy number"""
-    # Try multiple formats
-    patterns = [
-        f"deputy_photos/deputy_{logo_index:04d}.jpg",  # 0001
-        f"deputy_photos/deputy_{logo_index:03d}.jpg",   # 001
-    ]
-    
-    for pattern in patterns:
-        if os.path.exists(pattern):
-            return pattern
-    
-    return None
-
-def get_hemiciclo_seat(deputy_index):
-    """Get hemiciclo seat visualization"""
-    pattern = f"hemiciclo/hemi_{deputy_index:04d}_*.gif"
-    files = glob.glob(pattern)
-    if files:
-        return files[0]
-    return None
-
-# Load all data
 @st.cache_data
-def load_all_data():
-    """Load JSON and CSV data"""
+def load_data():
+    """Load and process the deputies data"""
+    df = pd.read_csv('all_deputies_transformed.csv')
+    
+    # Clean up names
+    df['informacion_personal_nombre_y_apellidos'] = df['informacion_personal_nombre_y_apellidos'].str.strip()
+    
+    # Clean up circunscripcion (standardize case)
+    if 'informacion_personal_circunscripcion' in df.columns:
+        df['informacion_personal_circunscripcion'] = df['informacion_personal_circunscripcion'].fillna('NO ESPECIFICADO')
+        df['informacion_personal_circunscripcion'] = df['informacion_personal_circunscripcion'].str.upper()
+    
+    return df
+
+def parse_json_field(field_value):
+    """Safely parse JSON fields"""
+    if pd.isna(field_value) or field_value == '[]' or field_value == '' or field_value is None:
+        return []
     try:
-        # Load JSON data
-        with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-        
-        # Load CSV data for additional information
-        csv_mapping = {}
-        try:
-            deputies_csv = pd.read_csv('deputies_data.csv', encoding='utf-8')
-            for _, row in deputies_csv.iterrows():
-                name = row.get('name', '').upper()
-                csv_mapping[name] = {
-                    'cod_parlamentario': row.get('cod_parlamentario', None),
-                    'partido': row.get('Partido', row.get('partido', '')),
-                    'twitter': row.get('twitter', ''),
-                    'instagram': row.get('instagram', ''),
-                    'facebook': row.get('facebook', ''),
-                    'website': row.get('website', '')
-                }
-        except Exception as e:
-            st.warning(f"Could not load deputies_data.csv: {e}")
-        
-        # Process data
-        processed_data = []
-        for entry in json_data:
-            if 'data' in entry and entry['data']:
-                data = entry['data']
-                personal_info = data.get('informacion_personal', {})
-                name = personal_info.get('nombre_y_apellidos', '').upper()
-                
-                # Get original deputy index from source file for logo matching
-                source_file = entry.get('source_file', '')
-                logo_idx = 1
-                if 'deputy_' in source_file:
-                    try:
-                        logo_idx = int(source_file.split('deputy_')[1].split('_')[0])
-                    except:
-                        pass
-                
-                # Get cod_parlamentario for photo matching
-                photo_idx = logo_idx  # Default to logo index
-                csv_info = csv_mapping.get(name, {})
-                if csv_info.get('cod_parlamentario'):
-                    try:
-                        photo_idx = int(csv_info['cod_parlamentario'])
-                    except:
-                        pass
-                
-                processed_data.append({
-                    'deputy_index': photo_idx,  # For face photo
-                    'logo_index': logo_idx,      # For party logo
-                    'Nombre': name,
-                    'Cargo': personal_info.get('cargo', 'Diputado'),
-                    'Circunscripción': personal_info.get('circunscripcion', ''),
-                    'Estado Civil': personal_info.get('estado_civil', ''),
-                    'Régimen Económico': personal_info.get('regimen_economico_matrimonial', ''),
-                    'Partido': csv_info.get('partido', ''),
-                    'Twitter': csv_info.get('twitter', ''),
-                    'Instagram': csv_info.get('instagram', ''),
-                    'Facebook': csv_info.get('facebook', ''),
-                    'Website': csv_info.get('website', '')
-                })
-        
-        return pd.DataFrame(processed_data), json_data
-        
-    except FileNotFoundError:
-        st.error("No se encuentra el archivo 'all_deputies_merged.json'")
-        return pd.DataFrame(), []
-    except Exception as e:
-        st.error(f"Error al procesar los archivos: {str(e)}")
-        return pd.DataFrame(), []
+        result = json.loads(field_value)
+        return result if isinstance(result, list) else [result]
+    except:
+        return []
 
-# Show disclaimer if not accepted
-if not st.session_state.disclaimer_accepted:
-    st.markdown("""
-    <div class="hero-section">
-        <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
-        <p class="hero-subtitle">XV Legislatura - Congreso de los Diputados</p>
-    </div>
-    """, unsafe_allow_html=True)
+def format_currency(value):
+    """Format currency values"""
+    if pd.isna(value):
+        return "No declarado"
+    try:
+        if isinstance(value, str):
+            # Remove currency symbols and convert
+            value = value.replace('€', '').replace(',', '.').strip()
+            value = float(value)
+        return f"€{value:,.2f}"
+    except:
+        return str(value)
+
+def display_personal_info(row):
+    """Display personal information section"""
+    st.markdown('<div class="section-header">👤 Información Personal Completa</div>', unsafe_allow_html=True)
     
-    st.info("""
-    **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
-    disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
-    Congreso de los Diputados.
-    """)
+    col1, col2 = st.columns(2)
     
-    st.warning("""
-    Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud, 
-    **la aplicación podría contener errores, inexactitudes, omisiones o información desactualizada**.
-    """)
+    with col1:
+        st.markdown("### 📋 Datos Básicos")
+        data_items = [
+            ("📍 **Circunscripción:**", row.get('informacion_personal_circunscripcion', 'No especificado')),
+            ("💼 **Cargo:**", row.get('informacion_personal_cargo', 'Diputado')),
+            ("💑 **Estado Civil:**", row.get('informacion_personal_estado_civil', 'No declarado')),
+            ("📄 **Régimen Matrimonial:**", row.get('informacion_personal_regimen_economico_matrimonial', 'No aplica')),
+        ]
+        for label, value in data_items:
+            if value and value != 'No aplica':
+                st.markdown(f"{label} {value}")
     
-    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("✅ **Aceptar y Continuar**", use_container_width=True):
-            st.session_state.disclaimer_accepted = True
-            st.rerun()
-    
-    st.stop()
-
-# Main app header
-st.markdown("""
-<div class="hero-section">
-    <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
-    <p class="hero-subtitle">XV Legislatura - Congreso de los Diputados</p>
-</div>
-""", unsafe_allow_html=True)
-
-# Load data
-df, json_data = load_all_data()
-
-if not df.empty:
-    # Main tabs
-    main_tab1, main_tab2 = st.tabs(["🔍 Análisis Individual", "📊 Tabla de Datos"])
-    
-    with main_tab1:
-        # Toggle for comparison mode
-        col1, col2, col3 = st.columns([2, 1, 2])
-        with col2:
-            comparison_mode = st.checkbox("📊 Modo Comparación", value=st.session_state.comparison_mode)
-            st.session_state.comparison_mode = comparison_mode
+        st.markdown("### 📅 Fechas Importantes")
+        st.markdown(f"**Fecha de Elección:** {row.get('informacion_personal_fecha_eleccion', 'No especificado')}")
+        st.markdown(f"**Presentación de Credencial:** {row.get('informacion_personal_fecha_presentacion_credencial', 'No especificado')}")
         
-        if not comparison_mode:
-            # Single deputy analysis
-            search_term = st.text_input("🔎 Buscar por nombre:", placeholder="Introduzca el nombre del parlamentario...")
-            
-            # Filter names
-            if search_term:
-                filtered_df = df[df['Nombre'].str.contains(search_term, case=False, na=False)]
-                names = sorted(filtered_df['Nombre'].unique())
+        # Source file info
+        if 'source_file' in row and row['source_file']:
+            st.markdown(f"**📁 Archivo fuente:** `{row['source_file']}`")
+
+def display_all_income(row):
+    """Display ALL income information comprehensively"""
+    st.markdown('<div class="section-header">💰 Todas las Rentas e Ingresos Declarados</div>', unsafe_allow_html=True)
+    
+    total_items = 0
+    
+    # 1. SALARIOS
+    salarios = parse_json_field(row.get('rentas_percibidas_percepciones_salariales', '[]'))
+    if salarios:
+        st.markdown(f"### 💼 Percepciones Salariales <span class='item-counter'>{len(salarios)} items</span>", unsafe_allow_html=True)
+        for i, sal in enumerate(salarios, 1):
+            st.markdown(f'<div class="income-item">', unsafe_allow_html=True)
+            concepto = sal.get('concepto', 'Concepto no especificado')
+            euros = sal.get('euros', 'Cantidad no declarada')
+            st.markdown(f"**Item {i}:** {concepto}")
+            st.markdown(f"**💵 Importe:** {euros}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_items += len(salarios)
+    else:
+        st.info("💼 No hay percepciones salariales declaradas")
+    
+    # 2. DIVIDENDOS
+    dividendos = parse_json_field(row.get('rentas_percibidas_dividendos_y_participaciones', '[]'))
+    if dividendos:
+        st.markdown(f"### 📈 Dividendos y Participaciones <span class='item-counter'>{len(dividendos)} items</span>", unsafe_allow_html=True)
+        for i, div in enumerate(dividendos, 1):
+            st.markdown(f'<div class="income-item">', unsafe_allow_html=True)
+            if isinstance(div, dict):
+                for key, value in div.items():
+                    st.markdown(f"**{key}:** {value}")
             else:
-                names = sorted(df['Nombre'].unique())
-            
-            if names:
-                selected_name = st.selectbox("Seleccione parlamentario:", names)
-                
-                if selected_name:
-                    # Get deputy data
-                    person_row = df[df['Nombre'] == selected_name].iloc[0]
-                    
-                    # Find JSON data for this deputy
-                    deputy_data = {}
-                    for entry in json_data:
-                        if entry.get('data', {}).get('informacion_personal', {}).get('nombre_y_apellidos', '').upper() == selected_name:
-                            deputy_data = entry.get('data', {})
-                            break
-                    
-                    personal_info = deputy_data.get('informacion_personal', {})
-                    
-                    # Display card
-                    st.markdown('<div class="individual-card">', unsafe_allow_html=True)
-                    
-                    col1, col2, col3 = st.columns([1, 2.5, 1.5])
-                    
-                    with col1:
-                        # Photo with party logo
-                        photo_path = get_deputy_photo(person_row['deputy_index'])
-                        party_logo_path = get_party_logo(person_row['logo_index'])
-                        
-                        if photo_path:
-                            with open(photo_path, "rb") as f:
-                                photo_b64 = base64.b64encode(f.read()).decode()
-                            
-                            html = f"""
-                            <div style="position: relative; display: inline-block;">
-                                <img src="data:image/jpeg;base64,{photo_b64}" 
-                                     style="width: 120px; height: 160px; object-fit: cover; 
-                                            border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-                            """
-                            
-                            if party_logo_path:
-                                with open(party_logo_path, "rb") as f:
-                                    logo_b64 = base64.b64encode(f.read()).decode()
-                                html += f"""
-                                <div style="position: absolute; bottom: -8px; right: -8px; 
-                                            background: white; border-radius: 50%; padding: 3px;
-                                            width: 35px; height: 35px;">
-                                    <img src="data:image/jpeg;base64,{logo_b64}" 
-                                         style="width: 28px; height: 28px; object-fit: contain;">
-                                </div>
-                                """
-                            
-                            html += "</div>"
-                            st.markdown(html, unsafe_allow_html=True)
-                        else:
-                            st.markdown("""
-                            <div style="background: rgba(102, 126, 234, 0.2); width: 120px; height: 160px; 
-                                        border-radius: 10px; display: flex; align-items: center; 
-                                        justify-content: center;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 3rem;">👤</div>
-                                    <p style="color: rgba(255,255,255,0.5); font-size: 0.7rem;">Sin foto</p>
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        # Info with social media
-                        party_name = person_row.get('Partido', '')
-                        social_links = ""
-                        
-                        twitter = person_row.get('Twitter', '')
-                        if twitter:
-                            if 'twitter.com/' in twitter:
-                                handle = twitter.split('twitter.com/')[-1].strip('/')
-                            else:
-                                handle = twitter
-                            social_links += f'<a href="https://twitter.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">🐦</a>'
-                        
-                        instagram = person_row.get('Instagram', '')
-                        if instagram:
-                            if 'instagram.com/' in instagram:
-                                handle = instagram.split('instagram.com/')[-1].strip('/')
-                            else:
-                                handle = instagram
-                            social_links += f'<a href="https://instagram.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">📷</a>'
-                        
-                        facebook = person_row.get('Facebook', '')
-                        if facebook:
-                            social_links += f'<a href="{facebook}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">📘</a>'
-                        
-                        website = person_row.get('Website', '')
-                        if website:
-                            social_links += f'<a href="{website}" target="_blank" style="text-decoration: none; font-size: 1.5rem;">🌐</a>'
-                        
-                        st.markdown(f"""
-                        <div style="padding-left: 15px;">
-                            <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
-                                {personal_info.get('nombre_y_apellidos', '').upper()}
-                            </h3>
-                            {f'<div style="margin: 10px 0;">{social_links}</div>' if social_links else ''}
-                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
-                                📍 <strong>{personal_info.get('circunscripcion', '')}</strong>
-                            </p>
-                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
-                                🏛️ {personal_info.get('cargo', 'Diputado')}
-                            </p>
-                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">🎯 <strong>{party_name}</strong></p>' if party_name else ''}
-                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
-                                💑 {personal_info.get('estado_civil', '')}
-                            </p>
-                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">📜 {personal_info.get("regimen_economico_matrimonial", "")}</p>' 
-                             if personal_info.get('regimen_economico_matrimonial') else ''}
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        # Hemiciclo seat
-                        seat_path = get_hemiciclo_seat(person_row['deputy_index'])
-                        if seat_path:
-                            with open(seat_path, "rb") as f:
-                                seat_b64 = base64.b64encode(f.read()).decode()
-                            st.markdown(f"""
-                            <div style="text-align: center;">
-                                <img src="data:image/gif;base64,{seat_b64}" 
-                                     style="width: 100px; border-radius: 8px;">
-                                <p style="color: rgba(224,224,224,0.5); font-size: 0.65rem; 
-                                         margin-top: 5px;">ESCAÑO</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # Data tabs
-                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["💰 Rentas", "🏠 Bienes", "💳 Cuentas", "📊 Deudas", "🚗 Vehículos"])
-                    
-                    with tab1:
-                        rentas = deputy_data.get('rentas_percibidas', {})
-                        
-                        if rentas.get('percepciones_salariales'):
-                            st.markdown("**Percepciones Salariales:**")
-                            for item in rentas['percepciones_salariales']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {item.get('concepto', 'Sin concepto')}: <strong>{item.get('euros', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        if rentas.get('dividendos_y_participaciones'):
-                            st.markdown("**Dividendos y Participaciones:**")
-                            for item in rentas['dividendos_y_participaciones']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {item.get('concepto', 'Sin concepto')}: <strong>{item.get('euros', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        if rentas.get('otras_rentas'):
-                            st.markdown("**Otras Rentas:**")
-                            for item in rentas['otras_rentas']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {item.get('concepto', 'Sin concepto')}: <strong>{item.get('euros', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        irpf = deputy_data.get('irpf', {})
-                        if irpf:
-                            st.markdown(f"""
-                            <div class="info-card" style="background: rgba(255,193,7,0.1); border-left-color: #ffc107;">
-                                <strong>IRPF Pagado:</strong> €{irpf.get('cantidad_pagada', 0)}
-                            </div>
-                            """, unsafe_allow_html=True)
-                        
-                        if not rentas.get('percepciones_salariales') and not rentas.get('dividendos_y_participaciones'):
-                            st.markdown("*No hay rentas declaradas*")
-                    
-                    with tab2:
-                        bienes = deputy_data.get('bienes_patrimoniales', {})
-                        
-                        if bienes.get('inmuebles_urbanos'):
-                            st.markdown("**Inmuebles Urbanos:**")
-                            for prop in bienes['inmuebles_urbanos']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • <strong>{prop.get('clase', prop.get('clase_y_caracteristicas', 'Inmueble'))}</strong>
-                                    <br>&nbsp;&nbsp;&nbsp;Situación: {prop.get('situacion', '')}
-                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho_sobre_el_bien', '')}
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        if bienes.get('inmuebles_rusticos'):
-                            st.markdown("**Inmuebles Rústicos:**")
-                            for prop in bienes['inmuebles_rusticos']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • <strong>{prop.get('clase', 'Inmueble')}</strong>
-                                    <br>&nbsp;&nbsp;&nbsp;Situación: {prop.get('situacion', '')}
-                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho_sobre_el_bien', '')}
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        if not bienes.get('inmuebles_urbanos') and not bienes.get('inmuebles_rusticos'):
-                            st.markdown("*No hay propiedades declaradas*")
-                    
-                    with tab3:
-                        cuentas = deputy_data.get('depositos_y_cuentas', {})
-                        if cuentas.get('cuentas'):
-                            st.markdown("**Cuentas y Depósitos:**")
-                            for cuenta in cuentas['cuentas']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {cuenta.get('descripcion', 'Cuenta')}: <strong>{cuenta.get('saldo', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        valores = deputy_data.get('otros_bienes_y_derechos', {})
-                        if valores.get('deuda_publica_y_valores'):
-                            st.markdown("**Valores y Participaciones:**")
-                            for valor in valores['deuda_publica_y_valores']:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {valor.get('descripcion', 'Valor')}: <strong>{valor.get('valor', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        if not cuentas.get('cuentas') and not valores.get('deuda_publica_y_valores'):
-                            st.markdown("*No hay cuentas o valores declarados*")
-                    
-                    with tab4:
-                        deudas = deputy_data.get('deudas_y_obligaciones', [])
-                        if deudas:
-                            st.markdown("**Deudas y Obligaciones:**")
-                            for deuda in deudas:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • <strong>{deuda.get('descripcion', 'Deuda')}</strong>
-                                    <br>&nbsp;&nbsp;&nbsp;Importe concedido: {deuda.get('importe_concedido', '')}
-                                    <br>&nbsp;&nbsp;&nbsp;Saldo pendiente: <strong>{deuda.get('saldo_pendiente', 0)}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            st.markdown("*No hay deudas declaradas*")
-                    
-                    with tab5:
-                        vehiculos = deputy_data.get('vehiculos', [])
-                        if vehiculos:
-                            st.markdown("**Vehículos:**")
-                            for vehiculo in vehiculos:
-                                st.markdown(f"""
-                                <div class="info-card">
-                                    • {vehiculo.get('descripcion', 'Vehículo')}
-                                    {f"<br>&nbsp;&nbsp;&nbsp;Adquisición: {vehiculo.get('fecha_adquisicion', '')}" 
-                                     if vehiculo.get('fecha_adquisicion') else ''}
-                                </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            st.markdown("*No hay vehículos declarados*")
-        
-        else:
-            # Comparison mode
-            st.markdown("### 📊 Comparación entre Parlamentarios")
+                st.markdown(f"**Item {i}:** {div}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_items += len(dividendos)
+    else:
+        st.info("📈 No hay dividendos declarados")
+    
+    # 3. INTERESES FINANCIEROS
+    intereses = parse_json_field(row.get('rentas_percibidas_intereses_financieros', '[]'))
+    if intereses:
+        st.markdown(f"### 🏦 Intereses Financieros <span class='item-counter'>{len(intereses)} items</span>", unsafe_allow_html=True)
+        for i, interes in enumerate(intereses, 1):
+            st.markdown(f'<div class="income-item">', unsafe_allow_html=True)
+            if isinstance(interes, dict):
+                for key, value in interes.items():
+                    st.markdown(f"**{key}:** {value}")
+            else:
+                st.markdown(f"**Item {i}:** {interes}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_items += len(intereses)
+    else:
+        st.info("🏦 No hay intereses financieros declarados")
+    
+    # 4. OTRAS RENTAS
+    otras = parse_json_field(row.get('rentas_percibidas_otras_rentas', '[]'))
+    if otras:
+        st.markdown(f"### 📊 Otras Rentas <span class='item-counter'>{len(otras)} items</span>", unsafe_allow_html=True)
+        for i, otra in enumerate(otras, 1):
+            st.markdown(f'<div class="income-item">', unsafe_allow_html=True)
+            if isinstance(otra, dict):
+                for key, value in otra.items():
+                    st.markdown(f"**{key}:** {value}")
+            else:
+                st.markdown(f"**Item {i}:** {otra}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_items += len(otras)
+    else:
+        st.info("📊 No hay otras rentas declaradas")
+    
+    # 5. IRPF
+    st.markdown("### 🏛️ IRPF Pagado")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        irpf = format_currency(row.get('irpf_cantidad_pagada'))
+        st.metric("Cantidad pagada de IRPF", irpf)
+    with col2:
+        st.metric("Total items de ingresos", total_items)
+
+def display_all_properties(row):
+    """Display ALL property information"""
+    st.markdown('<div class="section-header">🏠 Todos los Bienes Patrimoniales</div>', unsafe_allow_html=True)
+    
+    total_properties = 0
+    
+    # 1. INMUEBLES URBANOS
+    urbanos = parse_json_field(row.get('bienes_patrimoniales_inmuebles_urbanos', '[]'))
+    if urbanos:
+        st.markdown(f"### 🏢 Inmuebles Urbanos <span class='item-counter'>{len(urbanos)} propiedades</span>", unsafe_allow_html=True)
+        for i, prop in enumerate(urbanos, 1):
+            st.markdown(f'<div class="property-item">', unsafe_allow_html=True)
+            st.markdown(f"**🏠 Propiedad Urbana #{i}**")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**Tipo:** {prop.get('clase_y_caracteristicas', 'No especificado')}")
+                st.markdown(f"**📍 Ubicación:** {prop.get('situacion', 'No especificado')}")
+                st.markdown(f"**📅 Fecha Adquisición:** {prop.get('fecha_adquisicion', 'No especificado')}")
+            with col2:
+                st.markdown(f"**📜 Título:** {prop.get('titulo_adquisicion', 'No especificado')}")
+                st.markdown(f"**✅ Derecho:** {prop.get('derecho_sobre_el_bien', 'No especificado')}")
+                # Check for any additional fields
+                for key, value in prop.items():
+                    if key not in ['clase_y_caracteristicas', 'situacion', 'fecha_adquisicion', 'titulo_adquisicion', 'derecho_sobre_el_bien']:
+                        st.markdown(f"**{key}:** {value}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_properties += len(urbanos)
+    else:
+        st.info("🏢 No hay inmuebles urbanos declarados")
+    
+    # 2. INMUEBLES RÚSTICOS
+    rusticos = parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))
+    if rusticos:
+        st.markdown(f"### 🌾 Inmuebles Rústicos <span class='item-counter'>{len(rusticos)} propiedades</span>", unsafe_allow_html=True)
+        for i, prop in enumerate(rusticos, 1):
+            st.markdown(f'<div class="property-item">', unsafe_allow_html=True)
+            st.markdown(f"**🌾 Propiedad Rústica #{i}**")
+            if isinstance(prop, dict):
+                for key, value in prop.items():
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{prop}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_properties += len(rusticos)
+    else:
+        st.info("🌾 No hay inmuebles rústicos declarados")
+    
+    # 3. BIENES EN SOCIEDADES NO COTIZADAS
+    sociedades = parse_json_field(row.get('bienes_patrimoniales_bienes_sociedades_no_cotizadas', '[]'))
+    if sociedades:
+        st.markdown(f"### 🏭 Bienes en Sociedades No Cotizadas <span class='item-counter'>{len(sociedades)} items</span>", unsafe_allow_html=True)
+        for i, soc in enumerate(sociedades, 1):
+            st.markdown(f'<div class="property-item">', unsafe_allow_html=True)
+            st.markdown(f"**🏭 Sociedad #{i}**")
+            if isinstance(soc, dict):
+                for key, value in soc.items():
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{soc}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_properties += len(sociedades)
+    else:
+        st.info("🏭 No hay bienes en sociedades no cotizadas")
+    
+    st.metric("Total de propiedades", total_properties)
+
+def display_all_vehicles(row):
+    """Display ALL vehicle information"""
+    vehiculos = parse_json_field(row.get('vehiculos', '[]'))
+    
+    st.markdown(f'<div class="section-header">🚗 Todos los Vehículos <span class="item-counter">{len(vehiculos)} vehículos</span></div>', unsafe_allow_html=True)
+    
+    if vehiculos:
+        for i, vehicle in enumerate(vehiculos, 1):
+            st.markdown(f'<div class="vehicle-item">', unsafe_allow_html=True)
+            st.markdown(f"**🚗 Vehículo #{i}**")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**Descripción:** {vehicle.get('descripcion', 'Vehículo no especificado')}")
+            with col2:
+                st.markdown(f"**📅 Fecha Adquisición:** {vehicle.get('fecha_adquisicion', 'No especificado')}")
+            # Check for additional fields
+            for key, value in vehicle.items():
+                if key not in ['descripcion', 'fecha_adquisicion']:
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("🚗 No hay vehículos declarados")
+
+def display_all_financial_assets(row):
+    """Display ALL financial assets comprehensively"""
+    st.markdown('<div class="section-header">💳 Todos los Activos Financieros y Valores</div>', unsafe_allow_html=True)
+    
+    total_financial_items = 0
+    
+    # 1. CUENTAS BANCARIAS
+    cuentas = parse_json_field(row.get('depositos_y_cuentas_cuentas', '[]'))
+    if cuentas:
+        st.markdown(f"### 🏦 Depósitos y Cuentas Bancarias <span class='item-counter'>{len(cuentas)} cuentas</span>", unsafe_allow_html=True)
+        for i, cuenta in enumerate(cuentas, 1):
+            st.markdown(f'<div class="account-item">', unsafe_allow_html=True)
+            st.markdown(f"**💳 Cuenta #{i}**")
+            st.markdown(f"**Descripción:** {cuenta.get('descripcion', 'Cuenta no especificada')}")
+            st.markdown(f"**💰 Saldo:** {cuenta.get('saldo', 'No declarado')}")
+            # Check for additional fields
+            for key, value in cuenta.items():
+                if key not in ['descripcion', 'saldo']:
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_financial_items += len(cuentas)
+    else:
+        st.info("🏦 No hay cuentas bancarias declaradas")
+    
+    # 2. DEUDA PÚBLICA Y VALORES
+    valores = parse_json_field(row.get('otros_bienes_y_derechos_deuda_publica_y_valores', '[]'))
+    if valores:
+        st.markdown(f"### 📊 Deuda Pública y Valores <span class='item-counter'>{len(valores)} items</span>", unsafe_allow_html=True)
+        for i, valor in enumerate(valores, 1):
+            st.markdown(f'<div class="stock-item">', unsafe_allow_html=True)
+            st.markdown(f"**📈 Valor #{i}**")
+            if isinstance(valor, dict):
+                st.markdown(f"**Descripción:** {valor.get('descripcion', 'No especificado')}")
+                st.markdown(f"**💵 Valor:** {valor.get('valor', 'No declarado')}")
+                # Additional fields
+                for key, value in valor.items():
+                    if key not in ['descripcion', 'valor']:
+                        st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{valor}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_financial_items += len(valores)
+    else:
+        st.info("📊 No hay valores o deuda pública declarada")
+    
+    # 3. ACCIONES Y PARTICIPACIONES
+    acciones = parse_json_field(row.get('otros_bienes_y_derechos_acciones_y_participaciones', '[]'))
+    if acciones:
+        st.markdown(f"### 📈 Acciones y Participaciones <span class='item-counter'>{len(acciones)} items</span>", unsafe_allow_html=True)
+        for i, accion in enumerate(acciones, 1):
+            st.markdown(f'<div class="stock-item">', unsafe_allow_html=True)
+            st.markdown(f"**📈 Acción/Participación #{i}**")
+            if isinstance(accion, dict):
+                for key, value in accion.items():
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{accion}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_financial_items += len(acciones)
+    else:
+        st.info("📈 No hay acciones o participaciones declaradas")
+    
+    # 4. SOCIEDADES PARTICIPADAS MÁS DEL 5%
+    sociedades_5 = parse_json_field(row.get('otros_bienes_y_derechos_sociedades_participadas_mas_5_por_ciento', '[]'))
+    if sociedades_5:
+        st.markdown(f"### 🏢 Sociedades Participadas (>5%) <span class='item-counter'>{len(sociedades_5)} sociedades</span>", unsafe_allow_html=True)
+        for i, soc in enumerate(sociedades_5, 1):
+            st.markdown(f'<div class="stock-item">', unsafe_allow_html=True)
+            st.markdown(f"**🏢 Sociedad #{i}**")
+            if isinstance(soc, dict):
+                for key, value in soc.items():
+                    st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{soc}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_financial_items += len(sociedades_5)
+    else:
+        st.info("🏢 No hay sociedades participadas más del 5%")
+    
+    # 5. OTROS BIENES NO DECLARADOS ANTERIORMENTE
+    otros = parse_json_field(row.get('otros_bienes_no_declarados_anteriormente', '[]'))
+    if otros:
+        st.markdown(f"### 📦 Otros Bienes <span class='item-counter'>{len(otros)} items</span>", unsafe_allow_html=True)
+        for i, otro in enumerate(otros, 1):
+            st.markdown(f'<div class="stock-item">', unsafe_allow_html=True)
+            st.markdown(f"**📦 Bien #{i}**")
+            if isinstance(otro, dict):
+                st.markdown(f"**Descripción:** {otro.get('descripcion', 'No especificado')}")
+                st.markdown(f"**💵 Valor:** {otro.get('valor', 'No declarado')}")
+                for key, value in otro.items():
+                    if key not in ['descripcion', 'valor']:
+                        st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
+            else:
+                st.markdown(f"{otro}")
+            st.markdown('</div>', unsafe_allow_html=True)
+        total_financial_items += len(otros)
+    else:
+        st.info("📦 No hay otros bienes declarados")
+    
+    st.metric("Total de activos financieros", total_financial_items)
+
+def display_all_debts(row):
+    """Display ALL debts and obligations"""
+    deudas = parse_json_field(row.get('deudas_y_obligaciones', '[]'))
+    
+    st.markdown(f'<div class="section-header">💳 Todas las Deudas y Obligaciones <span class="item-counter">{len(deudas)} deudas</span></div>', unsafe_allow_html=True)
+    
+    if deudas:
+        total_deuda = 0
+        for i, deuda in enumerate(deudas, 1):
+            st.markdown(f'<div class="debt-item">', unsafe_allow_html=True)
+            st.markdown(f"**💳 Deuda #{i}**")
             
             col1, col2 = st.columns(2)
-            
             with col1:
-                names1 = sorted(df['Nombre'].unique())
-                selected_name1 = st.selectbox("Primer parlamentario:", names1)
-            
+                st.markdown(f"**Tipo:** {deuda.get('descripcion', 'Préstamo no especificado')}")
+                st.markdown(f"**📅 Fecha Concesión:** {deuda.get('fecha_concesion', 'No especificado')}")
+                st.markdown(f"**💰 Importe Concedido:** {deuda.get('importe_concedido', 'No declarado')}")
             with col2:
-                names2 = sorted(df['Nombre'].unique())
-                selected_name2 = st.selectbox("Segundo parlamentario:", names2)
+                saldo = deuda.get('saldo_pendiente', 'No declarado')
+                st.markdown(f"**⚠️ Saldo Pendiente:** **{saldo}**")
+                
+                # Try to calculate total debt
+                try:
+                    if isinstance(saldo, str):
+                        saldo_num = float(saldo.replace('€', '').replace(',', '.').replace(' ', ''))
+                        total_deuda += saldo_num
+                except:
+                    pass
+                
+                # Check for additional fields
+                for key, value in deuda.items():
+                    if key not in ['descripcion', 'fecha_concesion', 'importe_concedido', 'saldo_pendiente']:
+                        st.markdown(f"**{key.replace('_', ' ').title()}:** {value}")
             
-            if selected_name1 and selected_name2:
-                st.markdown('<h2 class="vs-header">VS</h2>', unsafe_allow_html=True)
-                
-                # Get data for both deputies
-                person1_row = df[df['Nombre'] == selected_name1].iloc[0]
-                person2_row = df[df['Nombre'] == selected_name2].iloc[0]
-                
-                data1 = {}
-                data2 = {}
-                for entry in json_data:
-                    name = entry.get('data', {}).get('informacion_personal', {}).get('nombre_y_apellidos', '').upper()
-                    if name == selected_name1:
-                        data1 = entry.get('data', {})
-                    elif name == selected_name2:
-                        data2 = entry.get('data', {})
-                
-                # Compare key metrics
-                col1, col2, col3 = st.columns([2, 1, 2])
-                
-                # Count properties
-                props1 = len(data1.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
-                        len(data1.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
-                props2 = len(data2.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
-                        len(data2.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
-                
-                vehicles1 = len(data1.get('vehiculos', []))
-                vehicles2 = len(data2.get('vehiculos', []))
-                
-                accounts1 = len(data1.get('depositos_y_cuentas', {}).get('cuentas', []))
-                accounts2 = len(data2.get('depositos_y_cuentas', {}).get('cuentas', []))
-                
-                debts1 = len(data1.get('deudas_y_obligaciones', []))
-                debts2 = len(data2.get('deudas_y_obligaciones', []))
-                
-                with col1:
-                    st.metric(selected_name1[:30], f"{props1} propiedades")
-                    st.metric("", f"{vehicles1} vehículos")
-                    st.metric("", f"{accounts1} cuentas")
-                    st.metric("", f"{debts1} deudas")
-                
-                with col2:
-                    st.markdown("<div style='text-align: center; padding-top: 50px;'>", unsafe_allow_html=True)
-                    st.markdown("<p>🏠</p>", unsafe_allow_html=True)
-                    st.markdown("<p>🚗</p>", unsafe_allow_html=True)
-                    st.markdown("<p>💳</p>", unsafe_allow_html=True)
-                    st.markdown("<p>📊</p>", unsafe_allow_html=True)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                
-                with col3:
-                    st.metric(selected_name2[:30], f"{props2} propiedades")
-                    st.metric("", f"{vehicles2} vehículos")
-                    st.metric("", f"{accounts2} cuentas")
-                    st.metric("", f"{debts2} deudas")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        if total_deuda > 0:
+            st.error(f"**💸 Deuda Total Pendiente Estimada: €{total_deuda:,.2f}**")
+    else:
+        st.success("✅ No hay deudas u obligaciones declaradas")
+
+def display_observations(row):
+    """Display observations if any"""
+    obs = row.get('observaciones')
+    if obs and not pd.isna(obs) and obs.strip():
+        st.markdown('<div class="section-header">📝 Observaciones Adicionales</div>', unsafe_allow_html=True)
+        st.info(obs)
+
+def display_complete_summary(row):
+    """Create a complete summary with all counts"""
+    st.markdown('<div class="section-header">📊 Resumen Completo del Patrimonio</div>', unsafe_allow_html=True)
     
-    with main_tab2:
-        st.markdown("### 📊 Tabla de Datos Completa")
+    # Calculate all totals
+    num_salarios = len(parse_json_field(row.get('rentas_percibidas_percepciones_salariales', '[]')))
+    num_dividendos = len(parse_json_field(row.get('rentas_percibidas_dividendos_y_participaciones', '[]')))
+    num_intereses = len(parse_json_field(row.get('rentas_percibidas_intereses_financieros', '[]')))
+    num_otras_rentas = len(parse_json_field(row.get('rentas_percibidas_otras_rentas', '[]')))
+    
+    num_urbanos = len(parse_json_field(row.get('bienes_patrimoniales_inmuebles_urbanos', '[]')))
+    num_rusticos = len(parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
+    num_sociedades = len(parse_json_field(row.get('bienes_patrimoniales_bienes_sociedades_no_cotizadas', '[]')))
+    
+    num_vehicles = len(parse_json_field(row.get('vehiculos', '[]')))
+    num_cuentas = len(parse_json_field(row.get('depositos_y_cuentas_cuentas', '[]')))
+    num_valores = len(parse_json_field(row.get('otros_bienes_y_derechos_deuda_publica_y_valores', '[]')))
+    num_acciones = len(parse_json_field(row.get('otros_bienes_y_derechos_acciones_y_participaciones', '[]')))
+    num_sociedades_5 = len(parse_json_field(row.get('otros_bienes_y_derechos_sociedades_participadas_mas_5_por_ciento', '[]')))
+    num_otros = len(parse_json_field(row.get('otros_bienes_no_declarados_anteriormente', '[]')))
+    num_deudas = len(parse_json_field(row.get('deudas_y_obligaciones', '[]')))
+    
+    # Display metrics in organized sections
+    st.markdown("### 💰 Resumen de Ingresos")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("💼 Salarios", num_salarios)
+    with col2:
+        st.metric("📈 Dividendos", num_dividendos)
+    with col3:
+        st.metric("🏦 Intereses", num_intereses)
+    with col4:
+        st.metric("📊 Otras Rentas", num_otras_rentas)
+    
+    st.markdown("### 🏠 Resumen de Propiedades")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("🏢 Inmuebles Urbanos", num_urbanos)
+    with col2:
+        st.metric("🌾 Inmuebles Rústicos", num_rusticos)
+    with col3:
+        st.metric("🏭 Sociedades No Cotizadas", num_sociedades)
+    with col4:
+        st.metric("🚗 Vehículos", num_vehicles)
+    
+    st.markdown("### 💳 Resumen Financiero")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric("🏦 Cuentas", num_cuentas)
+    with col2:
+        st.metric("📊 Valores", num_valores)
+    with col3:
+        st.metric("📈 Acciones", num_acciones)
+    with col4:
+        st.metric("🏢 Sociedades >5%", num_sociedades_5)
+    with col5:
+        st.metric("💸 Deudas", num_deudas, delta_color="inverse")
+    
+    # Total items
+    total_items = (num_salarios + num_dividendos + num_intereses + num_otras_rentas +
+                  num_urbanos + num_rusticos + num_sociedades + num_vehicles +
+                  num_cuentas + num_valores + num_acciones + num_sociedades_5 + 
+                  num_otros + num_deudas)
+    
+    st.markdown("---")
+    st.metric("📋 **TOTAL DE ITEMS DECLARADOS**", total_items)
+    
+    # Create visualization
+    if total_items > 0:
+        st.markdown("### 📈 Distribución Visual del Patrimonio")
         
-        search = st.text_input("🔍 Buscar en la tabla:", placeholder="Nombre, circunscripción...")
+        categories = []
+        values = []
+        colors = []
         
-        display_df = df.copy()
-        if search:
-            display_df = display_df[
-                display_df['Nombre'].str.contains(search, case=False, na=False) |
-                display_df['Circunscripción'].str.contains(search, case=False, na=False)
-            ]
+        if num_salarios > 0:
+            categories.append(f'Salarios ({num_salarios})')
+            values.append(num_salarios)
+            colors.append('#eab308')
         
-        # Remove index columns for display
-        display_cols = ['Nombre', 'Cargo', 'Circunscripción', 'Estado Civil', 'Partido']
-        display_df = display_df[display_cols]
+        total_properties = num_urbanos + num_rusticos + num_sociedades
+        if total_properties > 0:
+            categories.append(f'Propiedades ({total_properties})')
+            values.append(total_properties)
+            colors.append('#10b981')
         
-        st.dataframe(display_df, use_container_width=True, hide_index=True, height=600)
+        if num_vehicles > 0:
+            categories.append(f'Vehículos ({num_vehicles})')
+            values.append(num_vehicles)
+            colors.append('#6b7280')
         
-        csv = display_df.to_csv(index=False)
-        st.download_button("⬇️ Descargar CSV", data=csv, file_name='declaraciones_bienes.csv', mime='text/csv')
+        total_financial = num_cuentas + num_valores + num_acciones + num_sociedades_5
+        if total_financial > 0:
+            categories.append(f'Activos Financieros ({total_financial})')
+            values.append(total_financial)
+            colors.append('#3b82f6')
+        
+        if num_otros > 0:
+            categories.append(f'Otros Bienes ({num_otros})')
+            values.append(num_otros)
+            colors.append('#a855f7')
+        
+        if num_deudas > 0:
+            categories.append(f'Deudas ({num_deudas})')
+            values.append(num_deudas)
+            colors.append('#ef4444')
+        
+        if categories:
+            fig = go.Figure(data=[go.Pie(
+                labels=categories,
+                values=values,
+                hole=.3,
+                marker_colors=colors
+            )])
+            fig.update_traces(
+                textposition='inside',
+                textinfo='percent+label',
+                hovertemplate='<b>%{label}</b><br>Items: %{value}<br>Porcentaje: %{percent}<extra></extra>'
+            )
+            fig.update_layout(
+                height=500,
+                showlegend=True,
+                title="Distribución de Items Declarados"
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-else:
-    st.error("Error al cargar los datos. Verifique que existe el archivo 'all_deputies_merged.json'")
+def main():
+    # Header
+    st.markdown('<h1 class="main-header">🏛️ Explorador Completo de Declaraciones Patrimoniales</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #666;">Sistema integral para consultar TODA la información patrimonial de los diputados españoles</p>', unsafe_allow_html=True)
+    
+    # Load data
+    df = load_data()
+    
+    # Sidebar filters
+    with st.sidebar:
+        st.markdown("### 🔍 Filtros de Búsqueda")
+        
+        # Search by name
+        search_name = st.text_input("🔎 Buscar por nombre", placeholder="Escribe el nombre del diputado...")
+        
+        # Filter by circumscription
+        circunscripciones = ['Todas'] + sorted(df['informacion_personal_circunscripcion'].dropna().unique().tolist())
+        selected_circ = st.selectbox("📍 Filtrar por circunscripción", circunscripciones)
+        
+        # Apply filters
+        filtered_df = df.copy()
+        
+        if search_name:
+            filtered_df = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'].str.contains(search_name, case=False, na=False)]
+        
+        if selected_circ != 'Todas':
+            filtered_df = filtered_df[filtered_df['informacion_personal_circunscripcion'] == selected_circ]
+        
+        st.markdown("---")
+        st.markdown(f"### 📊 Estadísticas Generales")
+        st.metric("Total de diputados", len(df))
+        st.metric("Diputados filtrados", len(filtered_df))
+        
+        # Average IRPF
+        avg_irpf = df['irpf_cantidad_pagada'].mean()
+        if not pd.isna(avg_irpf):
+            st.metric("IRPF medio", format_currency(avg_irpf))
+        
+        # Show info about data completeness
+        st.markdown("### ℹ️ Información")
+        st.info("Este sistema muestra TODA la información disponible de cada diputado, incluyendo múltiples propiedades, cuentas, deudas, etc.")
+    
+    # Main content
+    if len(filtered_df) == 0:
+        st.warning("No se encontraron diputados con los filtros seleccionados.")
+    else:
+        # Deputy selector
+        st.markdown("### 👤 Selecciona un Diputado")
+        
+        deputy_names = filtered_df['informacion_personal_nombre_y_apellidos'].tolist()
+        selected_deputy = st.selectbox(
+            "Elige un diputado para ver TODA su información patrimonial:",
+            deputy_names,
+            format_func=lambda x: f"{x} - {filtered_df[filtered_df['informacion_personal_nombre_y_apellidos']==x]['informacion_personal_circunscripcion'].values[0]}"
+        )
+        
+        if selected_deputy:
+            # Get deputy data
+            deputy_data = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'] == selected_deputy].iloc[0]
+            
+            st.markdown("---")
+            
+            # Display deputy name prominently
+            st.markdown(f'<div class="deputy-name">{selected_deputy}</div>', unsafe_allow_html=True)
+            
+            # Create tabs for different sections
+            tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+                "📋 Personal", 
+                "💰 Ingresos", 
+                "🏠 Propiedades", 
+                "🚗 Vehículos",
+                "💳 Activos Financieros", 
+                "💸 Deudas",
+                "📝 Observaciones",
+                "📊 Resumen Total"
+            ])
+            
+            with tab1:
+                display_personal_info(deputy_data)
+            
+            with tab2:
+                display_all_income(deputy_data)
+            
+            with tab3:
+                display_all_properties(deputy_data)
+            
+            with tab4:
+                display_all_vehicles(deputy_data)
+            
+            with tab5:
+                display_all_financial_assets(deputy_data)
+            
+            with tab6:
+                display_all_debts(deputy_data)
+            
+            with tab7:
+                display_observations(deputy_data)
+                if not (deputy_data.get('observaciones') and not pd.isna(deputy_data.get('observaciones'))):
+                    st.info("📝 No hay observaciones adicionales para este diputado")
+            
+            with tab8:
+                display_complete_summary(deputy_data)
+                
+                # Export option
+                st.markdown("---")
+                st.markdown("### 💾 Exportar Información")
+                if st.button("📄 Generar informe completo en texto"):
+                    report = f"""
+INFORME COMPLETO DE DECLARACIÓN PATRIMONIAL
+==========================================
+Nombre: {selected_deputy}
+Circunscripción: {deputy_data.get('informacion_personal_circunscripcion', 'No especificado')}
+Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: rgba(224, 224, 224, 0.4); padding: 20px 0;'>
-    <p>🏛️ Datos públicos del Congreso de los Diputados</p>
-    <p>Desarrollado por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none;'>@Gsnchez</a></p>
-</div>
-""", unsafe_allow_html=True)
+DATOS COMPLETOS EN JSON:
+{deputy_data.to_json(indent=2)}
+                    """
+                    st.text_area("Informe completo:", report, height=400)
+
+if __name__ == "__main__":
+    main()
