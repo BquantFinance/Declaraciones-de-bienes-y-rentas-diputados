@@ -480,13 +480,33 @@ if not df.empty:
                             """, unsafe_allow_html=True)
                     
                     with col2:
-                        # Name and basic info (compact)
-                        party_name = get_deputy_party(person_idx, selected_name)
+                        # Name and basic info (compact) with social media
+                        party_name = person_row.get('Partido', '')
+                        twitter = person_row.get('Twitter', '')
+                        instagram = person_row.get('Instagram', '')
+                        facebook = person_row.get('Facebook', '')
+                        
+                        # Create social media links HTML
+                        social_links = ""
+                        if twitter:
+                            social_links += f"""<a href="{twitter if twitter.startswith('http') else f'https://twitter.com/{twitter}'}" 
+                                               target="_blank" style="text-decoration: none; margin-right: 10px;">
+                                               <span style="font-size: 1.2rem;">🐦</span></a>"""
+                        if instagram:
+                            social_links += f"""<a href="{instagram if instagram.startswith('http') else f'https://instagram.com/{instagram}'}" 
+                                               target="_blank" style="text-decoration: none; margin-right: 10px;">
+                                               <span style="font-size: 1.2rem;">📷</span></a>"""
+                        if facebook:
+                            social_links += f"""<a href="{facebook if facebook.startswith('http') else f'https://facebook.com/{facebook}'}" 
+                                               target="_blank" style="text-decoration: none;">
+                                               <span style="font-size: 1.2rem;">📘</span></a>"""
+                        
                         st.markdown(f"""
                         <div style="padding-left: 15px;">
                             <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
                                 {personal_info.get('nombre_y_apellidos', '').upper()}
                             </h3>
+                            {f'<div style="margin: 10px 0;">{social_links}</div>' if social_links else ''}
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
                                 📍 <strong>{personal_info.get('circunscripcion', '')}</strong>
                             </p>
@@ -494,7 +514,7 @@ if not df.empty:
                                 🏛️ {personal_info.get('cargo', 'Diputado')}
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
-                                🎯 <strong>{party_name if party_name else 'Partido no identificado'}</strong>
+                                🎯 <strong>{party_name if party_name else 'Sin partido identificado'}</strong>
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
                                 💑 {personal_info.get('estado_civil', '')}
