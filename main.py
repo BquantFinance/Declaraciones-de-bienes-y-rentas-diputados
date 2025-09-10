@@ -481,6 +481,7 @@ if not df.empty:
                     
                     with col2:
                         # Name and basic info (compact)
+                        party_name = get_deputy_party(person_idx, selected_name)
                         st.markdown(f"""
                         <div style="padding-left: 15px;">
                             <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
@@ -491,6 +492,9 @@ if not df.empty:
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
                                 🏛️ {personal_info.get('cargo', 'Diputado')}
+                            </p>
+                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
+                                🎯 <strong>{party_name if party_name else 'Partido no identificado'}</strong>
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
                                 💑 {personal_info.get('estado_civil', '')}
@@ -683,12 +687,22 @@ if not df.empty:
             if selected_name1 and selected_name2:
                 st.markdown('<h2 class="vs-header">VS</h2>', unsafe_allow_html=True)
                 
-                # Get data for both deputies
-                idx1 = df[df['Nombre'] == selected_name1]['deputy_index'].iloc[0]
-                idx2 = df[df['Nombre'] == selected_name2]['deputy_index'].iloc[0]
+                # Get data for both deputies from dataframe
+                person1_row = df[df['Nombre'] == selected_name1].iloc[0]
+                person2_row = df[df['Nombre'] == selected_name2].iloc[0]
                 
-                data1 = json_data[idx1 - 1]['data'] if idx1 <= len(json_data) else {}
-                data2 = json_data[idx2 - 1]['data'] if idx2 <= len(json_data) else {}
+                idx1 = person1_row['deputy_index']
+                idx2 = person2_row['deputy_index']
+                
+                # Find JSON data for both
+                data1 = {}
+                data2 = {}
+                for entry in json_data:
+                    name = entry.get('data', {}).get('informacion_personal', {}).get('nombre_y_apellidos', '').upper()
+                    if name == selected_name1:
+                        data1 = entry.get('data', {})
+                    elif name == selected_name2:
+                        data2 = entry.get('data', {})
                 
                 # Compare key metrics
                 col1, col2, col3 = st.columns([2, 1, 2])
@@ -728,6 +742,7 @@ if not df.empty:
                     st.metric("", f"{accounts2} cuentas")
                     st.metric("", f"{debts2} deudas")
     
+    # THIS NEEDS TO BE AT THE SAME LEVEL AS "with main_tab1:"
     with main_tab2:
         st.markdown("### 📊 Tabla de Datos Completa")
         
