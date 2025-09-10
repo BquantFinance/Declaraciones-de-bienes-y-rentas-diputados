@@ -728,7 +728,7 @@ if not df.empty:
                     st.metric("", f"{accounts2} cuentas")
                     st.metric("", f"{debts2} deudas")
     
-    with tab2:
+    with main_tab2:
         st.markdown("### 📊 Tabla de Datos Completa")
         
         # Simple search
