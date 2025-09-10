@@ -485,21 +485,37 @@ if not df.empty:
                         twitter = person_row.get('Twitter', '')
                         instagram = person_row.get('Instagram', '')
                         facebook = person_row.get('Facebook', '')
+                        website = person_row.get('Website', '')
                         
                         # Create social media links HTML
                         social_links = ""
                         if twitter:
-                            social_links += f"""<a href="{twitter if twitter.startswith('http') else f'https://twitter.com/{twitter}'}" 
+                            # Clean up Twitter URLs - extract username if full URL
+                            if 'twitter.com/' in twitter:
+                                twitter_handle = twitter.split('twitter.com/')[-1].strip('/')
+                            else:
+                                twitter_handle = twitter
+                            social_links += f"""<a href="https://twitter.com/{twitter_handle}" 
                                                target="_blank" style="text-decoration: none; margin-right: 10px;">
                                                <span style="font-size: 1.2rem;">🐦</span></a>"""
                         if instagram:
-                            social_links += f"""<a href="{instagram if instagram.startswith('http') else f'https://instagram.com/{instagram}'}" 
+                            # Clean up Instagram URLs
+                            if 'instagram.com/' in instagram:
+                                insta_handle = instagram.split('instagram.com/')[-1].strip('/')
+                            else:
+                                insta_handle = instagram
+                            social_links += f"""<a href="https://instagram.com/{insta_handle}" 
                                                target="_blank" style="text-decoration: none; margin-right: 10px;">
                                                <span style="font-size: 1.2rem;">📷</span></a>"""
                         if facebook:
-                            social_links += f"""<a href="{facebook if facebook.startswith('http') else f'https://facebook.com/{facebook}'}" 
-                                               target="_blank" style="text-decoration: none;">
+                            # Facebook URLs are already full URLs in your CSV
+                            social_links += f"""<a href="{facebook}" 
+                                               target="_blank" style="text-decoration: none; margin-right: 10px;">
                                                <span style="font-size: 1.2rem;">📘</span></a>"""
+                        if website:
+                            social_links += f"""<a href="{website}" 
+                                               target="_blank" style="text-decoration: none;">
+                                               <span style="font-size: 1.2rem;">🌐</span></a>"""
                         
                         st.markdown(f"""
                         <div style="padding-left: 15px;">
