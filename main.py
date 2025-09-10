@@ -15,16 +15,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Spectacular dark mode CSS with glassmorphism and gradients
+# Enhanced dark mode CSS
 st.markdown("""
 <style>
     /* Import fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     
-    /* Dark mode base */
+    /* Dark mode base with better gradient */
     .stApp {
-        background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
+        background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
         font-family: 'Inter', sans-serif;
+        color: #e0e0e0;
     }
     
     /* Hide Streamlit branding */
@@ -32,14 +33,14 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Hero section */
+    /* Enhanced hero section */
     .hero-section {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 50px 40px;
-        border-radius: 30px;
-        margin-bottom: 30px;
+        padding: 40px 30px;
+        border-radius: 20px;
+        margin-bottom: 25px;
         text-align: center;
-        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
         position: relative;
         overflow: hidden;
     }
@@ -48,248 +49,253 @@ st.markdown("""
         content: "";
         position: absolute;
         top: -50%;
-        left: -50%;
+        right: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: pulse 4s ease-in-out infinite;
+        background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+        animation: rotate 20s linear infinite;
     }
     
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 0.5; }
-        50% { transform: scale(1.1); opacity: 0.8; }
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     
     .hero-title {
         color: white;
-        font-size: 2.8rem;
-        font-weight: 900;
-        margin-bottom: 10px;
-        letter-spacing: -1px;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
         position: relative;
         z-index: 1;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
     }
     
     .hero-subtitle {
-        color: rgba(255, 255, 255, 0.95);
-        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
         font-weight: 400;
-        margin-bottom: 25px;
         position: relative;
         z-index: 1;
-        letter-spacing: 0.5px;
     }
     
-    /* Individual card with glassmorphism */
+    /* Compact individual card */
     .individual-card {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        border-radius: 25px;
-        padding: 30px;
-        margin: 20px 0;
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+        background: rgba(30, 30, 45, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 16px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         transition: all 0.3s ease;
     }
     
     .individual-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.3);
     }
     
-    /* Metric containers with animations */
+    /* Metric containers */
     .metric-container {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 25px;
-        height: 100%;
+        background: rgba(40, 40, 55, 0.5);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        border-radius: 12px;
+        padding: 15px;
         transition: all 0.3s ease;
     }
     
     .metric-container:hover {
-        background: rgba(255, 255, 255, 0.08);
-        transform: translateY(-5px);
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 10px 0;
-    }
-    
-    .metric-label {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* Photo containers */
-    .deputy-photo-container {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        border-radius: 20px;
-        padding: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-    
-    .deputy-photo-container:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
-    }
-    
-    .no-photo-placeholder {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-        border-radius: 20px;
-        padding: 60px 20px;
-        text-align: center;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-    }
-    
-    .no-photo-placeholder i {
-        font-size: 4rem;
-        color: rgba(255, 255, 255, 0.3);
-        margin-bottom: 10px;
-    }
-    
-    /* Comparison card */
-    .comparison-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 20px;
-        margin: 10px 0;
-        transition: all 0.3s ease;
-    }
-    
-    .comparison-card:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(50, 50, 65, 0.6);
+        transform: translateY(-2px);
         border-color: rgba(102, 126, 234, 0.3);
     }
     
-    /* Data tables with glassmorphism */
-    .dataframe {
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-        border-radius: 15px;
+    /* Info cards with better contrast */
+    .info-card {
+        background: rgba(40, 40, 55, 0.4);
+        border-left: 3px solid #667eea;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 8px 0;
+        color: #e0e0e0;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
     }
     
-    .dataframe tbody tr:hover {
-        background: rgba(102, 126, 234, 0.1) !important;
+    .info-card:hover {
+        background: rgba(50, 50, 65, 0.5);
+        transform: translateX(3px);
     }
     
-    /* Section headers */
-    h1, h2, h3 {
-        color: white !important;
-        font-weight: 800 !important;
+    .info-card strong {
+        color: #a0b0ff;
     }
     
-    /* Tabs with animations */
+    /* Enhanced tabs */
     .stTabs [data-baseweb="tab-list"] {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 15px;
-        padding: 5px;
-        gap: 5px;
+        background: rgba(30, 30, 45, 0.4);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+        border: 1px solid rgba(102, 126, 234, 0.1);
     }
     
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        color: rgba(255, 255, 255, 0.6);
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        color: rgba(224, 224, 224, 0.7);
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
     }
     
     .stTabs [data-baseweb="tab"][aria-selected="true"] {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        transform: translateY(-2px);
+        background: rgba(102, 126, 234, 0.1);
         color: white;
     }
     
-    /* Buttons with gradient */
+    /* Better buttons */
     .stButton button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        border-radius: 10px;
-        padding: 12px 30px;
+        border-radius: 8px;
+        padding: 10px 24px;
         font-weight: 600;
-        font-size: 1rem;
         transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
     }
     
     .stButton button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
     }
     
-    /* Select boxes and inputs */
-    .stSelectbox > div > div {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-    }
-    
+    /* Input fields */
+    .stSelectbox > div > div,
     .stTextInput > div > div {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
+        background: rgba(30, 30, 45, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        color: #e0e0e0;
     }
     
-    /* Comparison header */
+    .stSelectbox > div > div:hover,
+    .stTextInput > div > div:hover {
+        border-color: rgba(102, 126, 234, 0.4);
+    }
+    
+    /* Data tables */
+    .dataframe {
+        background: rgba(30, 30, 45, 0.4) !important;
+        border: 1px solid rgba(102, 126, 234, 0.1) !important;
+        color: #e0e0e0 !important;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .dataframe thead th {
+        background: rgba(102, 126, 234, 0.15) !important;
+        color: white !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .dataframe tbody tr:hover {
+        background: rgba(102, 126, 234, 0.08) !important;
+    }
+    
+    /* Headings */
+    h1, h2, h3, h4 {
+        color: #e0e0e0 !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: rgba(30, 30, 45, 0.4);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        color: #e0e0e0;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: rgba(40, 40, 55, 0.5);
+    }
+    
+    /* Comparison card */
+    .comparison-card {
+        background: rgba(30, 30, 45, 0.5);
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 12px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    /* VS header */
     .vs-header {
         text-align: center;
-        font-size: 2rem;
-        font-weight: 900;
+        font-size: 1.8rem;
+        font-weight: 800;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 20px 0;
     }
     
-    /* Info cards */
-    .info-card {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-        border-left: 4px solid #667eea;
-        padding: 15px;
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 30, 45, 0.3);
         border-radius: 10px;
-        margin: 10px 0;
     }
     
-    /* Animated background elements */
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 10px;
     }
     
-    .float-animation {
-        animation: float 6s ease-in-out infinite;
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.7);
+    }
+    
+    /* Checkbox styling */
+    .stCheckbox label {
+        color: #e0e0e0 !important;
+    }
+    
+    /* Metric styling */
+    [data-testid="metric-container"] {
+        background: rgba(30, 30, 45, 0.4);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+    }
+    
+    [data-testid="metric-container"]:hover {
+        background: rgba(40, 40, 55, 0.5);
+        border-color: rgba(102, 126, 234, 0.2);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state for disclaimer
+# Initialize session state
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 if 'comparison_mode' not in st.session_state:
@@ -324,69 +330,6 @@ def get_hemiciclo_seat(deputy_index):
         return files[0]
     return None
 
-def get_party_logo_html(party_name):
-    """
-    Generate HTML for party logo overlay
-    Map party names to logo files
-    """
-    # Map party names to logo files - adjust these paths to match your structure
-    party_logos = {
-        'PSOE': 'logos/psoe.png',
-        'PP': 'logos/pp.png', 
-        'VOX': 'logos/vox.png',
-        'SUMAR': 'logos/sumar.png',
-        'PODEMOS': 'logos/podemos.png',
-        'ERC': 'logos/erc.png',
-        'JUNTS': 'logos/junts.png',
-        'PNV': 'logos/pnv.png',
-        'EH BILDU': 'logos/ehbildu.png',
-        # Add more party mappings as needed
-    }
-    
-    logo_path = party_logos.get(party_name, None)
-    
-    if logo_path and os.path.exists(logo_path):
-        with open(logo_path, "rb") as logo_file:
-            encoded_logo = base64.b64encode(logo_file.read()).decode()
-        return f"""
-        <!-- Party logo overlay -->
-        <div style="
-            position: absolute;
-            bottom: -10px;
-            right: -10px;
-            background: white;
-            border-radius: 50%;
-            padding: 5px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        ">
-            <img src="data:image/png;base64,{encoded_logo}" 
-                 style="width: 40px; height: 40px; object-fit: contain;">
-        </div>
-        """
-    return ""
-
-def extract_party_from_data(person_data):
-    """
-    Extract party affiliation from person data
-    Adapt this based on your actual data structure
-    """
-    # Check if party is directly available
-    if 'Partido' in person_data:
-        return person_data['Partido']
-    
-    # Try to extract from circunscripción or other fields
-    circ = person_data.get('Circunscripción', '')
-    
-    # This is an example - you'll need to adapt based on your data
-    # You might need to check the JSON structure for party information
-    
-    return ''
-
 # Load JSON data
 def load_json_data():
     try:
@@ -400,39 +343,6 @@ def load_json_data():
                 data = entry['data']
                 personal_info = data.get('informacion_personal', {})
                 
-                # Calculate totals
-                total_income = 0
-                rentas = data.get('rentas_percibidas', {})
-                
-                for salary in rentas.get('percepciones_salariales', []):
-                    total_income += parse_money_value(salary.get('euros', 0))
-                for dividend in rentas.get('dividendos_y_participaciones', []):
-                    total_income += parse_money_value(dividend.get('euros', 0))
-                for interest in rentas.get('intereses_financieros', []):
-                    total_income += parse_money_value(interest.get('euros', 0))
-                for other in rentas.get('otras_rentas', []):
-                    total_income += parse_money_value(other.get('euros', 0))
-                
-                # Liquid assets
-                liquid_assets = 0
-                accounts = data.get('depositos_y_cuentas', {}).get('cuentas', [])
-                for account in accounts:
-                    liquid_assets += parse_money_value(account.get('saldo', 0))
-                
-                # Debt
-                total_debt = 0
-                debts = data.get('deudas_y_obligaciones', [])
-                for debt in debts:
-                    total_debt += parse_money_value(debt.get('saldo_pendiente', 0))
-                
-                # Properties
-                urban_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', []))
-                rustic_properties = len(data.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
-                vehicles_count = len(data.get('vehiculos', []))
-                
-                # Try to extract party information if available
-                partido = personal_info.get('partido', '')  # Adjust this field name based on your JSON
-                
                 processed_data.append({
                     'deputy_index': idx,
                     'Nombre': personal_info.get('nombre_y_apellidos', '').upper(),
@@ -440,30 +350,19 @@ def load_json_data():
                     'Circunscripción': personal_info.get('circunscripcion', ''),
                     'Estado Civil': personal_info.get('estado_civil', ''),
                     'Régimen Económico': personal_info.get('regimen_economico_matrimonial', ''),
-                    'Partido': partido,  # Add party field
-                    'Ingresos Declarados': total_income,
-                    'Activos Líquidos': liquid_assets,
-                    'Deudas': total_debt,
-                    'Posición Neta': liquid_assets - total_debt,
-                    'IRPF Pagado': parse_money_value(data.get('irpf', {}).get('cantidad_pagada', 0)),
-                    'Propiedades Urbanas': urban_properties,
-                    'Propiedades Rústicas': rustic_properties,
-                    'Total Propiedades': urban_properties + rustic_properties,
-                    'Vehículos': vehicles_count,
                 })
         
-        return pd.DataFrame(processed_data)
+        return pd.DataFrame(processed_data), json_data
         
     except FileNotFoundError:
         st.error("No se encuentra el archivo 'all_deputies_merged.json'")
-        return pd.DataFrame()
+        return pd.DataFrame(), []
     except Exception as e:
         st.error(f"Error al procesar el archivo: {str(e)}")
-        return pd.DataFrame()
+        return pd.DataFrame(), []
 
 # Show disclaimer if not accepted
 if not st.session_state.disclaimer_accepted:
-    # Hero Section HTML
     st.markdown("""
     <div class="hero-section">
         <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
@@ -471,118 +370,40 @@ if not st.session_state.disclaimer_accepted:
     </div>
     """, unsafe_allow_html=True)
     
-    # Create a styled container for the disclaimer
-    st.markdown("""
-    <style>
-    .disclaimer-container {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.05), rgba(255, 152, 0, 0.05));
-        border-radius: 20px;
-        padding: 30px;
-        margin: 20px 0;
-    }
-    .stAlert {
-        background: rgba(255, 193, 7, 0.1);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-        border-radius: 15px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Main disclaimer container
     with st.container():
-        # Title with emoji and styling
         st.markdown("## ⚠️ **Descargo de Responsabilidad Legal**")
         st.markdown("---")
         
-        # Create columns for better layout
         col1, col2, col3 = st.columns([0.5, 10, 0.5])
         
         with col2:
-            # First paragraph in a styled container
-            with st.container():
-                st.markdown("### 📋 Naturaleza de la Aplicación")
-                st.info("""
-                **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
-                disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
-                Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
-                """)
+            st.info("""
+            **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
+            disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+            Congreso de los Diputados, sus órganos de gobierno, ni cuenta con aval, autorización o respaldo oficial de dicha institución.
+            """)
             
-            # Second paragraph
-            with st.container():
-                st.markdown("### 📊 Origen y Precisión de los Datos")
-                st.warning("""
-                Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
-                procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
-                omisiones o información desactualizada** derivados del procesamiento de los documentos originales. 
-                Para consultas oficiales y verificación de la información, se recomienda acudir directamente a los documentos 
-                originales publicados en el portal web del Congreso de los Diputados.
-                """)
+            st.warning("""
+            Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud mediante 
+            procesos automatizados de extracción y estructuración, **la aplicación podría contener errores, inexactitudes, 
+            omisiones o información desactualizada** derivados del procesamiento de los documentos originales.
+            """)
             
-            # Third paragraph
-            with st.container():
-                st.markdown("### ⚖️ Responsabilidad del Usuario")
-                st.write("""
-                El uso de esta herramienta es responsabilidad exclusiva del usuario, quien deberá ejercer su propio criterio 
-                en la interpretación y utilización de los datos aquí presentados.
-                """)
-            
-            st.markdown("---")
-            
-            # Acceptance notice with special styling
-            with st.container():
-                st.markdown("""
-                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); 
-                            border-radius: 20px; padding: 25px; margin: 20px 0; 
-                            border: 2px solid rgba(102, 126, 234, 0.3);">
-                    <p style="text-align: center; color: white; font-size: 1.1rem; margin: 0;">
-                        ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad, 
-                        y acepta que el uso de esta aplicación es bajo su propio riesgo y responsabilidad.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Separator
-    st.markdown("")
-    
-    # Configuration requirements with better styling
-    with st.container():
-        col1, col2, col3 = st.columns([1, 3, 1])
-        with col2:
             st.markdown("""
-            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15)); 
-                        backdrop-filter: blur(10px); 
-                        border: 1px solid rgba(102, 126, 234, 0.3); 
-                        border-radius: 20px; 
-                        padding: 25px; 
-                        margin: 20px 0;">
-                <h3 style="color: #667eea; text-align: center; margin-top: 0;">⚙️ Requisitos de Visualización</h3>
-                <p style="text-align: center; color: white; font-size: 1.05rem;">
-                    Esta aplicación requiere: <strong>Resolución de PC (mínimo 1920x1080)</strong> y <strong>Modo Oscuro del Navegador</strong> 
-                    para una experiencia óptima.
+            <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 20px; margin: 20px 0; 
+                        border: 1px solid rgba(102, 126, 234, 0.3);">
+                <p style="text-align: center; color: #e0e0e0; font-size: 1rem; margin: 0;">
+                    ✅ Al hacer clic en <strong>"Aceptar y Continuar"</strong>, usted reconoce haber leído y comprendido este descargo de responsabilidad.
                 </p>
             </div>
             """, unsafe_allow_html=True)
     
-    # Accept button with spacing
-    st.markdown("")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("✅ **Aceptar y Continuar**", use_container_width=True, type="primary"):
             st.session_state.disclaimer_accepted = True
             st.rerun()
     
-    # Beautiful footer
-    st.markdown("")
-    st.markdown("---")
-    st.markdown("""
-    <div style='text-align: center; padding: 20px;'>
-        <p style='color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;'>
-            Desarrollado con 💜 por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none; font-weight: 600;'>@Gsnchez</a>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Stop execution here
     st.stop()
 
 # Main App - Hero Section
@@ -590,38 +411,17 @@ st.markdown("""
 <div class="hero-section">
     <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
     <p class="hero-subtitle">XV Legislatura - Congreso de los Diputados</p>
-    <a href="https://twitter.com/Gsnchez" target="_blank" style="display: inline-block; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); padding: 12px 24px; border-radius: 50px; color: white; font-weight: 600; text-decoration: none; transition: all 0.3s ease; position: relative; z-index: 1;">
-        Desarrollado por @Gsnchez ✨
-    </a>
-</div>
-""", unsafe_allow_html=True)
-
-# Project motivation
-st.markdown("""
-<div style="background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(102, 126, 234, 0.2); border-radius: 20px; padding: 30px; margin: 20px 0; color: white;">
-    <h3 style="color: #667eea; margin-top: 0; text-align: center;">📚 Motivación del Proyecto</h3>
-    <p style="line-height: 1.8; text-align: justify;">
-        Este proyecto surge con el propósito fundamental de <strong>democratizar el acceso a la información pública</strong> 
-        relativa a las declaraciones de bienes y rentas de los parlamentarios españoles.
-    </p>
-    <ul style="line-height: 1.8;">
-        <li><strong>Transparencia:</strong> Facilitar el escrutinio público de la información patrimonial de los representantes electos.</li>
-        <li><strong>Accesibilidad:</strong> Eliminar las barreras técnicas que dificultan el acceso a estos datos.</li>
-        <li><strong>Estructuración:</strong> Organizar sistemáticamente la información dispersa en múltiples documentos PDF.</li>
-    </ul>
 </div>
 """, unsafe_allow_html=True)
 
 # Load data
-df = load_json_data()
+df, json_data = load_json_data()
 
 if not df.empty:
     # Main tabs
-    tab1, tab2 = st.tabs(["🔍 Análisis Individual", "📊 Tabla de Datos Completa"])
+    tab1, tab2 = st.tabs(["🔍 Análisis Individual", "📊 Tabla de Datos"])
     
     with tab1:
-        st.markdown("### 🔍 Análisis Individual de Parlamentarios")
-        
         # Comparison mode toggle
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
@@ -629,7 +429,7 @@ if not df.empty:
             st.session_state.comparison_mode = comparison_mode
         
         if not comparison_mode:
-            # Single deputy analysis
+            # Single deputy analysis - COMPACT VERSION
             col1, col2 = st.columns([3, 1])
             with col1:
                 search_term = st.text_input("🔎 Buscar por nombre:", placeholder="Introduzca el nombre del parlamentario...")
@@ -645,279 +445,222 @@ if not df.empty:
                 selected_name = st.selectbox("Seleccione parlamentario:", names, key="single_select")
                 
                 if selected_name:
-                    person_data = df[df['Nombre'] == selected_name].iloc[0]
+                    person_idx = df[df['Nombre'] == selected_name]['deputy_index'].iloc[0]
+                    deputy_data = json_data[person_idx - 1]['data'] if person_idx <= len(json_data) else {}
+                    personal_info = deputy_data.get('informacion_personal', {})
                     
-                    # ENHANCED DEPUTY CARD SECTION
-                    # Main container with improved photo layout
-                    st.markdown("""
-                    <div class="individual-card">
-                    """, unsafe_allow_html=True)
+                    # Compact card with photo and basic info
+                    st.markdown('<div class="individual-card">', unsafe_allow_html=True)
                     
-                    # Create a refined layout with better proportions
-                    main_col1, main_col2 = st.columns([1.2, 2.8])
+                    col1, col2, col3 = st.columns([1, 2.5, 1.5])
                     
-                    with main_col1:
-                        # Photo and party logo container
-                        photo_path = get_deputy_photo(person_data['deputy_index'])
-                        
-                        # Deputy photo with enhanced styling
+                    with col1:
+                        # Photo section (compact)
+                        photo_path = get_deputy_photo(person_idx)
                         if photo_path:
                             with open(photo_path, "rb") as image_file:
                                 encoded_string = base64.b64encode(image_file.read()).decode()
-                            
-                            # Get party logo if available
-                            party_name = extract_party_from_data(person_data)
-                            party_logo_html = get_party_logo_html(party_name)
-                            
-                            st.markdown(
-                                f"""
-                                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                                    <!-- Deputy Photo with enhanced frame -->
-                                    <div style="position: relative;">
-                                        <div style="
-                                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                            padding: 3px;
-                                            border-radius: 15px;
-                                            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
-                                        ">
-                                            <img src="data:image/jpeg;base64,{encoded_string}" 
-                                                 style="width: 180px; height: 240px; object-fit: cover; border-radius: 12px; display: block;">
-                                        </div>
-                                        {party_logo_html}
-                                    </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
+                            st.markdown(f"""
+                            <div style="text-align: center;">
+                                <img src="data:image/jpeg;base64,{encoded_string}" 
+                                     style="width: 120px; height: 160px; object-fit: cover; 
+                                            border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                            </div>
+                            """, unsafe_allow_html=True)
                         else:
-                            # Enhanced placeholder
                             st.markdown("""
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                                <div class="no-photo-placeholder" style="
-                                    width: 186px; 
-                                    height: 246px; 
-                                    border-radius: 15px;
-                                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-                                ">
-                                    <div>
-                                        <div style="font-size: 4rem; margin-bottom: 10px; text-align: center;">👤</div>
-                                        <p style="color: rgba(255, 255, 255, 0.5); margin: 0; font-size: 0.9rem;">Sin foto disponible</p>
-                                    </div>
+                            <div style="background: rgba(102, 126, 234, 0.2); width: 120px; height: 160px; 
+                                        border-radius: 10px; display: flex; align-items: center; 
+                                        justify-content: center; margin: 0 auto;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 3rem;">👤</div>
+                                    <p style="color: rgba(255,255,255,0.5); font-size: 0.7rem;">Sin foto</p>
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                     
-                    with main_col2:
-                        # Enhanced information display
-                        # Prepare hemiciclo seat image if available
-                        seat_path = get_hemiciclo_seat(person_data['deputy_index'])
+                    with col2:
+                        # Name and basic info (compact)
+                        st.markdown(f"""
+                        <div style="padding-left: 15px;">
+                            <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
+                                {personal_info.get('nombre_y_apellidos', '').upper()}
+                            </h3>
+                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
+                                📍 <strong>{personal_info.get('circunscripcion', '')}</strong>
+                            </p>
+                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
+                                🏛️ {personal_info.get('cargo', 'Diputado')}
+                            </p>
+                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">
+                                💑 {personal_info.get('estado_civil', '')}
+                            </p>
+                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0; font-size: 0.9rem;">📜 {personal_info.get("regimen_economico_matrimonial", "")}</p>' 
+                             if personal_info.get('regimen_economico_matrimonial') else ''}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col3:
+                        # Hemiciclo seat (compact)
+                        seat_path = get_hemiciclo_seat(person_idx)
+                        if seat_path:
+                            with open(seat_path, "rb") as image_file:
+                                encoded_seat = base64.b64encode(image_file.read()).decode()
+                            st.markdown(f"""
+                            <div style="text-align: center;">
+                                <img src="data:image/gif;base64,{encoded_seat}" 
+                                     style="width: 100px; border-radius: 8px;">
+                                <p style="color: rgba(224,224,224,0.5); font-size: 0.65rem; 
+                                         margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">Escaño</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Tabs for different sections of raw data
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                        "💰 Rentas", 
+                        "🏠 Bienes", 
+                        "💳 Cuentas",
+                        "📊 Deudas",
+                        "🚗 Vehículos"
+                    ])
+                    
+                    with tab1:
+                        # Show actual income data from JSON
+                        rentas = deputy_data.get('rentas_percibidas', {})
                         
-                        # Create sub-columns for better organization
-                        info_col, seat_col = st.columns([1.8, 1])
-                        
-                        with info_col:
-                            # Display deputy information with improved styling
-                            st.markdown(
-                                f"""
-                                <div style="padding-left: 20px;">
-                                    <!-- Name with gradient effect -->
-                                    <h2 style="
-                                        font-size: 2.3rem; 
-                                        font-weight: 900; 
-                                        background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
-                                        -webkit-background-clip: text;
-                                        -webkit-text-fill-color: transparent;
-                                        margin-bottom: 25px; 
-                                        line-height: 1.1;
-                                        letter-spacing: -0.5px;
-                                    ">
-                                        {person_data['Nombre']}
-                                    </h2>
-                                    
-                                    <!-- Information cards -->
-                                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.1);
-                                            border-left: 3px solid #667eea;
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: #667eea; font-size: 1.1rem;">📍</span>
-                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
-                                                <strong>{person_data['Circunscripción']}</strong>
-                                            </span>
-                                        </div>
-                                        
-                                        <div style="
-                                            background: rgba(118, 75, 162, 0.1);
-                                            border-left: 3px solid #764ba2;
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: #764ba2; font-size: 1.1rem;">🏛️</span>
-                                            <span style="color: #E0E7FF; font-size: 1rem; margin-left: 8px;">
-                                                <strong>{person_data['Cargo']}</strong>
-                                            </span>
-                                        </div>
-                                        
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.08);
-                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">💑</span>
-                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
-                                                {person_data['Estado Civil']}
-                                            </span>
-                                        </div>
-                                        
-                                        {f'''
-                                        <div style="
-                                            background: rgba(102, 126, 234, 0.08);
-                                            border-left: 3px solid rgba(102, 126, 234, 0.5);
-                                            padding: 12px 15px;
-                                            border-radius: 8px;
-                                        ">
-                                            <span style="color: rgba(255, 255, 255, 0.7); font-size: 1.1rem;">📜</span>
-                                            <span style="color: rgba(255, 255, 255, 0.8); font-size: 1rem; margin-left: 8px;">
-                                                {person_data.get('Régimen Económico', 'No especificado')}
-                                            </span>
-                                        </div>
-                                        ''' if person_data.get('Régimen Económico') else ''}
-                                    </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        
-                        with seat_col:
-                            # Hemiciclo seat visualization with better styling
-                            if seat_path:
-                                with open(seat_path, "rb") as image_file:
-                                    encoded_seat_img = base64.b64encode(image_file.read()).decode()
+                        if rentas.get('percepciones_salariales'):
+                            st.markdown("**Percepciones Salariales:**")
+                            for salary in rentas['percepciones_salariales']:
                                 st.markdown(f"""
-                                <div style="
-                                    display: flex;
-                                    flex-direction: column;
-                                    align-items: center;
-                                    padding: 20px 10px;
-                                ">
-                                    <div style="
-                                        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-                                        padding: 15px;
-                                        border-radius: 15px;
-                                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                                    ">
-                                        <img src="data:image/gif;base64,{encoded_seat_img}" 
-                                             style="width: 160px; border-radius: 10px;">
-                                    </div>
-                                    <p style="
-                                        color: rgba(255, 255, 255, 0.6); 
-                                        font-size: 0.75rem; 
-                                        text-transform: uppercase; 
-                                        letter-spacing: 1.5px;
-                                        margin-top: 12px;
-                                        font-weight: 600;
-                                    ">Escaño Hemiciclo</p>
+                                <div class="info-card">
+                                    • {salary.get('concepto', 'Sin concepto')}: <strong>€{salary.get('euros', 0)}</strong>
                                 </div>
                                 """, unsafe_allow_html=True)
+                        
+                        if rentas.get('dividendos_y_participaciones'):
+                            st.markdown("**Dividendos y Participaciones:**")
+                            for div in rentas['dividendos_y_participaciones']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {div.get('concepto', 'Sin concepto')}: <strong>€{div.get('euros', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if rentas.get('intereses_financieros'):
+                            st.markdown("**Intereses Financieros:**")
+                            for interest in rentas['intereses_financieros']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {interest.get('concepto', 'Sin concepto')}: <strong>€{interest.get('euros', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if rentas.get('otras_rentas'):
+                            st.markdown("**Otras Rentas:**")
+                            for other in rentas['otras_rentas']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {other.get('concepto', 'Sin concepto')}: <strong>€{other.get('euros', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        # IRPF
+                        irpf = deputy_data.get('irpf', {})
+                        if irpf:
+                            st.markdown(f"""
+                            <div class="info-card" style="background: rgba(255,193,7,0.1); border-left-color: #ffc107;">
+                                <strong>IRPF Pagado:</strong> €{irpf.get('cantidad_pagada', 0)}
+                            </div>
+                            """, unsafe_allow_html=True)
                     
-                    st.markdown("</div>", unsafe_allow_html=True)  # Close individual-card div
+                    with tab2:
+                        # Show actual property data
+                        bienes = deputy_data.get('bienes_patrimoniales', {})
+                        
+                        if bienes.get('inmuebles_urbanos'):
+                            st.markdown("**Inmuebles Urbanos:**")
+                            for prop in bienes['inmuebles_urbanos']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{prop.get('tipo', 'Inmueble')}</strong> - {prop.get('provincia', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho', '')} | Porcentaje: {prop.get('porcentaje', '')}%
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if bienes.get('inmuebles_rusticos'):
+                            st.markdown("**Inmuebles Rústicos:**")
+                            for prop in bienes['inmuebles_rusticos']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{prop.get('tipo', 'Inmueble')}</strong> - {prop.get('provincia', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho', '')} | Porcentaje: {prop.get('porcentaje', '')}%
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if not bienes.get('inmuebles_urbanos') and not bienes.get('inmuebles_rusticos'):
+                            st.markdown("*No hay propiedades declaradas*")
                     
-                    # Separator with gradient
-                    st.markdown("""
-                    <div style="height: 2px; background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.5), transparent); margin: 30px 0;"></div>
-                    """, unsafe_allow_html=True)
+                    with tab3:
+                        # Show actual account data
+                        cuentas_data = deputy_data.get('depositos_y_cuentas', {})
+                        
+                        if cuentas_data.get('cuentas'):
+                            st.markdown("**Cuentas y Depósitos:**")
+                            for cuenta in cuentas_data['cuentas']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{cuenta.get('tipo', 'Cuenta')}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Saldo: <strong>€{cuenta.get('saldo', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        valores = deputy_data.get('valores_y_participaciones', {})
+                        if valores.get('valores'):
+                            st.markdown("**Valores y Participaciones:**")
+                            for valor in valores['valores']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{valor.get('entidad', 'Entidad')}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Valor: €{valor.get('valor_euros', 0)}
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if not cuentas_data.get('cuentas') and not valores.get('valores'):
+                            st.markdown("*No hay cuentas o valores declarados*")
                     
-                    # COMPACT Financial Information Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        💰 Información Financiera
-                    </h3>
-                    """, unsafe_allow_html=True)
+                    with tab4:
+                        # Show actual debt data
+                        deudas = deputy_data.get('deudas_y_obligaciones', [])
+                        
+                        if deudas:
+                            st.markdown("**Deudas y Obligaciones:**")
+                            for deuda in deudas:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{deuda.get('tipo', 'Deuda')}</strong> - {deuda.get('entidad', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Saldo pendiente: <strong>€{deuda.get('saldo_pendiente', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("*No hay deudas declaradas*")
                     
-                    # Compact financial metrics in 2 rows
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">INGRESOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Ingresos Declarados']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">ACTIVOS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Activos Líquidos']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">DEUDAS</p>
-                            <p style="color: #667eea; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['Deudas']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        net_position = person_data['Posición Neta']
-                        color = "#4CAF50" if net_position >= 0 else "#f44336"
-                        st.markdown(f"""
-                        <div style="background: rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">POSICIÓN NETA</p>
-                            <p style="color: {color}; font-size: 1.2rem; font-weight: bold; margin: 0;">€{net_position:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # COMPACT Patrimony Section
-                    st.markdown("""
-                    <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.4rem; font-weight: 700;">
-                        🏠 Patrimonio
-                    </h3>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">IRPF PAGADO</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">€{person_data['IRPF Pagado']:,.0f}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. URBANAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Urbanas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col3:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">PROP. RÚSTICAS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Propiedades Rústicas'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    with col4:
-                        st.markdown(f"""
-                        <div style="background: rgba(255, 193, 7, 0.1); border-radius: 12px; padding: 15px; text-align: center;">
-                            <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; margin-bottom: 5px;">VEHÍCULOS</p>
-                            <p style="color: #ffa500; font-size: 1.2rem; font-weight: bold; margin: 0;">{int(person_data['Vehículos'])}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    with tab5:
+                        # Show actual vehicle data
+                        vehiculos = deputy_data.get('vehiculos', [])
+                        
+                        if vehiculos:
+                            st.markdown("**Vehículos:**")
+                            for vehiculo in vehiculos:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{vehiculo.get('marca', '')} {vehiculo.get('modelo', '')}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Año: {vehiculo.get('fecha_adquisicion', '')}
+                                </div>
+                                """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("*No hay vehículos declarados*")
         
         else:
             # Comparison mode
@@ -938,106 +681,71 @@ if not df.empty:
                 st.markdown('</div>', unsafe_allow_html=True)
             
             if selected_name1 and selected_name2:
-                person1 = df[df['Nombre'] == selected_name1].iloc[0]
-                person2 = df[df['Nombre'] == selected_name2].iloc[0]
-                
                 st.markdown('<h2 class="vs-header">VS</h2>', unsafe_allow_html=True)
                 
-                # Comparison metrics
-                metrics = [
-                    ('Ingresos Declarados', '€'),
-                    ('Activos Líquidos', '€'),
-                    ('Deudas', '€'),
-                    ('Posición Neta', '€'),
-                    ('IRPF Pagado', '€'),
-                    ('Total Propiedades', ''),
-                    ('Vehículos', '')
-                ]
+                # Get data for both deputies
+                idx1 = df[df['Nombre'] == selected_name1]['deputy_index'].iloc[0]
+                idx2 = df[df['Nombre'] == selected_name2]['deputy_index'].iloc[0]
                 
-                for metric, prefix in metrics:
-                    col1, col2, col3 = st.columns([2, 1, 2])
-                    
-                    with col1:
-                        value1 = person1[metric]
-                        if prefix == '€':
-                            st.metric(selected_name1[:20], f"{prefix}{value1:,.0f}")
-                        else:
-                            st.metric(selected_name1[:20], f"{int(value1)}")
-                    
-                    with col2:
-                        st.markdown(f"<p style='text-align: center; color: rgba(255,255,255,0.5); margin-top: 20px;'>{metric}</p>", unsafe_allow_html=True)
-                    
-                    with col3:
-                        value2 = person2[metric]
-                        if prefix == '€':
-                            st.metric(selected_name2[:20], f"{prefix}{value2:,.0f}")
-                        else:
-                            st.metric(selected_name2[:20], f"{int(value2)}")
+                data1 = json_data[idx1 - 1]['data'] if idx1 <= len(json_data) else {}
+                data2 = json_data[idx2 - 1]['data'] if idx2 <= len(json_data) else {}
+                
+                # Compare key metrics
+                col1, col2, col3 = st.columns([2, 1, 2])
+                
+                # Count properties for each
+                props1 = len(data1.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
+                        len(data1.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
+                props2 = len(data2.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
+                        len(data2.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
+                
+                vehicles1 = len(data1.get('vehiculos', []))
+                vehicles2 = len(data2.get('vehiculos', []))
+                
+                accounts1 = len(data1.get('depositos_y_cuentas', {}).get('cuentas', []))
+                accounts2 = len(data2.get('depositos_y_cuentas', {}).get('cuentas', []))
+                
+                debts1 = len(data1.get('deudas_y_obligaciones', []))
+                debts2 = len(data2.get('deudas_y_obligaciones', []))
+                
+                with col1:
+                    st.metric(selected_name1[:25], f"{props1} propiedades")
+                    st.metric("", f"{vehicles1} vehículos")
+                    st.metric("", f"{accounts1} cuentas")
+                    st.metric("", f"{debts1} deudas")
+                
+                with col2:
+                    st.markdown("<div style='text-align: center; padding-top: 50px;'>", unsafe_allow_html=True)
+                    st.markdown("<p>🏠</p>", unsafe_allow_html=True)
+                    st.markdown("<p>🚗</p>", unsafe_allow_html=True)
+                    st.markdown("<p>💳</p>", unsafe_allow_html=True)
+                    st.markdown("<p>📊</p>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                
+                with col3:
+                    st.metric(selected_name2[:25], f"{props2} propiedades")
+                    st.metric("", f"{vehicles2} vehículos")
+                    st.metric("", f"{accounts2} cuentas")
+                    st.metric("", f"{debts2} deudas")
     
     with tab2:
-        st.markdown("### 📊 Tabla de Datos Completa con Filtros")
+        st.markdown("### 📊 Tabla de Datos Completa")
         
-        # Advanced filters in expandable section
-        with st.expander("🔧 Filtros Avanzados", expanded=True):
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                min_income = st.number_input("Ingresos mínimos (€):", min_value=0, value=0, step=10000)
-                max_income = st.number_input("Ingresos máximos (€):", min_value=0, value=10000000, step=10000)
-            
-            with col2:
-                min_assets = st.number_input("Activos mínimos (€):", min_value=0, value=0, step=10000)
-                max_debt = st.number_input("Deuda máxima (€):", min_value=0, value=10000000, step=10000)
-            
-            with col3:
-                unique_constituencies = df['Circunscripción'].dropna().unique().tolist()
-                constituencies = ['Todas'] + sorted([c for c in unique_constituencies if c])
-                selected_constituency = st.selectbox("Circunscripción:", constituencies)
-                
-                min_properties = st.number_input("Mínimo propiedades:", min_value=0, value=0, step=1)
-            
-            with col4:
-                sort_by = st.selectbox("Ordenar por:", 
-                    ['Ingresos Declarados', 'Activos Líquidos', 'Posición Neta', 'Deudas', 'IRPF Pagado'])
-                sort_order = st.radio("Orden:", ['Descendente', 'Ascendente'])
+        # Simple search
+        search = st.text_input("🔍 Buscar en la tabla:", placeholder="Nombre, circunscripción...")
         
-        # Apply filters
-        filtered_df = df.copy()
+        # Filter dataframe
+        display_df = df.copy()
+        if search:
+            display_df = display_df[
+                display_df['Nombre'].str.contains(search, case=False, na=False) |
+                display_df['Circunscripción'].str.contains(search, case=False, na=False)
+            ]
         
-        if min_income > 0:
-            filtered_df = filtered_df[filtered_df['Ingresos Declarados'] >= min_income]
-        if max_income < 10000000:
-            filtered_df = filtered_df[filtered_df['Ingresos Declarados'] <= max_income]
-        if min_assets > 0:
-            filtered_df = filtered_df[filtered_df['Activos Líquidos'] >= min_assets]
-        if max_debt < 10000000:
-            filtered_df = filtered_df[filtered_df['Deudas'] <= max_debt]
-        if selected_constituency != 'Todas':
-            filtered_df = filtered_df[filtered_df['Circunscripción'] == selected_constituency]
-        if min_properties > 0:
-            filtered_df = filtered_df[filtered_df['Total Propiedades'] >= min_properties]
+        # Remove deputy_index for display
+        display_df = display_df.drop('deputy_index', axis=1)
         
-        # Sort
-        filtered_df = filtered_df.sort_values(sort_by, ascending=(sort_order == 'Ascendente'))
-        
-        # Show results
-        st.markdown(f"""
-        <div class="info-card">
-            📊 Mostrando <strong>{len(filtered_df)}</strong> de <strong>{len(df)}</strong> parlamentarios
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Format for display
-        display_df = filtered_df.copy()
-        money_cols = ['Ingresos Declarados', 'Activos Líquidos', 'Deudas', 'Posición Neta', 'IRPF Pagado']
-        for col in money_cols:
-            display_df[col] = display_df[col].apply(lambda x: f'€{x:,.0f}')
-        
-        # Remove deputy_index and Partido columns for display
-        columns_to_display = [col for col in display_df.columns if col not in ['deputy_index', 'Partido']]
-        display_df = display_df[columns_to_display]
-        
-        # Display with style
+        # Display
         st.dataframe(
             display_df,
             use_container_width=True,
@@ -1045,35 +753,22 @@ if not df.empty:
             height=600
         )
         
-        # Export options
-        col1, col2 = st.columns(2)
-        with col1:
-            csv = filtered_df.to_csv(index=False)
-            st.download_button(
-                label="⬇️ Descargar datos filtrados (CSV)",
-                data=csv,
-                file_name='declaraciones_filtradas.csv',
-                mime='text/csv'
-            )
-        
-        with col2:
-            # Summary statistics
-            if len(filtered_df) > 0:
-                avg_income = filtered_df['Ingresos Declarados'].mean()
-                total_assets = filtered_df['Activos Líquidos'].sum()
-                st.markdown(f"""
-                <div class="info-card">
-                    📈 <strong>Resumen:</strong> Ingreso medio: €{avg_income:,.0f} | Total activos: €{total_assets:,.0f}
-                </div>
-                """, unsafe_allow_html=True)
+        # Export option
+        csv = display_df.to_csv(index=False)
+        st.download_button(
+            label="⬇️ Descargar CSV",
+            data=csv,
+            file_name='declaraciones_bienes.csv',
+            mime='text/csv'
+        )
 
 else:
     st.error("Error al cargar los datos. Verifique que existe el archivo 'all_deputies_merged.json'")
 
-# Footer with style
+# Footer
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center; color: rgba(255, 255, 255, 0.5); padding: 30px 0;'>
+<div style='text-align: center; color: rgba(224, 224, 224, 0.4); padding: 20px 0;'>
     <p>🏛️ Datos públicos del Congreso de los Diputados</p>
     <p>Desarrollado por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none;'>@Gsnchez</a></p>
 </div>
