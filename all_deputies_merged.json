@@ -509,26 +509,39 @@ if not df.empty:
                         if website:
                             social_links += f'<a href="{website}" target="_blank" style="text-decoration: none; font-size: 1.5rem;">🌐</a>'
                         
-                        st.markdown(f"""
+                        info_html = f"""
                         <div style="padding-left: 15px;">
                             <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
                                 {personal_info.get('nombre_y_apellidos', '').upper()}
                             </h3>
-                            {f'<div style="margin: 10px 0;">{social_links}</div>' if social_links else ''}
+                        """
+                        
+                        if social_links:
+                            info_html += f'<div style="margin: 10px 0;">{social_links}</div>'
+                        
+                        info_html += f"""
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 📍 <strong>{personal_info.get('circunscripcion', '')}</strong>
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 🏛️ {personal_info.get('cargo', 'Diputado')}
                             </p>
-                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">🎯 <strong>{party_name}</strong></p>' if party_name else ''}
+                        """
+                        
+                        if party_name:
+                            info_html += f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">🎯 <strong>{party_name}</strong></p>'
+                        
+                        info_html += f"""
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 💑 {personal_info.get('estado_civil', '')}
                             </p>
-                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">📜 {personal_info.get("regimen_economico_matrimonial", "")}</p>' 
-                             if personal_info.get('regimen_economico_matrimonial') else ''}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        """
+                        
+                        if personal_info.get('regimen_economico_matrimonial'):
+                            info_html += f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">📜 {personal_info.get("regimen_economico_matrimonial", "")}</p>'
+                        
+                        info_html += '</div>'
+                        st.markdown(info_html, unsafe_allow_html=True)
                     
                     with col3:
                         # Hemiciclo seat
@@ -663,13 +676,14 @@ if not df.empty:
                         if vehiculos:
                             st.markdown("**Vehículos:**")
                             for vehiculo in vehiculos:
-                                st.markdown(f"""
+                                desc_html = f"""
                                 <div class="info-card">
                                     • {vehiculo.get('descripcion', 'Vehículo')}
-                                    {f"<br>&nbsp;&nbsp;&nbsp;Adquisición: {vehiculo.get('fecha_adquisicion', '')}" 
-                                     if vehiculo.get('fecha_adquisicion') else ''}
-                                </div>
-                                """, unsafe_allow_html=True)
+                                """
+                                if vehiculo.get('fecha_adquisicion'):
+                                    desc_html += f"<br>&nbsp;&nbsp;&nbsp;Adquisición: {vehiculo.get('fecha_adquisicion', '')}"
+                                desc_html += "</div>"
+                                st.markdown(desc_html, unsafe_allow_html=True)
                         else:
                             st.markdown("*No hay vehículos declarados*")
         
