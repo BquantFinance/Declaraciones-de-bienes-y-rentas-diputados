@@ -41,6 +41,22 @@ st.markdown("""
         overflow: hidden;
     }
     
+    .hero-section::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+        animation: rotate 20s linear infinite;
+    }
+    
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
     .hero-title {
         color: white;
         font-size: 2.2rem;
@@ -67,6 +83,13 @@ st.markdown("""
         padding: 20px;
         margin: 15px 0;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .individual-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.3);
     }
     
     .info-card {
@@ -77,6 +100,12 @@ st.markdown("""
         margin: 8px 0;
         color: #e0e0e0;
         font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .info-card:hover {
+        background: rgba(50, 50, 65, 0.5);
+        transform: translateX(3px);
     }
     
     .info-card strong {
@@ -107,6 +136,11 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
     
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: white;
+    }
+    
     .stButton button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -118,6 +152,11 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
     }
     
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    
     .stSelectbox > div > div,
     .stTextInput > div > div {
         background: rgba(30, 30, 45, 0.5);
@@ -126,11 +165,30 @@ st.markdown("""
         color: #e0e0e0;
     }
     
+    .stSelectbox > div > div:hover,
+    .stTextInput > div > div:hover {
+        border-color: rgba(102, 126, 234, 0.4);
+    }
+    
     .dataframe {
         background: rgba(30, 30, 45, 0.4) !important;
         border: 1px solid rgba(102, 126, 234, 0.1) !important;
         color: #e0e0e0 !important;
         border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .dataframe thead th {
+        background: rgba(102, 126, 234, 0.15) !important;
+        color: white !important;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .dataframe tbody tr:hover {
+        background: rgba(102, 126, 234, 0.08) !important;
     }
     
     h1, h2, h3, h4 {
@@ -155,6 +213,29 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         margin: 20px 0;
     }
+    
+    .stCheckbox label {
+        color: #e0e0e0 !important;
+    }
+    
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 30, 45, 0.3);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.7);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -166,13 +247,29 @@ if 'comparison_mode' not in st.session_state:
 
 # Helper functions
 def get_deputy_photo(deputy_index):
-    """Get deputy photo from fotos_diputados folder"""
+    """Get deputy photo from fotos_diputados folder using cod_parlamentario"""
+    # Try with 3 digits first
     photo_path = f"fotos_diputados/deputy_{deputy_index:03d}.jpg"
     if os.path.exists(photo_path):
         return photo_path
+    # Try with 4 digits
     photo_path = f"fotos_diputados/deputy_{deputy_index:04d}.jpg"
     if os.path.exists(photo_path):
         return photo_path
+    return None
+
+def get_party_logo(logo_index):
+    """Get party logo from deputy_photos folder using original deputy number"""
+    # Try multiple formats
+    patterns = [
+        f"deputy_photos/deputy_{logo_index:04d}.jpg",  # 0001
+        f"deputy_photos/deputy_{logo_index:03d}.jpg",   # 001
+    ]
+    
+    for pattern in patterns:
+        if os.path.exists(pattern):
+            return pattern
+    
     return None
 
 def get_hemiciclo_seat(deputy_index):
@@ -183,38 +280,8 @@ def get_hemiciclo_seat(deputy_index):
         return files[0]
     return None
 
-def get_party_logo(party_name):
-    """Get party logo from deputy_photos folder"""
-    if not party_name:
-        return None
-    
-    # Try different possible filenames for party logos
-    possible_names = [
-        f"deputy_photos/{party_name.lower()}.png",
-        f"deputy_photos/{party_name.lower()}.jpg",
-        f"deputy_photos/{party_name.upper()}.png",
-        f"deputy_photos/{party_name.upper()}.jpg",
-        f"deputy_photos/{party_name}.png",
-        f"deputy_photos/{party_name}.jpg",
-    ]
-    
-    # Also try removing spaces and special characters
-    clean_name = party_name.replace(' ', '').replace('-', '')
-    possible_names.extend([
-        f"deputy_photos/{clean_name.lower()}.png",
-        f"deputy_photos/{clean_name.lower()}.jpg",
-        f"deputy_photos/{clean_name.upper()}.png",
-        f"deputy_photos/{clean_name.upper()}.jpg",
-    ])
-    
-    # Check each possible filename
-    for path in possible_names:
-        if os.path.exists(path):
-            return path
-    
-    return None
-
 # Load all data
+@st.cache_data
 def load_all_data():
     """Load JSON and CSV data"""
     try:
@@ -222,7 +289,7 @@ def load_all_data():
         with open('all_deputies_merged.json', 'r', encoding='utf-8') as f:
             json_data = json.load(f)
         
-        # Load CSV data
+        # Load CSV data for additional information
         csv_mapping = {}
         try:
             deputies_csv = pd.read_csv('deputies_data.csv', encoding='utf-8')
@@ -247,25 +314,27 @@ def load_all_data():
                 personal_info = data.get('informacion_personal', {})
                 name = personal_info.get('nombre_y_apellidos', '').upper()
                 
-                # Get deputy index from source file
+                # Get original deputy index from source file for logo matching
                 source_file = entry.get('source_file', '')
-                deputy_idx = 1
+                logo_idx = 1
                 if 'deputy_' in source_file:
                     try:
-                        deputy_idx = int(source_file.split('deputy_')[1].split('_')[0])
+                        logo_idx = int(source_file.split('deputy_')[1].split('_')[0])
                     except:
                         pass
                 
-                # Override with cod_parlamentario if available
+                # Get cod_parlamentario for photo matching
+                photo_idx = logo_idx  # Default to logo index
                 csv_info = csv_mapping.get(name, {})
                 if csv_info.get('cod_parlamentario'):
                     try:
-                        deputy_idx = int(csv_info['cod_parlamentario'])
+                        photo_idx = int(csv_info['cod_parlamentario'])
                     except:
                         pass
                 
                 processed_data.append({
-                    'deputy_index': deputy_idx,
+                    'deputy_index': photo_idx,  # For face photo
+                    'logo_index': logo_idx,      # For party logo
                     'Nombre': name,
                     'Cargo': personal_info.get('cargo', 'Diputado'),
                     'Circunscripción': personal_info.get('circunscripcion', ''),
@@ -287,7 +356,7 @@ def load_all_data():
         st.error(f"Error al procesar los archivos: {str(e)}")
         return pd.DataFrame(), []
 
-# Show disclaimer
+# Show disclaimer if not accepted
 if not st.session_state.disclaimer_accepted:
     st.markdown("""
     <div class="hero-section">
@@ -298,7 +367,13 @@ if not st.session_state.disclaimer_accepted:
     
     st.info("""
     **Esta aplicación constituye una herramienta independiente de análisis y visualización de información pública** 
-    disponible en el portal oficial del Congreso de los Diputados.
+    disponible en el portal oficial del Congreso de los Diputados. No mantiene vinculación institucional alguna con el 
+    Congreso de los Diputados.
+    """)
+    
+    st.warning("""
+    Los datos presentados provienen de fuentes públicas oficiales y, si bien se ha procurado garantizar su exactitud, 
+    **la aplicación podría contener errores, inexactitudes, omisiones o información desactualizada**.
     """)
     
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -309,7 +384,7 @@ if not st.session_state.disclaimer_accepted:
     
     st.stop()
 
-# Main app
+# Main app header
 st.markdown("""
 <div class="hero-section">
     <h1 class="hero-title">DECLARACIONES DE BIENES Y RENTAS</h1>
@@ -365,9 +440,8 @@ if not df.empty:
                     
                     with col1:
                         # Photo with party logo
-                        photo_path = get_deputy_photo(person_idx)
-                        party_name = person_row.get('Partido', '')
-                        party_logo_path = get_party_logo(party_name)
+                        photo_path = get_deputy_photo(person_row['deputy_index'])
+                        party_logo_path = get_party_logo(person_row['logo_index'])
                         
                         if photo_path:
                             with open(photo_path, "rb") as f:
@@ -387,7 +461,7 @@ if not df.empty:
                                 <div style="position: absolute; bottom: -8px; right: -8px; 
                                             background: white; border-radius: 50%; padding: 3px;
                                             width: 35px; height: 35px;">
-                                    <img src="data:image/png;base64,{logo_b64}" 
+                                    <img src="data:image/jpeg;base64,{logo_b64}" 
                                          style="width: 28px; height: 28px; object-fit: contain;">
                                 </div>
                                 """
@@ -408,6 +482,7 @@ if not df.empty:
                     
                     with col2:
                         # Info with social media
+                        party_name = person_row.get('Partido', '')
                         social_links = ""
                         
                         twitter = person_row.get('Twitter', '')
@@ -416,7 +491,7 @@ if not df.empty:
                                 handle = twitter.split('twitter.com/')[-1].strip('/')
                             else:
                                 handle = twitter
-                            social_links += f'<a href="https://twitter.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px;">🐦</a>'
+                            social_links += f'<a href="https://twitter.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">🐦</a>'
                         
                         instagram = person_row.get('Instagram', '')
                         if instagram:
@@ -424,40 +499,40 @@ if not df.empty:
                                 handle = instagram.split('instagram.com/')[-1].strip('/')
                             else:
                                 handle = instagram
-                            social_links += f'<a href="https://instagram.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px;">📷</a>'
+                            social_links += f'<a href="https://instagram.com/{handle}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">📷</a>'
                         
                         facebook = person_row.get('Facebook', '')
                         if facebook:
-                            social_links += f'<a href="{facebook}" target="_blank" style="text-decoration: none; margin-right: 10px;">📘</a>'
+                            social_links += f'<a href="{facebook}" target="_blank" style="text-decoration: none; margin-right: 10px; font-size: 1.5rem;">📘</a>'
                         
                         website = person_row.get('Website', '')
                         if website:
-                            social_links += f'<a href="{website}" target="_blank" style="text-decoration: none;">🌐</a>'
+                            social_links += f'<a href="{website}" target="_blank" style="text-decoration: none; font-size: 1.5rem;">🌐</a>'
                         
                         st.markdown(f"""
                         <div style="padding-left: 15px;">
                             <h3 style="color: #e0e0e0; margin: 0 0 10px 0; font-size: 1.6rem;">
                                 {personal_info.get('nombre_y_apellidos', '').upper()}
                             </h3>
-                            {f'<div style="margin: 10px 0; font-size: 1.5rem;">{social_links}</div>' if social_links else ''}
+                            {f'<div style="margin: 10px 0;">{social_links}</div>' if social_links else ''}
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 📍 <strong>{personal_info.get('circunscripcion', '')}</strong>
                             </p>
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 🏛️ {personal_info.get('cargo', 'Diputado')}
                             </p>
-                            <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
-                                🎯 <strong>{party_name if party_name else 'Sin partido'}</strong>
-                            </p>
+                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">🎯 <strong>{party_name}</strong></p>' if party_name else ''}
                             <p style="color: rgba(224,224,224,0.8); margin: 5px 0;">
                                 💑 {personal_info.get('estado_civil', '')}
                             </p>
+                            {f'<p style="color: rgba(224,224,224,0.8); margin: 5px 0;">📜 {personal_info.get("regimen_economico_matrimonial", "")}</p>' 
+                             if personal_info.get('regimen_economico_matrimonial') else ''}
                         </div>
                         """, unsafe_allow_html=True)
                     
                     with col3:
                         # Hemiciclo seat
-                        seat_path = get_hemiciclo_seat(person_idx)
+                        seat_path = get_hemiciclo_seat(person_row['deputy_index'])
                         if seat_path:
                             with open(seat_path, "rb") as f:
                                 seat_b64 = base64.b64encode(f.read()).decode()
@@ -487,13 +562,34 @@ if not df.empty:
                                 </div>
                                 """, unsafe_allow_html=True)
                         
+                        if rentas.get('dividendos_y_participaciones'):
+                            st.markdown("**Dividendos y Participaciones:**")
+                            for item in rentas['dividendos_y_participaciones']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {item.get('concepto', 'Sin concepto')}: <strong>{item.get('euros', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if rentas.get('otras_rentas'):
+                            st.markdown("**Otras Rentas:**")
+                            for item in rentas['otras_rentas']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {item.get('concepto', 'Sin concepto')}: <strong>{item.get('euros', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
                         irpf = deputy_data.get('irpf', {})
                         if irpf:
                             st.markdown(f"""
-                            <div class="info-card">
+                            <div class="info-card" style="background: rgba(255,193,7,0.1); border-left-color: #ffc107;">
                                 <strong>IRPF Pagado:</strong> €{irpf.get('cantidad_pagada', 0)}
                             </div>
                             """, unsafe_allow_html=True)
+                        
+                        if not rentas.get('percepciones_salariales') and not rentas.get('dividendos_y_participaciones'):
+                            st.markdown("*No hay rentas declaradas*")
                     
                     with tab2:
                         bienes = deputy_data.get('bienes_patrimoniales', {})
@@ -503,41 +599,79 @@ if not df.empty:
                             for prop in bienes['inmuebles_urbanos']:
                                 st.markdown(f"""
                                 <div class="info-card">
-                                    • <strong>{prop.get('clase', 'Inmueble')}</strong> - {prop.get('situacion', '')}
+                                    • <strong>{prop.get('clase', prop.get('clase_y_caracteristicas', 'Inmueble'))}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Situación: {prop.get('situacion', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho_sobre_el_bien', '')}
                                 </div>
                                 """, unsafe_allow_html=True)
+                        
+                        if bienes.get('inmuebles_rusticos'):
+                            st.markdown("**Inmuebles Rústicos:**")
+                            for prop in bienes['inmuebles_rusticos']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • <strong>{prop.get('clase', 'Inmueble')}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Situación: {prop.get('situacion', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Derecho: {prop.get('derecho_sobre_el_bien', '')}
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if not bienes.get('inmuebles_urbanos') and not bienes.get('inmuebles_rusticos'):
+                            st.markdown("*No hay propiedades declaradas*")
                     
                     with tab3:
                         cuentas = deputy_data.get('depositos_y_cuentas', {})
                         if cuentas.get('cuentas'):
-                            st.markdown("**Cuentas:**")
+                            st.markdown("**Cuentas y Depósitos:**")
                             for cuenta in cuentas['cuentas']:
                                 st.markdown(f"""
                                 <div class="info-card">
                                     • {cuenta.get('descripcion', 'Cuenta')}: <strong>{cuenta.get('saldo', 0)}</strong>
                                 </div>
                                 """, unsafe_allow_html=True)
+                        
+                        valores = deputy_data.get('otros_bienes_y_derechos', {})
+                        if valores.get('deuda_publica_y_valores'):
+                            st.markdown("**Valores y Participaciones:**")
+                            for valor in valores['deuda_publica_y_valores']:
+                                st.markdown(f"""
+                                <div class="info-card">
+                                    • {valor.get('descripcion', 'Valor')}: <strong>{valor.get('valor', 0)}</strong>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        if not cuentas.get('cuentas') and not valores.get('deuda_publica_y_valores'):
+                            st.markdown("*No hay cuentas o valores declarados*")
                     
                     with tab4:
                         deudas = deputy_data.get('deudas_y_obligaciones', [])
                         if deudas:
+                            st.markdown("**Deudas y Obligaciones:**")
                             for deuda in deudas:
                                 st.markdown(f"""
                                 <div class="info-card">
                                     • <strong>{deuda.get('descripcion', 'Deuda')}</strong>
-                                    <br>Saldo: <strong>{deuda.get('saldo_pendiente', 0)}</strong>
+                                    <br>&nbsp;&nbsp;&nbsp;Importe concedido: {deuda.get('importe_concedido', '')}
+                                    <br>&nbsp;&nbsp;&nbsp;Saldo pendiente: <strong>{deuda.get('saldo_pendiente', 0)}</strong>
                                 </div>
                                 """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("*No hay deudas declaradas*")
                     
                     with tab5:
                         vehiculos = deputy_data.get('vehiculos', [])
                         if vehiculos:
+                            st.markdown("**Vehículos:**")
                             for vehiculo in vehiculos:
                                 st.markdown(f"""
                                 <div class="info-card">
                                     • {vehiculo.get('descripcion', 'Vehículo')}
+                                    {f"<br>&nbsp;&nbsp;&nbsp;Adquisición: {vehiculo.get('fecha_adquisicion', '')}" 
+                                     if vehiculo.get('fecha_adquisicion') else ''}
                                 </div>
                                 """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("*No hay vehículos declarados*")
         
         else:
             # Comparison mode
@@ -556,22 +690,61 @@ if not df.empty:
             if selected_name1 and selected_name2:
                 st.markdown('<h2 class="vs-header">VS</h2>', unsafe_allow_html=True)
                 
-                # Simple comparison display
+                # Get data for both deputies
+                person1_row = df[df['Nombre'] == selected_name1].iloc[0]
+                person2_row = df[df['Nombre'] == selected_name2].iloc[0]
+                
+                data1 = {}
+                data2 = {}
+                for entry in json_data:
+                    name = entry.get('data', {}).get('informacion_personal', {}).get('nombre_y_apellidos', '').upper()
+                    if name == selected_name1:
+                        data1 = entry.get('data', {})
+                    elif name == selected_name2:
+                        data2 = entry.get('data', {})
+                
+                # Compare key metrics
                 col1, col2, col3 = st.columns([2, 1, 2])
                 
+                # Count properties
+                props1 = len(data1.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
+                        len(data1.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
+                props2 = len(data2.get('bienes_patrimoniales', {}).get('inmuebles_urbanos', [])) + \
+                        len(data2.get('bienes_patrimoniales', {}).get('inmuebles_rusticos', []))
+                
+                vehicles1 = len(data1.get('vehiculos', []))
+                vehicles2 = len(data2.get('vehiculos', []))
+                
+                accounts1 = len(data1.get('depositos_y_cuentas', {}).get('cuentas', []))
+                accounts2 = len(data2.get('depositos_y_cuentas', {}).get('cuentas', []))
+                
+                debts1 = len(data1.get('deudas_y_obligaciones', []))
+                debts2 = len(data2.get('deudas_y_obligaciones', []))
+                
                 with col1:
-                    st.metric(selected_name1[:25], "")
+                    st.metric(selected_name1[:30], f"{props1} propiedades")
+                    st.metric("", f"{vehicles1} vehículos")
+                    st.metric("", f"{accounts1} cuentas")
+                    st.metric("", f"{debts1} deudas")
                 
                 with col2:
-                    st.markdown("<p style='text-align: center;'>📊</p>", unsafe_allow_html=True)
+                    st.markdown("<div style='text-align: center; padding-top: 50px;'>", unsafe_allow_html=True)
+                    st.markdown("<p>🏠</p>", unsafe_allow_html=True)
+                    st.markdown("<p>🚗</p>", unsafe_allow_html=True)
+                    st.markdown("<p>💳</p>", unsafe_allow_html=True)
+                    st.markdown("<p>📊</p>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
                 
                 with col3:
-                    st.metric(selected_name2[:25], "")
+                    st.metric(selected_name2[:30], f"{props2} propiedades")
+                    st.metric("", f"{vehicles2} vehículos")
+                    st.metric("", f"{accounts2} cuentas")
+                    st.metric("", f"{debts2} deudas")
     
     with main_tab2:
         st.markdown("### 📊 Tabla de Datos Completa")
         
-        search = st.text_input("🔍 Buscar:", placeholder="Nombre, circunscripción...")
+        search = st.text_input("🔍 Buscar en la tabla:", placeholder="Nombre, circunscripción...")
         
         display_df = df.copy()
         if search:
@@ -580,13 +753,23 @@ if not df.empty:
                 display_df['Circunscripción'].str.contains(search, case=False, na=False)
             ]
         
-        # Remove deputy_index for display
-        display_df = display_df.drop('deputy_index', axis=1, errors='ignore')
+        # Remove index columns for display
+        display_cols = ['Nombre', 'Cargo', 'Circunscripción', 'Estado Civil', 'Partido']
+        display_df = display_df[display_cols]
         
         st.dataframe(display_df, use_container_width=True, hide_index=True, height=600)
         
         csv = display_df.to_csv(index=False)
-        st.download_button("⬇️ Descargar CSV", data=csv, file_name='datos.csv', mime='text/csv')
+        st.download_button("⬇️ Descargar CSV", data=csv, file_name='declaraciones_bienes.csv', mime='text/csv')
 
 else:
-    st.error("Error al cargar los datos")
+    st.error("Error al cargar los datos. Verifique que existe el archivo 'all_deputies_merged.json'")
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: rgba(224, 224, 224, 0.4); padding: 20px 0;'>
+    <p>🏛️ Datos públicos del Congreso de los Diputados</p>
+    <p>Desarrollado por <a href='https://twitter.com/Gsnchez' style='color: #667eea; text-decoration: none;'>@Gsnchez</a></p>
+</div>
+""", unsafe_allow_html=True)
