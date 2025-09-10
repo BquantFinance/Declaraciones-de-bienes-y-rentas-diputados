@@ -185,27 +185,33 @@ def get_hemiciclo_seat(deputy_index):
 
 def get_party_logo(party_name):
     """Get party logo from deputy_photos folder"""
-    party_logos = {
-        'PSOE': 'deputy_photos/psoe.png',
-        'PP': 'deputy_photos/pp.png', 
-        'VOX': 'deputy_photos/vox.png',
-        'SUMAR': 'deputy_photos/sumar.png',
-        'PODEMOS': 'deputy_photos/podemos.png',
-        'ERC': 'deputy_photos/erc.png',
-        'JUNTS': 'deputy_photos/junts.png',
-        'PNV': 'deputy_photos/pnv.png',
-        'EH BILDU': 'deputy_photos/ehbildu.png',
-        'EHBILDU': 'deputy_photos/ehbildu.png',
-        'BNG': 'deputy_photos/bng.png',
-        'CUP': 'deputy_photos/cup.png',
-        'CC': 'deputy_photos/cc.png',
-        'UPN': 'deputy_photos/upn.png',
-    }
+    if not party_name:
+        return None
     
-    if party_name:
-        logo_path = party_logos.get(party_name.upper(), '')
-        if logo_path and os.path.exists(logo_path):
-            return logo_path
+    # Try different possible filenames for party logos
+    possible_names = [
+        f"deputy_photos/{party_name.lower()}.png",
+        f"deputy_photos/{party_name.lower()}.jpg",
+        f"deputy_photos/{party_name.upper()}.png",
+        f"deputy_photos/{party_name.upper()}.jpg",
+        f"deputy_photos/{party_name}.png",
+        f"deputy_photos/{party_name}.jpg",
+    ]
+    
+    # Also try removing spaces and special characters
+    clean_name = party_name.replace(' ', '').replace('-', '')
+    possible_names.extend([
+        f"deputy_photos/{clean_name.lower()}.png",
+        f"deputy_photos/{clean_name.lower()}.jpg",
+        f"deputy_photos/{clean_name.upper()}.png",
+        f"deputy_photos/{clean_name.upper()}.jpg",
+    ])
+    
+    # Check each possible filename
+    for path in possible_names:
+        if os.path.exists(path):
+            return path
+    
     return None
 
 # Load all data
