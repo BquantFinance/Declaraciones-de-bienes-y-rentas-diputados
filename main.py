@@ -10,7 +10,7 @@ import base64
 
 # Page configuration
 st.set_page_config(
-    page_title="Registro de Diputados - Congreso de España",
+    page_title="Declaración de Bienes - Congreso de España",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -803,14 +803,23 @@ def show_disclaimer():
             st.rerun()
 
         st.error("Para usar esta aplicación debe aceptar los términos y condiciones.")
-
+        
+        st.markdown("---")
+        st.markdown(
+            """
+            <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
+                Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 def main_app():
     """Main application"""
     apply_css()
     
-    st.markdown('<h1 style="text-align: center;">⚖️ Registro de Diputados</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #94a3b8;">CONGRESO DE LOS DIPUTADOS · Portal de Transparencia Financiera</p>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align: center;">⚖️ Declaración de Bienes</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #94a3b8;">Análisis Interactivo de la Transparencia Financiera en el Congreso de los Diputados</p>', unsafe_allow_html=True)
     
     df = load_data()
     
@@ -1301,6 +1310,16 @@ def main_app():
                         st.write(otros_bienes)
                 else:
                     st.info("No hay otros bienes declarados")
+    
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # Main execution
 if __name__ == "__main__":
