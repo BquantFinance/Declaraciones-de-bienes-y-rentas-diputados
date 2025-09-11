@@ -7,6 +7,14 @@ from datetime import datetime
 import re
 import os
 import base64
+from locale import setlocale, LC_TIME
+
+# Set locale to Spanish to parse month names correctly
+try:
+    setlocale(LC_TIME, 'es_ES.UTF-8')
+except:
+    setlocale(LC_TIME, 'Spanish_Spain.1252')
+
 
 # Page configuration
 st.set_page_config(
@@ -861,32 +869,47 @@ def main_app():
         )
         
         # Get all declarations for selected deputy
-        deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name]
+        deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name].sort_values(by='source_file', ascending=True)
         
         # Declaration selector (if multiple)
         if len(deputy_declarations) > 1:
             st.info(f"📋 Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
             
-            # Create options for declarations
+            # Create options for declarations with new, more descriptive labels
             declaration_options = []
-            for idx, row in deputy_declarations.iterrows():
-                fecha_eleccion = row.get('informacion_personal_fecha_eleccion', '')
-                fecha_presentacion = row.get('informacion_personal_fecha_presentacion_credencial', '')
+            for i, (idx, row) in enumerate(deputy_declarations.iterrows()):
+                declaration_number = i + 1
+                label_parts = [f"📄 Declaración {declaration_number}"]
+
+                cargo = row.get('informacion_personal_cargo', '')
+                if pd.notna(cargo):
+                    label_parts.append(f"({cargo.strip()})")
+
+                # Extract date from filename, as it's more reliable
+                doc_date_str = "Fecha Desconocida"
+                source_file = row.get('source_file', '')
+                date_match = re.search(r'_(\d{8})\.json$', source_file)
+                if date_match:
+                    try:
+                        doc_date = datetime.strptime(date_match.group(1), '%Y%m%d')
+                        doc_date_str = doc_date.strftime('%d %b %Y')
+                    except ValueError:
+                        pass
                 
-                declaration_number = idx - deputy_declarations.index[0] + 1
-                label = f"📄 Declaración {declaration_number}"
+                label_parts.append(f"- Doc: {doc_date_str}")
                 
-                if fecha_eleccion and str(fecha_eleccion).lower() != 'nan':
-                    label += f" - Elección: {fecha_eleccion}"
-                if fecha_presentacion and str(fecha_presentacion).lower() != 'nan':
-                    label += f" - Presentación: {fecha_presentacion}"
-                    
+                # Check for modifications
+                observaciones = row.get('observaciones', '')
+                if pd.notna(observaciones) and ('modificación' in observaciones.lower() or 'remito a' in observaciones.lower() or 'actualizar' in observaciones.lower()):
+                    label_parts.append("[Modificación]")
+                
+                label = " ".join(label_parts)
                 declaration_options.append((idx, label))
             
             selected_idx = st.selectbox(
                 "Seleccionar Declaración:",
                 [opt[0] for opt in declaration_options],
-                format_func=lambda x: next(opt[1] for opt in declaration_options if opt[0] == x)
+                format_func=lambda x: next((opt[1] for opt in declaration_options if opt[0] == x), "Seleccionar")
             )
             
             deputy_data = deputy_declarations.loc[selected_idx]
@@ -1315,7 +1338,7 @@ def main_app():
     st.markdown(
         """
         <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
         </div>
         """,
         unsafe_allow_html=True
