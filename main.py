@@ -8,144 +8,255 @@ import re
 
 # Page configuration
 st.set_page_config(
-    page_title="Deputies Information Portal",
-    page_icon="🏛️",
+    page_title="Deputies Registry",
+    page_icon="⚖️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for dark theme and beautiful styling
+# Minimalist dark theme with gold accents
 st.markdown("""
 <style>
-    /* Dark theme override */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    /* Main theme */
     .stApp {
-        background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+        background: #0a0a0a;
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Custom card styling */
-    .deputy-card {
-        background: rgba(30, 30, 50, 0.9);
-        border-radius: 20px;
-        padding: 25px;
-        margin: 15px 0;
-        border: 1px solid rgba(100, 100, 255, 0.2);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
+    /* Remove default padding */
+    .block-container {
+        padding-top: 2rem;
+        max-width: 1400px;
     }
     
-    .deputy-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 48px rgba(100, 100, 255, 0.2);
-        border-color: rgba(100, 100, 255, 0.4);
+    /* Main header */
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: 300;
+        letter-spacing: -1px;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
     }
     
-    .info-section {
-        background: rgba(40, 40, 60, 0.6);
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px 0;
-        border-left: 4px solid #6366f1;
+    .subtitle {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 2rem;
+        font-weight: 400;
     }
     
-    .stat-box {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-        border-radius: 12px;
-        padding: 15px;
-        text-align: center;
-        border: 1px solid rgba(99, 102, 241, 0.3);
-        transition: all 0.3s ease;
-    }
-    
-    .stat-box:hover {
-        transform: scale(1.05);
-        border-color: rgba(99, 102, 241, 0.6);
-    }
-    
-    .header-gradient {
-        background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: bold;
+    /* Deputy name header */
+    .deputy-name {
         font-size: 3rem;
-        text-align: center;
-        margin-bottom: 30px;
+        font-weight: 200;
+        letter-spacing: -2px;
+        color: #fff;
+        margin: 0;
+        line-height: 1.1;
+    }
+    
+    .deputy-title {
+        font-size: 1.1rem;
+        color: #888;
+        font-weight: 300;
+        margin-top: 0.5rem;
+    }
+    
+    /* Info cards */
+    .info-card {
+        background: #111111;
+        border: 1px solid #222;
+        border-radius: 4px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .info-card:hover {
+        border-color: #444;
+        background: #141414;
+    }
+    
+    .card-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #666;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .card-value {
+        font-size: 1.5rem;
+        color: #fff;
+        font-weight: 300;
+    }
+    
+    .card-value.large {
+        font-size: 2rem;
+        font-weight: 200;
+    }
+    
+    /* Gold accent for important values */
+    .gold-accent {
+        color: #d4af37;
+    }
+    
+    /* Property item */
+    .property-item {
+        background: #0f0f0f;
+        border-left: 2px solid #d4af37;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        color: #ccc;
+    }
+    
+    .property-item strong {
+        color: #fff;
+        font-weight: 500;
+    }
+    
+    /* Social media links - minimal style */
+    .social-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
     }
     
     .social-link {
-        display: inline-block;
-        margin: 5px;
-        padding: 8px 16px;
-        border-radius: 25px;
+        color: #666;
         text-decoration: none;
-        transition: all 0.3s ease;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        border: 1px solid #333;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     
-    .metric-label {
-        color: #a0a0b8;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    .metric-value {
+    .social-link:hover {
         color: #fff;
-        font-size: 1.8rem;
-        font-weight: bold;
+        border-color: #666;
+        background: #1a1a1a;
     }
     
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: rgba(20, 20, 35, 0.95);
+    /* Section headers */
+    .section-header {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #666;
+        margin: 2rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #222;
+        font-weight: 600;
     }
     
-    /* Search box styling */
+    /* Data grid */
+    .data-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    /* Search box */
     .stTextInput > div > div > input {
-        background: rgba(40, 40, 60, 0.8);
-        border: 1px solid rgba(99, 102, 241, 0.3);
-        border-radius: 10px;
-        color: white;
+        background: #111;
+        border: 1px solid #333;
+        color: #fff;
+        font-weight: 300;
+        border-radius: 3px;
     }
     
     .stSelectbox > div > div {
-        background: rgba(40, 40, 60, 0.8);
-        border-radius: 10px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 3px;
     }
     
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
-    }
-    
-    /* Tab styling */
+    /* Tabs - minimal style */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background: rgba(30, 30, 50, 0.5);
-        border-radius: 15px;
-        padding: 5px;
+        gap: 2rem;
+        border-bottom: 1px solid #222;
+        background: transparent;
     }
     
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        border-radius: 10px;
-        color: #a0a0b8;
-        padding: 10px 20px;
+        border: none;
+        color: #666;
+        padding: 0.5rem 0;
+        font-weight: 400;
+        font-size: 0.95rem;
+        border-radius: 0;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(90deg, #6366f1, #8b5cf6);
-        color: white;
+        background: transparent;
+        color: #fff;
+        border-bottom: 2px solid #d4af37;
+    }
+    
+    /* Metrics */
+    [data-testid="metric-container"] {
+        background: #111;
+        border: 1px solid #222;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 0.5rem 0;
+    }
+    
+    [data-testid="metric-container"] label {
+        color: #666;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    [data-testid="metric-container"] [data-testid="metric-value"] {
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: 300;
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Divider */
+    .divider {
+        height: 1px;
+        background: #222;
+        margin: 2rem 0;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    /* Photo container */
+    .photo-container {
+        width: 120px;
+        height: 120px;
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid #333;
+        margin-bottom: 1rem;
+    }
+    
+    .photo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -170,308 +281,361 @@ def format_currency(value):
     if pd.isna(value):
         return "€0"
     if isinstance(value, (int, float)):
-        return f"€{value:,.2f}"
-    # Handle string values with euro symbol
+        return f"€{value:,.0f}"
     if isinstance(value, str):
-        # Extract numeric value
         numeric = re.findall(r'[\d,\.]+', value)
         if numeric:
-            return f"€{numeric[0]}"
+            try:
+                num = float(numeric[0].replace(',', '').replace('.', ''))
+                return f"€{num:,.0f}"
+            except:
+                return str(value)
     return str(value)
 
-def create_financial_summary(row):
-    """Create a financial summary visualization"""
-    # Parse salary information
-    salaries = parse_json_field(row['rentas_percibidas_percepciones_salariales'])
-    total_salary = 0
-    for salary in salaries:
-        if isinstance(salary, dict) and 'euros' in salary and salary['euros']:
-            amount = re.findall(r'[\d,\.]+', str(salary['euros']))
-            if amount:
-                total_salary += float(amount[0].replace(',', '').replace('.', '').replace('€', ''))
-    
-    # Get IRPF paid
-    irpf = row['irpf_cantidad_pagada'] if pd.notna(row['irpf_cantidad_pagada']) else 0
-    
-    # Create metrics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="stat-box">
-            <div class="metric-label">Total Income</div>
-            <div class="metric-value">{format_currency(total_salary)}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="stat-box">
-            <div class="metric-label">IRPF Paid</div>
-            <div class="metric-value">{format_currency(irpf)}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        tax_rate = (irpf / total_salary * 100) if total_salary > 0 else 0
-        st.markdown(f"""
-        <div class="stat-box">
-            <div class="metric-label">Tax Rate</div>
-            <div class="metric-value">{tax_rate:.1f}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-def display_properties(row):
-    """Display property information"""
-    urban = parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos'])
-    rural = parse_json_field(row['bienes_patrimoniales_inmuebles_rusticos'])
-    vehicles = parse_json_field(row['vehiculos'])
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### 🏠 Real Estate")
-        if urban:
-            for prop in urban:
-                if isinstance(prop, dict):
-                    st.markdown(f"""
-                    <div class="info-section">
-                        <b>{prop.get('clase_y_caracteristicas', 'Property')}</b><br>
-                        📍 {prop.get('situacion', 'N/A')}<br>
-                        📅 Acquired: {prop.get('fecha_adquisicion', 'N/A')}<br>
-                        📜 {prop.get('derecho_sobre_el_bien', 'N/A')}
-                    </div>
-                    """, unsafe_allow_html=True)
-        else:
-            st.info("No urban properties declared")
-    
-    with col2:
-        st.markdown("### 🚗 Vehicles")
-        if vehicles:
-            for vehicle in vehicles:
-                if isinstance(vehicle, dict):
-                    st.markdown(f"""
-                    <div class="info-section">
-                        <b>{vehicle.get('descripcion', 'Vehicle')}</b><br>
-                        📅 Acquired: {vehicle.get('fecha_adquisicion', 'N/A')}
-                    </div>
-                    """, unsafe_allow_html=True)
-        else:
-            st.info("No vehicles declared")
-
-def display_social_media(row):
-    """Display social media links"""
-    social_links = []
-    
-    if pd.notna(row['twitter']):
-        social_links.append(f"[![Twitter](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)]({row['twitter']})")
-    if pd.notna(row['instagram']):
-        social_links.append(f"[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)]({row['instagram']})")
-    if pd.notna(row['facebook']):
-        social_links.append(f"[![Facebook](https://img.shields.io/badge/Facebook-1877F2?style=for-the-badge&logo=facebook&logoColor=white)]({row['facebook']})")
-    if pd.notna(row['website']):
-        social_links.append(f"[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=About.me&logoColor=white)]({row['website']})")
-    
-    if social_links:
-        st.markdown(" ".join(social_links))
-    else:
-        st.info("No social media profiles available")
+def extract_currency_value(value_str):
+    """Extract numeric value from currency string"""
+    if pd.isna(value_str) or value_str == '':
+        return 0
+    if isinstance(value_str, (int, float)):
+        return float(value_str)
+    numeric = re.findall(r'[\d,\.]+', str(value_str))
+    if numeric:
+        try:
+            return float(numeric[0].replace(',', '').replace('.', ''))
+        except:
+            return 0
+    return 0
 
 def main():
     # Header
-    st.markdown('<h1 class="header-gradient">🏛️ Deputies Information Portal</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #a0a0b8; font-size: 1.2rem;">Explore comprehensive information about Spanish deputies</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Deputies Registry</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">SPANISH CONGRESS · FINANCIAL DECLARATIONS</p>', unsafe_allow_html=True)
     
     # Load data
     df = load_data()
     
-    # Sidebar filters
-    with st.sidebar:
-        st.markdown("## 🔍 Search & Filter")
-        
-        # Search by name
-        search_term = st.text_input("🔎 Search by name", placeholder="Enter deputy name...")
-        
-        # Filter by constituency
-        constituencies = ['All'] + sorted([c for c in df['informacion_personal_circunscripcion'].dropna().unique()])
-        selected_constituency = st.selectbox("📍 Constituency", constituencies)
-        
-        # Filter by civil status
-        civil_status = ['All'] + sorted([s for s in df['informacion_personal_estado_civil'].dropna().unique()])
-        selected_status = st.selectbox("💑 Civil Status", civil_status)
-        
-        # Apply filters
-        filtered_df = df.copy()
-        
-        if search_term:
-            filtered_df = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
-        
-        if selected_constituency != 'All':
-            filtered_df = filtered_df[filtered_df['informacion_personal_circunscripcion'] == selected_constituency]
-        
-        if selected_status != 'All':
-            filtered_df = filtered_df[filtered_df['informacion_personal_estado_civil'] == selected_status]
-        
-        st.markdown("---")
-        st.markdown(f"### 📊 Results: {len(filtered_df)} deputies")
-        
-        # Statistics
-        if len(filtered_df) > 0:
-            avg_irpf = filtered_df['irpf_cantidad_pagada'].mean()
-            st.metric("Average IRPF Paid", format_currency(avg_irpf))
+    # Top search bar
+    col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
     
-    # Main content area
+    with col1:
+        search_term = st.text_input("", placeholder="Search deputy by name...", label_visibility="collapsed")
+    
+    with col2:
+        constituencies = ['All Constituencies'] + sorted([c for c in df['informacion_personal_circunscripcion'].dropna().unique()])
+        selected_constituency = st.selectbox("", constituencies, label_visibility="collapsed")
+    
+    with col3:
+        civil_status = ['All Status'] + sorted([s for s in df['informacion_personal_estado_civil'].dropna().unique()])
+        selected_status = st.selectbox("", civil_status, label_visibility="collapsed")
+    
+    # Apply filters
+    filtered_df = df.copy()
+    
+    if search_term:
+        filtered_df = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
+    
+    if selected_constituency != 'All Constituencies':
+        filtered_df = filtered_df[filtered_df['informacion_personal_circunscripcion'] == selected_constituency]
+    
+    if selected_status != 'All Status':
+        filtered_df = filtered_df[filtered_df['informacion_personal_estado_civil'] == selected_status]
+    
+    with col4:
+        st.markdown(f'<div style="text-align: right; color: #666; margin-top: 2rem;">{len(filtered_df)} results</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+    
     if len(filtered_df) == 0:
-        st.warning("No deputies found matching your criteria. Please adjust your filters.")
+        st.markdown('<div class="empty-state">No deputies found matching your criteria</div>', unsafe_allow_html=True)
     else:
-        # Deputy selector
+        # Deputy selector (minimal dropdown)
         deputy_names = filtered_df['informacion_personal_nombre_y_apellidos'].tolist()
         selected_deputy = st.selectbox(
-            "Select a Deputy",
+            "Select Deputy",
             deputy_names,
-            format_func=lambda x: f"👤 {x}"
+            label_visibility="collapsed"
         )
         
         # Get selected deputy data
         deputy_data = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'] == selected_deputy].iloc[0]
         
-        # Display deputy information
-        st.markdown('<div class="deputy-card">', unsafe_allow_html=True)
+        # Main content layout
+        col_left, col_right = st.columns([1, 3])
         
-        # Header with photo
-        col1, col2, col3 = st.columns([1, 3, 1])
-        
-        with col1:
+        with col_left:
+            # Photo
             if pd.notna(deputy_data['photo_path']):
                 try:
-                    st.image(deputy_data['photo_path'], width=150, caption="Deputy Photo")
+                    st.image(deputy_data['photo_path'], width=180)
                 except:
-                    st.markdown("👤", unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"# {deputy_data['informacion_personal_nombre_y_apellidos']}")
-            st.markdown(f"**Position:** {deputy_data.get('informacion_personal_cargo', 'N/A')}")
-            st.markdown(f"**Constituency:** {deputy_data.get('informacion_personal_circunscripcion', 'N/A')}")
-            st.markdown(f"**Civil Status:** {deputy_data.get('informacion_personal_estado_civil', 'N/A')}")
-            if pd.notna(deputy_data.get('informacion_personal_fecha_eleccion')):
-                st.markdown(f"**Election Date:** {deputy_data['informacion_personal_fecha_eleccion']}")
-        
-        with col3:
-            if pd.notna(deputy_data['logo_path']):
-                try:
-                    st.image(deputy_data['logo_path'], width=100, caption="Party Logo")
-                except:
-                    pass
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Tabs for different information sections
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["💰 Financial", "🏠 Assets", "💳 Debts", "📱 Social Media", "📊 Analysis"])
-        
-        with tab1:
-            st.markdown("### 💰 Financial Information")
-            create_financial_summary(deputy_data)
+                    st.markdown('<div class="photo-container"><div style="padding: 3rem; color: #444;">No photo</div></div>', unsafe_allow_html=True)
             
-            # Detailed income breakdown
-            st.markdown("#### 📋 Income Sources")
-            salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
-            if salaries:
-                for salary in salaries:
-                    if isinstance(salary, dict):
-                        concept = salary.get('concepto', 'Unknown')
-                        amount = salary.get('euros', 'N/A')
-                        st.markdown(f"""
-                        <div class="info-section">
-                            <b>{concept}</b><br>
-                            💶 {amount}
-                        </div>
-                        """, unsafe_allow_html=True)
-        
-        with tab2:
-            st.markdown("### 🏠 Assets & Properties")
-            display_properties(deputy_data)
-            
-            # Bank accounts
-            st.markdown("### 💳 Bank Accounts")
-            accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
-            if accounts:
-                for account in accounts:
-                    if isinstance(account, dict):
-                        st.markdown(f"""
-                        <div class="info-section">
-                            <b>{account.get('descripcion', 'Account')}</b><br>
-                            💰 Balance: {account.get('saldo', 'N/A')}
-                        </div>
-                        """, unsafe_allow_html=True)
-        
-        with tab3:
-            st.markdown("### 💳 Debts & Obligations")
-            debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
-            if debts:
-                total_debt = 0
-                for debt in debts:
-                    if isinstance(debt, dict):
-                        st.markdown(f"""
-                        <div class="info-section">
-                            <b>{debt.get('descripcion', 'Debt')}</b><br>
-                            📅 Granted: {debt.get('fecha_concesion', 'N/A')}<br>
-                            💵 Original: {debt.get('importe_concedido', 'N/A')}<br>
-                            ⏳ Pending: {debt.get('saldo_pendiente', 'N/A')}
-                        </div>
-                        """, unsafe_allow_html=True)
-            else:
-                st.success("No debts declared")
-        
-        with tab4:
-            st.markdown("### 📱 Social Media Presence")
-            display_social_media(deputy_data)
-        
-        with tab5:
-            st.markdown("### 📊 Comparative Analysis")
-            
-            # Compare with constituency average
-            if pd.notna(deputy_data['informacion_personal_circunscripcion']):
-                constituency_df = df[df['informacion_personal_circunscripcion'] == deputy_data['informacion_personal_circunscripcion']]
+            # Basic info
+            st.markdown(f"""
+            <div style="margin-top: 1rem;">
+                <div style="color: #666; font-size: 0.8rem; margin-bottom: 0.3rem;">POSITION</div>
+                <div style="color: #fff; margin-bottom: 1rem;">{deputy_data.get('informacion_personal_cargo', 'Deputy')}</div>
                 
-                if len(constituency_df) > 1:
-                    col1, col2 = st.columns(2)
+                <div style="color: #666; font-size: 0.8rem; margin-bottom: 0.3rem;">CONSTITUENCY</div>
+                <div style="color: #fff; margin-bottom: 1rem;">{deputy_data.get('informacion_personal_circunscripcion', 'N/A')}</div>
+                
+                <div style="color: #666; font-size: 0.8rem; margin-bottom: 0.3rem;">CIVIL STATUS</div>
+                <div style="color: #fff; margin-bottom: 1rem;">{deputy_data.get('informacion_personal_estado_civil', 'N/A')}</div>
+                
+                <div style="color: #666; font-size: 0.8rem; margin-bottom: 0.3rem;">ELECTED</div>
+                <div style="color: #fff; margin-bottom: 1rem;">{deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Social media - compact links
+            social_html = '<div style="margin-top: 2rem;">'
+            if pd.notna(deputy_data['twitter']):
+                social_html += f'<a href="{deputy_data["twitter"]}" target="_blank" class="social-link">Twitter</a> '
+            if pd.notna(deputy_data['instagram']):
+                social_html += f'<a href="{deputy_data["instagram"]}" target="_blank" class="social-link">Instagram</a> '
+            if pd.notna(deputy_data['facebook']):
+                social_html += f'<a href="{deputy_data["facebook"]}" target="_blank" class="social-link">Facebook</a> '
+            if pd.notna(deputy_data['website']):
+                social_html += f'<a href="{deputy_data["website"]}" target="_blank" class="social-link">Web</a>'
+            social_html += '</div>'
+            
+            if any([pd.notna(deputy_data[x]) for x in ['twitter', 'instagram', 'facebook', 'website']]):
+                st.markdown(social_html, unsafe_allow_html=True)
+        
+        with col_right:
+            # Deputy name
+            st.markdown(f'<h1 class="deputy-name">{deputy_data["informacion_personal_nombre_y_apellidos"]}</h1>', unsafe_allow_html=True)
+            
+            # Financial summary
+            st.markdown('<div class="section-header">FINANCIAL OVERVIEW</div>', unsafe_allow_html=True)
+            
+            # Calculate totals
+            salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
+            total_salary = 0
+            for salary in salaries:
+                if isinstance(salary, dict) and 'euros' in salary and salary['euros']:
+                    total_salary += extract_currency_value(salary['euros'])
+            
+            irpf = deputy_data['irpf_cantidad_pagada'] if pd.notna(deputy_data['irpf_cantidad_pagada']) else 0
+            tax_rate = (irpf / total_salary * 100) if total_salary > 0 else 0
+            
+            # Financial metrics
+            fcol1, fcol2, fcol3, fcol4 = st.columns(4)
+            with fcol1:
+                st.markdown(f"""
+                <div class="info-card">
+                    <div class="card-label">Annual Income</div>
+                    <div class="card-value">{format_currency(total_salary)}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with fcol2:
+                st.markdown(f"""
+                <div class="info-card">
+                    <div class="card-label">IRPF Paid</div>
+                    <div class="card-value gold-accent">{format_currency(irpf)}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with fcol3:
+                st.markdown(f"""
+                <div class="info-card">
+                    <div class="card-label">Tax Rate</div>
+                    <div class="card-value">{tax_rate:.1f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with fcol4:
+                # Count properties
+                properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
+                st.markdown(f"""
+                <div class="info-card">
+                    <div class="card-label">Properties</div>
+                    <div class="card-value">{properties}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Tabs for detailed information
+            tab1, tab2, tab3, tab4 = st.tabs(["Income", "Assets", "Liabilities", "Analysis"])
+            
+            with tab1:
+                st.markdown('<div class="section-header">INCOME SOURCES</div>', unsafe_allow_html=True)
+                
+                if salaries:
+                    for salary in salaries:
+                        if isinstance(salary, dict):
+                            concept = salary.get('concepto', 'Unknown')
+                            amount = salary.get('euros', 'N/A')
+                            st.markdown(f"""
+                            <div class="property-item">
+                                <strong>{concept}</strong><br>
+                                <span class="gold-accent">{amount}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                else:
+                    st.markdown('<div style="color: #666;">No income sources declared</div>', unsafe_allow_html=True)
+                
+                # Other income
+                dividends = parse_json_field(deputy_data['rentas_percibidas_dividendos_y_participaciones'])
+                if dividends and len(dividends) > 0:
+                    st.markdown('<div class="section-header">DIVIDENDS</div>', unsafe_allow_html=True)
+                    for div in dividends:
+                        if isinstance(div, dict):
+                            st.markdown(f"""
+                            <div class="property-item">
+                                <strong>{div.get('concepto', 'Dividend')}</strong><br>
+                                {div.get('euros', 'N/A')}
+                            </div>
+                            """, unsafe_allow_html=True)
+            
+            with tab2:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown('<div class="section-header">REAL ESTATE</div>', unsafe_allow_html=True)
+                    urban = parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])
+                    if urban:
+                        for prop in urban:
+                            if isinstance(prop, dict):
+                                st.markdown(f"""
+                                <div class="property-item">
+                                    <strong>{prop.get('clase_y_caracteristicas', 'Property')}</strong><br>
+                                    {prop.get('situacion', 'N/A')} · {prop.get('fecha_adquisicion', 'N/A')}<br>
+                                    <span style="color: #888; font-size: 0.85rem;">{prop.get('derecho_sobre_el_bien', 'N/A')}</span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div style="color: #666;">No properties declared</div>', unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown('<div class="section-header">VEHICLES</div>', unsafe_allow_html=True)
+                    vehicles = parse_json_field(deputy_data['vehiculos'])
+                    if vehicles:
+                        for vehicle in vehicles:
+                            if isinstance(vehicle, dict):
+                                st.markdown(f"""
+                                <div class="property-item">
+                                    <strong>{vehicle.get('descripcion', 'Vehicle')}</strong><br>
+                                    Acquired: {vehicle.get('fecha_adquisicion', 'N/A')}
+                                </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        st.markdown('<div style="color: #666;">No vehicles declared</div>', unsafe_allow_html=True)
+                
+                # Bank accounts
+                st.markdown('<div class="section-header">BANK ACCOUNTS</div>', unsafe_allow_html=True)
+                accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
+                if accounts:
+                    for account in accounts:
+                        if isinstance(account, dict):
+                            st.markdown(f"""
+                            <div class="property-item">
+                                <strong>{account.get('descripcion', 'Account')}</strong><br>
+                                Balance: <span class="gold-accent">{account.get('saldo', 'N/A')}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+            
+            with tab3:
+                st.markdown('<div class="section-header">DEBTS & OBLIGATIONS</div>', unsafe_allow_html=True)
+                debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
+                if debts:
+                    total_debt = 0
+                    for debt in debts:
+                        if isinstance(debt, dict):
+                            pending = extract_currency_value(debt.get('saldo_pendiente', 0))
+                            total_debt += pending
+                            st.markdown(f"""
+                            <div class="property-item">
+                                <strong>{debt.get('descripcion', 'Debt')}</strong><br>
+                                Granted: {debt.get('fecha_concesion', 'N/A')}<br>
+                                Original: {debt.get('importe_concedido', 'N/A')}<br>
+                                <span class="gold-accent">Pending: {debt.get('saldo_pendiente', 'N/A')}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
                     
-                    with col1:
-                        # IRPF comparison
-                        avg_constituency_irpf = constituency_df['irpf_cantidad_pagada'].mean()
-                        deputy_irpf = deputy_data['irpf_cantidad_pagada'] if pd.notna(deputy_data['irpf_cantidad_pagada']) else 0
-                        
-                        fig = go.Figure(data=[
-                            go.Bar(name='Deputy', x=['IRPF Paid'], y=[deputy_irpf], marker_color='#6366f1'),
-                            go.Bar(name='Constituency Avg', x=['IRPF Paid'], y=[avg_constituency_irpf], marker_color='#8b5cf6')
-                        ])
-                        fig.update_layout(
-                            title="IRPF Comparison",
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
-                            height=300
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                    st.markdown(f'<div style="margin-top: 2rem; padding: 1rem; background: #111; border-left: 3px solid #d4af37;"><strong>Total Debt:</strong> <span class="gold-accent">{format_currency(total_debt)}</span></div>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<div style="color: #666;">No debts declared</div>', unsafe_allow_html=True)
+            
+            with tab4:
+                st.markdown('<div class="section-header">COMPARATIVE ANALYSIS</div>', unsafe_allow_html=True)
+                
+                if pd.notna(deputy_data['informacion_personal_circunscripcion']):
+                    constituency_df = df[df['informacion_personal_circunscripcion'] == deputy_data['informacion_personal_circunscripcion']]
                     
-                    with col2:
-                        # Distribution pie chart
-                        property_count = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
-                        vehicle_count = len(parse_json_field(deputy_data['vehiculos']))
+                    if len(constituency_df) > 1:
+                        col1, col2 = st.columns(2)
                         
-                        fig = go.Figure(data=[go.Pie(
-                            labels=['Properties', 'Vehicles', 'Other Assets'],
-                            values=[property_count, vehicle_count, max(1, property_count//2)],
-                            hole=.3,
-                            marker=dict(colors=['#6366f1', '#8b5cf6', '#ec4899'])
-                        )])
-                        fig.update_layout(
-                            title="Asset Distribution",
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='white'),
-                            height=300
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
+                        with col1:
+                            # Tax comparison
+                            avg_constituency_irpf = constituency_df['irpf_cantidad_pagada'].mean()
+                            deputy_irpf = deputy_data['irpf_cantidad_pagada'] if pd.notna(deputy_data['irpf_cantidad_pagada']) else 0
+                            
+                            fig = go.Figure()
+                            fig.add_trace(go.Bar(
+                                x=['This Deputy', f'{deputy_data["informacion_personal_circunscripcion"]} Average'],
+                                y=[deputy_irpf, avg_constituency_irpf],
+                                marker_color=['#d4af37', '#444'],
+                                text=[format_currency(deputy_irpf), format_currency(avg_constituency_irpf)],
+                                textposition='outside',
+                                textfont=dict(color='white', size=12)
+                            ))
+                            
+                            fig.update_layout(
+                                title="IRPF Tax Comparison",
+                                title_font=dict(size=12, color='#666'),
+                                plot_bgcolor='#0a0a0a',
+                                paper_bgcolor='#0a0a0a',
+                                font=dict(color='#666'),
+                                height=300,
+                                showlegend=False,
+                                yaxis=dict(showgrid=True, gridcolor='#222', zeroline=False),
+                                xaxis=dict(showgrid=False)
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        with col2:
+                            # Calculate net worth estimate
+                            properties_count = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
+                            vehicles_count = len(parse_json_field(deputy_data['vehiculos']))
+                            accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
+                            
+                            total_accounts = 0
+                            for acc in accounts:
+                                if isinstance(acc, dict):
+                                    total_accounts += extract_currency_value(acc.get('saldo', 0))
+                            
+                            # Asset composition
+                            fig = go.Figure(data=[go.Pie(
+                                labels=['Properties', 'Vehicles', 'Liquid Assets'],
+                                values=[properties_count * 150000, vehicles_count * 25000, total_accounts],
+                                hole=.5,
+                                marker=dict(colors=['#d4af37', '#888', '#555']),
+                                textfont=dict(color='white'),
+                                hoverinfo='label+percent'
+                            )])
+                            
+                            fig.update_layout(
+                                title="Estimated Asset Distribution",
+                                title_font=dict(size=12, color='#666'),
+                                plot_bgcolor='#0a0a0a',
+                                paper_bgcolor='#0a0a0a',
+                                font=dict(color='#666'),
+                                height=300,
+                                showlegend=True,
+                                legend=dict(font=dict(color='#666'))
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Percentile ranking
+                        all_irpf = df['irpf_cantidad_pagada'].dropna()
+                        percentile = (all_irpf < deputy_irpf).sum() / len(all_irpf) * 100
+                        
+                        st.markdown(f"""
+                        <div style="margin-top: 2rem; padding: 1rem; background: #111; border-radius: 4px;">
+                            <strong>Tax Contribution Ranking:</strong> This deputy's IRPF payment is in the <span class="gold-accent">{percentile:.0f}th percentile</span> among all deputies
+                        </div>
+                        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
