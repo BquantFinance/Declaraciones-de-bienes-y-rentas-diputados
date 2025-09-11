@@ -943,7 +943,7 @@ def main_app():
     
     with col1:
         search_term = st.text_input(
-            "",
+            "Buscar diputado...",
             placeholder="🔍 Buscar diputado por nombre...",
             key="search",
             label_visibility="collapsed"
