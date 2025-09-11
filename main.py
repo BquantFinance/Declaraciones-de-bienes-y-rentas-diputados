@@ -139,8 +139,8 @@ st.markdown("""
     /* Compact Info Grid */
     .info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.2rem;
         margin: 1.5rem 0;
     }
     
@@ -239,32 +239,36 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* Social Media Pills */
+    /* Social Media Pills - Circular Emoji Buttons */
     .social-pills {
         display: flex;
-        gap: 0.5rem;
+        gap: 1rem;
         flex-wrap: wrap;
-        margin-top: 1rem;
+        margin-top: 1.2rem;
     }
     
     .social-pill {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        color: #e2e8f0;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        font-size: 1.6rem;
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
+        justify-content: center;
+        cursor: pointer;
+        color: #ffffff;
+        font-weight: bold;
     }
     
     .social-pill:hover {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.35) 0%, rgba(118, 75, 162, 0.35) 100%);
+        transform: translateY(-4px) scale(1.1);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.45);
+        border-color: rgba(102, 126, 234, 0.6);
     }
     
     /* Expandable Cards */
@@ -374,21 +378,34 @@ def parse_json_field(field_value):
         return []
 
 def format_currency(value):
-    """Format currency values for display with Spanish notation"""
+    """Format currency values for display with Spanish notation - exact values"""
     if not isinstance(value, (int, float)):
-        return "€0"
-    if value >= 1000000:
-        return f"{value/1000000:.1f}M€"
-    elif value >= 1000:
-        return f"{value/1000:.0f}K€"
+        return "0€"
+    
+    # Check if it's a whole number or has decimals
+    if value == int(value):
+        # No decimals needed - format with Spanish thousands separator
+        formatted = f"{int(value):,}".replace(",", ".")
+        return f"{formatted}€"
     else:
-        return f"{value:.0f}€"
+        # Show up to 2 decimal places with Spanish formatting
+        formatted = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{formatted}€"
 
 def format_currency_full(value):
     """Format currency values for detailed display with Spanish formatting"""
     if not isinstance(value, (int, float)):
         return "0,00 €"
-    return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+    
+    # Show exact value with Spanish formatting
+    if value == int(value):
+        # If it's a whole number, show without decimals
+        formatted = f"{int(value):,}".replace(",", ".")
+        return f"{formatted} €"
+    else:
+        # Show with 2 decimal places
+        formatted = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{formatted} €"
 
 def extract_currency_value(value_str):
     """Extract numeric value from currency string"""
@@ -412,9 +429,10 @@ def create_image_gallery(deputy_data):
     
     # Main photo
     gallery_html += '<div class="main-image-container">'
-    if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
+    photo_path = deputy_data.get('photo_path', '')
+    if pd.notna(photo_path) and str(photo_path).lower() != 'nan' and os.path.exists(str(photo_path)):
         import base64
-        with open(deputy_data['photo_path'], "rb") as f:
+        with open(photo_path, "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
             gallery_html += f'<img src="data:image/jpeg;base64,{img_data}" class="main-image" alt="Foto del Diputado">'
     else:
@@ -425,16 +443,18 @@ def create_image_gallery(deputy_data):
     gallery_html += '<div class="badge-container">'
     
     # Party logo
-    if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
+    logo_path = deputy_data.get('logo_path', '')
+    if pd.notna(logo_path) and str(logo_path).lower() != 'nan' and os.path.exists(str(logo_path)):
         import base64
-        with open(deputy_data['logo_path'], "rb") as f:
+        with open(logo_path, "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
             gallery_html += f'<img src="data:image/png;base64,{img_data}" class="party-logo" alt="Logo del Partido" title="Partido Político">'
     
     # Seat indicator
-    if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
+    hemiciclo_path = deputy_data.get('hemiciclo_path', '')
+    if pd.notna(hemiciclo_path) and str(hemiciclo_path).lower() != 'nan' and os.path.exists(str(hemiciclo_path)):
         import base64
-        with open(deputy_data['hemiciclo_path'], "rb") as f:
+        with open(hemiciclo_path, "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
             gallery_html += f'<img src="data:image/png;base64,{img_data}" class="seat-indicator" alt="Posición en el Hemiciclo" title="Escaño en el Hemiciclo">'
     
@@ -491,42 +511,72 @@ def main():
             
             # Basic info in compact grid
             st.markdown("### 📋 Información Básica")
-            st.markdown(f"""
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">📋 CARGO</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_cargo', 'Diputado')}</div>
-                </div>
+            
+            # Build info grid dynamically, excluding 'nan' values
+            info_html = '<div class="info-grid">'
+            
+            # Always show cargo, default to "Diputado" if empty
+            cargo = deputy_data.get('informacion_personal_cargo', '')
+            if not cargo or str(cargo).lower() == 'nan':
+                cargo = 'Diputado'
+            info_html += f'''
+            <div class="info-item">
+                <div class="info-label">📋 CARGO</div>
+                <div class="info-value">{cargo}</div>
+            </div>'''
+            
+            circunscripcion = deputy_data.get('informacion_personal_circunscripcion', '')
+            if circunscripcion and str(circunscripcion).lower() != 'nan':
+                info_html += f'''
                 <div class="info-item">
                     <div class="info-label">📍 CIRCUNSCRIPCIÓN</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_circunscripcion', 'No especificada')}</div>
-                </div>
+                    <div class="info-value">{circunscripcion}</div>
+                </div>'''
+            
+            estado_civil = deputy_data.get('informacion_personal_estado_civil', '')
+            if estado_civil and str(estado_civil).lower() != 'nan':
+                info_html += f'''
                 <div class="info-item">
                     <div class="info-label">💑 ESTADO CIVIL</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_estado_civil', 'No especificado')}</div>
-                </div>
+                    <div class="info-value">{estado_civil}</div>
+                </div>'''
+            
+            fecha_eleccion = deputy_data.get('informacion_personal_fecha_eleccion', '')
+            if fecha_eleccion and str(fecha_eleccion).lower() != 'nan':
+                info_html += f'''
                 <div class="info-item">
                     <div class="info-label">📅 FECHA DE ELECCIÓN</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_fecha_eleccion', 'No especificada')}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                    <div class="info-value">{fecha_eleccion}</div>
+                </div>'''
             
-            # Social Media Links as pills
+            info_html += '</div>'
+            st.markdown(info_html, unsafe_allow_html=True)
+            
+            # Social Media Links as pills with emojis
             social_links = {
-                "𝕏": deputy_data.get('twitter'),
-                "Facebook": deputy_data.get('facebook'),
-                "Instagram": deputy_data.get('instagram'),
-                "Sitio Web": deputy_data.get('website')
+                "𝕏": deputy_data.get('twitter'),  # X/Twitter
+                "📘": deputy_data.get('facebook'),  # Facebook
+                "📸": deputy_data.get('instagram'),  # Instagram
+                "🌐": deputy_data.get('website')  # Website
             }
             
-            valid_links = {label: url for label, url in social_links.items() if pd.notna(url)}
+            valid_links = {emoji: url for emoji, url in social_links.items() if pd.notna(url) and str(url).lower() != 'nan'}
             
             if valid_links:
                 st.markdown("### 🌐 Redes Sociales")
                 social_html = '<div class="social-pills">'
-                for label, url in valid_links.items():
-                    social_html += f'<a href="{url}" target="_blank" class="social-pill">{label}</a>'
+                
+                # Map emojis to titles for hover text
+                emoji_titles = {
+                    "𝕏": "X (Twitter)",
+                    "📘": "Facebook", 
+                    "📸": "Instagram",
+                    "🌐": "Sitio Web"
+                }
+                
+                for emoji, url in valid_links.items():
+                    title = emoji_titles.get(emoji, "")
+                    social_html += f'<a href="{url}" target="_blank" class="social-pill" title="{title}">{emoji}</a>'
                 social_html += '</div>'
                 st.markdown(social_html, unsafe_allow_html=True)
         
@@ -551,12 +601,12 @@ def main():
             debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
             total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
             
-            # Financial Overview - Compact metrics
+            # Financial Overview - Compact metrics with exact values
             st.markdown("### 💰 Resumen Financiero")
             metric_cols = st.columns(6)
             metric_cols[0].metric("Ingresos", format_currency(total_salary), help="Total de ingresos anuales declarados")
             metric_cols[1].metric("IRPF", format_currency(irpf), help="Impuesto sobre la renta pagado")
-            metric_cols[2].metric("Tipo", f"{tax_rate:.1f}%", help="Tipo impositivo efectivo")
+            metric_cols[2].metric("Tipo", f"{tax_rate:.2f}%", help="Tipo impositivo efectivo")
             metric_cols[3].metric("Inmuebles", str(properties_count), help="Número de propiedades")
             metric_cols[4].metric("Vehículos", str(vehicles_count), help="Número de vehículos")
             metric_cols[5].metric("Deudas", format_currency(total_debt), help="Deuda total pendiente")
@@ -575,7 +625,11 @@ def main():
                     if salaries:
                         for i, salary in enumerate(salaries):
                             if isinstance(salary, dict):
-                                with st.expander(f"💰 {salary.get('concepto', f'Fuente de Ingresos #{i+1}')}"):
+                                concepto = salary.get('concepto', '')
+                                if not concepto or str(concepto).lower() == 'nan':
+                                    concepto = f'Fuente de Ingresos #{i+1}'
+                                
+                                with st.expander(f"💰 {concepto}"):
                                     amount = extract_currency_value(salary.get('euros'))
                                     display_amount = format_currency_full(amount)
                                     if "mensual" in str(salary.get('euros', '')).lower():
@@ -590,8 +644,14 @@ def main():
                     if dividends:
                         for div in dividends:
                             if isinstance(div, dict):
-                                with st.expander(f"📊 {div.get('concepto', 'Inversión')}"):
-                                    st.markdown(f"**Rendimientos:** {format_currency_full(extract_currency_value(div.get('euros')))}")
+                                concepto = div.get('concepto', '')
+                                if not concepto or str(concepto).lower() == 'nan':
+                                    concepto = 'Inversión'
+                                
+                                with st.expander(f"📊 {concepto}"):
+                                    rendimientos = extract_currency_value(div.get('euros'))
+                                    if rendimientos > 0:
+                                        st.markdown(f"**Rendimientos:** {format_currency_full(rendimientos)}")
                     else:
                         st.info("No se han declarado rentas del capital")
             
@@ -605,9 +665,17 @@ def main():
                         for i, prop in enumerate(urban):
                             if isinstance(prop, dict):
                                 with st.expander(f"🏢 Inmueble #{i+1}"):
-                                    st.markdown(f"**Tipo:** {prop.get('clase_y_caracteristicas', 'Propiedad')}")
-                                    st.markdown(f"**Ubicación:** {prop.get('situacion', 'No especificada')}")
-                                    st.markdown(f"**Fecha Adquisición:** {prop.get('fecha_adquisicion', 'No especificada')}")
+                                    tipo = prop.get('clase_y_caracteristicas', '')
+                                    if tipo and str(tipo).lower() != 'nan':
+                                        st.markdown(f"**Tipo:** {tipo}")
+                                    
+                                    ubicacion = prop.get('situacion', '')
+                                    if ubicacion and str(ubicacion).lower() != 'nan':
+                                        st.markdown(f"**Ubicación:** {ubicacion}")
+                                    
+                                    fecha = prop.get('fecha_adquisicion', '')
+                                    if fecha and str(fecha).lower() != 'nan':
+                                        st.markdown(f"**Fecha Adquisición:** {fecha}")
                     else:
                         st.info("No se han declarado propiedades")
                     
@@ -616,8 +684,14 @@ def main():
                     if accounts:
                         for i, account in enumerate(accounts):
                             if isinstance(account, dict):
-                                with st.expander(f"🏦 {account.get('descripcion', f'Cuenta #{i+1}')}"):
-                                    st.markdown(f"**Saldo:** {format_currency_full(extract_currency_value(account.get('saldo')))}")
+                                desc = account.get('descripcion', '')
+                                if not desc or str(desc).lower() == 'nan':
+                                    desc = f'Cuenta #{i+1}'
+                                
+                                with st.expander(f"🏦 {desc}"):
+                                    saldo = extract_currency_value(account.get('saldo'))
+                                    if saldo > 0:
+                                        st.markdown(f"**Saldo:** {format_currency_full(saldo)}")
                     else:
                         st.info("No se han declarado cuentas")
                 
@@ -627,8 +701,11 @@ def main():
                     if vehicles:
                         for i, vehicle in enumerate(vehicles):
                             if isinstance(vehicle, dict):
-                                with st.expander(f"🚙 {vehicle.get('descripcion', f'Vehículo #{i+1}')}"):
-                                    st.markdown(f"**Fecha Adquisición:** {vehicle.get('fecha_adquisicion', 'No especificada')}")
+                                desc = vehicle.get('descripcion', f'Vehículo #{i+1}')
+                                with st.expander(f"🚙 {desc}"):
+                                    fecha = vehicle.get('fecha_adquisicion', '')
+                                    if fecha and str(fecha).lower() != 'nan':
+                                        st.markdown(f"**Fecha Adquisición:** {fecha}")
                     else:
                         st.info("No se han declarado vehículos")
             
@@ -640,18 +717,31 @@ def main():
                     
                     for i, debt in enumerate(debts):
                         if isinstance(debt, dict):
-                            with st.expander(f"📄 {debt.get('descripcion', f'Deuda #{i+1}')}"):
+                            desc = debt.get('descripcion', '')
+                            if not desc or str(desc).lower() == 'nan':
+                                desc = f'Deuda #{i+1}'
+                            
+                            with st.expander(f"📄 {desc}"):
                                 col1, col2 = st.columns(2)
                                 with col1:
-                                    st.markdown(f"**Importe Original:** {format_currency_full(extract_currency_value(debt.get('importe_concedido')))}")
-                                    st.markdown(f"**Fecha Concesión:** {debt.get('fecha_concesion', 'No especificada')}")
+                                    importe_original = extract_currency_value(debt.get('importe_concedido'))
+                                    if importe_original > 0:
+                                        st.markdown(f"**Importe Original:** {format_currency_full(importe_original)}")
+                                    
+                                    fecha = debt.get('fecha_concesion', '')
+                                    if fecha and str(fecha).lower() != 'nan':
+                                        st.markdown(f"**Fecha Concesión:** {fecha}")
+                                
                                 with col2:
-                                    st.markdown(f"**Importe Pendiente:** {format_currency_full(extract_currency_value(debt.get('saldo_pendiente')))}")
+                                    importe_pendiente = extract_currency_value(debt.get('saldo_pendiente'))
+                                    if importe_pendiente > 0:
+                                        st.markdown(f"**Importe Pendiente:** {format_currency_full(importe_pendiente)}")
+                                    
                                     original = extract_currency_value(debt.get('importe_concedido'))
                                     pending = extract_currency_value(debt.get('saldo_pendiente'))
                                     if original > 0:
                                         paid_pct = ((original - pending) / original) * 100
-                                        st.markdown(f"**Pagado:** {paid_pct:.1f}%")
+                                        st.markdown(f"**Pagado:** {paid_pct:.2f}%")
                 else:
                     st.success("✅ No se han declarado deudas")
             
@@ -684,10 +774,11 @@ def main():
                     st.plotly_chart(fig_assets, use_container_width=True)
                 
                 with col2:
-                    # Tax Efficiency Gauge
+                    # Tax Efficiency Gauge with exact value
                     fig_tax = go.Figure(go.Indicator(
                         mode="gauge+number",
                         value=tax_rate,
+                        number={'suffix': "%", 'valueformat': ".2f"},
                         title={'text': "Tipo Impositivo Efectivo"},
                         domain={'x': [0, 1], 'y': [0, 1]},
                         gauge={
