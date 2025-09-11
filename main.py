@@ -825,17 +825,29 @@ def show_disclaimer():
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Accept button
+        # Centered Accept button and message
         col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
         with col_btn2:
             if st.button("✅ ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
                 st.session_state.disclaimer_accepted = True
                 st.rerun()
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("❌ NO ACEPTO - SALIR", use_container_width=True):
-                st.error("Para usar esta aplicación debe aceptar los términos y condiciones.")
-                st.stop()
+
+            st.markdown(
+                """
+                <p style="
+                    margin-top: 1rem; 
+                    padding: 1rem; 
+                    background: rgba(239, 68, 68, 0.1); 
+                    border-radius: 10px; 
+                    border-left: 4px solid #ef4444;
+                    text-align: center;
+                    color: #e2e8f0;
+                ">
+                    Para usar esta aplicación debe aceptar los términos y condiciones.
+                </p>
+                """,
+                unsafe_allow_html=True
+            )
 
 def main_app():
     """Main application"""
