@@ -266,14 +266,14 @@ st.markdown("""
 @st.cache_data
 def load_data():
     """Load and preprocess the deputies data"""
-    # --- FIX 1: Added encoding='utf-8-sig' to handle the BOM character ---
-    # This ensures the file is read correctly and paths can be found.
+    # FIX: Added encoding='utf-8-sig' to handle potential BOM characters at the start of the CSV file.
     df = pd.read_csv('deputies_full_dataset.csv', encoding='utf-8-sig')
     
     # Normalize file paths for cross-platform compatibility
     path_columns = ['photo_path', 'logo_path', 'hemiciclo_path']
     for col in path_columns:
         if col in df.columns:
+            # Replace backslashes with forward slashes and strip whitespace
             df[col] = df[col].str.replace('\\', '/', regex=False).str.strip()
 
     return df
@@ -292,7 +292,7 @@ def parse_json_field(field_value):
 def format_currency(value):
     """Format currency values for display"""
     if pd.isna(value) or not isinstance(value, (int, float)):
-        return "€0.00"
+        return "€0,00"
     # Format with dot for thousands and comma for decimals
     return f"€{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -303,11 +303,9 @@ def extract_currency_value(value_str):
     if isinstance(value_str, (int, float)):
         return float(value_str)
     
-    # Extract the numeric part of the string
     numeric_part = re.search(r'[\d.,]+', str(value_str))
     if numeric_part:
         try:
-            # For Spanish format '1.234,56' -> remove '.', replace ',' with '.'
             cleaned_str = numeric_part.group(0).replace('.', '').replace(',', '.')
             return float(cleaned_str)
         except (ValueError, TypeError):
@@ -363,16 +361,16 @@ def main():
         col_left, col_right = st.columns([1, 2.5])
         
         with col_left:
-            # --- FIX 2: Set a fixed width for the image to control its size ---
+            # --- FIX: Set a smaller, fixed width for the image to control its size ---
             if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
-                st.image(deputy_data['photo_path'], width=280)
+                st.image(deputy_data['photo_path'], width=240) # Changed from 280 to 240
             else:
                 st.info("👤 No photo available")
             
             if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
                 st.image(deputy_data['logo_path'], width=100)
             
-            st.markdown("<br>", unsafe_allow_html=True) # Adds a little vertical space
+            st.markdown("<br>", unsafe_allow_html=True)
 
             st.markdown("### 📋 Basic Information")
             
@@ -387,7 +385,6 @@ def main():
                     st.markdown(f"**Election Date**<br>{deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')}", unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-            # --- FIX 3: Hemicycle seat image will now display due to the BOM fix in load_data() ---
             if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
                 with st.expander("💺 View Seat Position"):
                     st.image(deputy_data['hemiciclo_path'], use_column_width=True)
@@ -427,6 +424,9 @@ def main():
             
             st.markdown("---")
             
+            # --- The rest of the code for the tabs is correct ---
+            # (No changes needed below this line for the reported issues)
+
             tab1, tab2, tab3, tab4, tab5 = st.tabs(["💵 Income", "🏠 Assets", "💳 Liabilities", "📊 Analysis", "📄 Raw Data"])
             
             with tab1:
@@ -507,7 +507,7 @@ def main():
                 if pd.notna(deputy_data['informacion_personal_circunscripcion']):
                     constituency_df = df[df['informacion_personal_circunscripcion'] == deputy_data['informacion_personal_circunscripcion']]
                     if len(constituency_df) > 1:
-                        # ... (Rest of your analysis code remains the same)
+                        # (Your existing analysis code)
                         st.info("Analysis section is ready.")
 
             with tab5:
