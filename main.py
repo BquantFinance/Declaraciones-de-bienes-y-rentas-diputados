@@ -318,6 +318,30 @@ def apply_css():
             text-align: center;
             margin-bottom: 2rem;
         }
+
+        .disclaimer-section-title {
+            color: #f59e0b;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-left: 2.5rem;
+            position: relative;
+            font-size: 1.2rem;
+        }
+
+        .disclaimer-section-title::before {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
+        
+        .disclaimer-section-title.nature::before { content: '📋'; }
+        .disclaimer-section-title.disclaimer::before { content: '⚠️'; }
+        .disclaimer-section-title.liability::before { content: '📌'; }
+        .disclaimer-section-title.source::before { content: '✅'; }
+        .disclaimer-section-title.privacy::before { content: '👤'; }
+        .disclaimer-section-title.acceptance::before { content: '⚖️'; }
         
         .disclaimer-text {
             color: #e2e8f0;
@@ -762,13 +786,13 @@ def show_disclaimer():
     with col2:
         st.markdown("""
         <div class="disclaimer-container">
-            <h1 class="disclaimer-title">⚖️ DESCARGO DE RESPONSABILIDAD LEGAL</h1>
+            <h1 class="disclaimer-title">DESCARGO DE RESPONSABILIDAD LEGAL</h1>
             <div class="disclaimer-text">
                 <p><strong>IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN</strong></p>
                 
                 <p>Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.</p>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">📋 NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>
+                <h3 class="disclaimer-section-title nature">NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>
                 <p>La información mostrada en esta Aplicación proviene exclusivamente de:</p>
                 <ul class="disclaimer-list">
                     <li>Declaraciones de bienes y rentas publicadas en el Portal de Transparencia del Congreso de los Diputados</li>
@@ -776,7 +800,7 @@ def show_disclaimer():
                     <li>Documentación oficial de acceso público disponible en www.congreso.es</li>
                 </ul>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">⚠️ DESCARGO DE RESPONSABILIDAD</h3>
+                <h3 class="disclaimer-section-title disclaimer">DESCARGO DE RESPONSABILIDAD</h3>
                 <p><strong>La Aplicación no pertenece, no está vinculada, afiliada, patrocinada, avalada ni autorizada de ninguna manera por el Congreso de los Diputados</strong>, ni por ninguna institución gubernamental o entidad pública española. Es un proyecto independiente desarrollado con fines informativos y de acceso facilitado a información pública.</p>
                 
                 <p>El contenido mostrado se ofrece únicamente con fines informativos, educativos y de consulta pública. Aunque se realizan esfuerzos razonables para garantizar la precisión y actualización de los datos:</p>
@@ -788,7 +812,7 @@ def show_disclaimer():
                     <li>La interpretación o procesamiento automatizado de los datos puede introducir errores involuntarios</li>
                 </ul>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">📌 LIMITACIÓN DE RESPONSABILIDAD</h3>
+                <h3 class="disclaimer-section-title liability">LIMITACIÓN DE RESPONSABILIDAD</h3>
                 <p>Los desarrolladores y operadores de esta Aplicación:</p>
                 <ul class="disclaimer-list">
                     <li>No garantizan la exactitud, integridad, actualidad o idoneidad de la información para ningún propósito particular</li>
@@ -797,17 +821,17 @@ def show_disclaimer():
                     <li>Se reservan el derecho de modificar, suspender o discontinuar el servicio sin previo aviso</li>
                 </ul>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">✅ FUENTE OFICIAL</h3>
+                <h3 class="disclaimer-section-title source">FUENTE OFICIAL</h3>
                 <p><strong>Para la consulta oficial, íntegra, auténtica y legalmente válida de las declaraciones de bienes y rentas de los diputados, se debe acudir directamente a:</strong></p>
                 <p style="text-align: center; font-size: 1.2rem; margin: 1.5rem 0;">
                     <strong>🔗 Portal de Transparencia del Congreso de los Diputados</strong><br>
                     <span style="color: #3b82f6;">www.congreso.es</span>
                 </p>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">👤 PRIVACIDAD Y DATOS PERSONALES</h3>
+                <h3 class="disclaimer-section-title privacy">PRIVACIDAD Y DATOS PERSONALES</h3>
                 <p>Esta Aplicación muestra únicamente información que ya es de dominio público y ha sido publicada oficialmente por el Congreso de los Diputados en cumplimiento de las obligaciones de transparencia establecidas en la legislación española.</p>
                 
-                <h3 style="color: #f59e0b; margin-top: 2rem;">⚖️ ACEPTACIÓN DE TÉRMINOS</h3>
+                <h3 class="disclaimer-section-title acceptance">ACEPTACIÓN DE TÉRMINOS</h3>
                 <p>Al hacer clic en "ACEPTO Y ENTIENDO" y utilizar esta Aplicación, usted reconoce que:</p>
                 <ul class="disclaimer-list">
                     <li>Ha leído y comprendido este descargo de responsabilidad en su totalidad</li>
