@@ -337,14 +337,6 @@ st.markdown("""
     #MainMenu, footer, header { visibility: hidden; }
     .viewerBadge_container__1QSob { display: none; }
     
-    /* Divider */
-    hr {
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
-        margin: 1.5rem 0;
-    }
-    
     /* Loading Animation */
     @keyframes pulse {
         0%, 100% { opacity: 1; }
