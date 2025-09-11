@@ -102,7 +102,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
-    /* Hide Streamlit branding */
     #MainMenu, footer, header { visibility: hidden; }
 
     hr {
@@ -110,7 +109,7 @@ st.markdown("""
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         margin: 2rem 0;
     }
-
+    
     .info-label {
         font-size: 0.8rem;
         color: #9aa0a6;
@@ -119,6 +118,23 @@ st.markdown("""
     .info-value {
         font-size: 0.95rem;
         color: #e8eaed;
+    }
+    
+    /* Custom button for popover */
+    .stButton > button.popover-button {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #9aa0a6;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    .stButton > button.popover-button:hover {
+        background: rgba(88, 101, 242, 0.1);
+        border-color: #5865f2;
+        color: #ffffff;
     }
 
 </style>
@@ -215,45 +231,34 @@ def main():
         col_left, col_right = st.columns([1, 2.5])
         
         with col_left:
-            # FIX: Smaller image size
-            if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
-                st.image(deputy_data['photo_path'], width=220)
-            else:
-                st.info("👤 No photo available")
+            # --- FIX: Compact top row for images ---
+            img_col1, img_col2, img_col3 = st.columns([2,1,1])
+
+            with img_col1:
+                if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
+                    st.image(deputy_data['photo_path']) # No width needed, it will adapt
+                else:
+                    st.info("👤 No photo")
+
+            with img_col2:
+                if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
+                    st.image(deputy_data['logo_path'])
             
+            with img_col3:
+                if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
+                    with st.popover("💺 Seat"):
+                        st.image(deputy_data['hemiciclo_path'], caption="Hemicycle Position")
+
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # FIX: More compact layout with logo next to title
-            info_col1, info_col2 = st.columns([3, 1])
-            with info_col1:
-                st.markdown("### 📋 Basic Information")
-            with info_col2:
-                if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
-                    st.image(deputy_data['logo_path'], width=50)
-
+            st.markdown("### 📋 Basic Information")
             st.markdown('<p class="info-label">Position</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_cargo', 'Deputy')), unsafe_allow_html=True)
             st.markdown('<p class="info-label">Constituency</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_circunscripcion', 'N/A')), unsafe_allow_html=True)
             st.markdown('<p class="info-label">Civil Status</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_estado_civil', 'N/A')), unsafe_allow_html=True)
             st.markdown('<p class="info-label">Election Date</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')), unsafe_allow_html=True)
+            
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # --- TEMPORARY DEBUGGING BLOCK ---
-            # This will help us confirm the path issue for the hemicycle image.
-            # Run the app, select a deputy, and see what this prints.
-            # You can remove this block later.
-            with st.expander("Debug Info (Temporary)"):
-                hemi_path = deputy_data['hemiciclo_path']
-                st.write(f"Path from CSV: `{hemi_path}`")
-                if pd.notna(hemi_path):
-                    st.write(f"Does it exist? `{os.path.exists(hemi_path)}`")
-                else:
-                    st.write("Path is NaN (missing in CSV)")
-            # --- END DEBUGGING BLOCK ---
-
-            if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
-                with st.expander("💺 View Seat Position"):
-                    st.image(deputy_data['hemiciclo_path'], use_column_width=True)
-            
             st.markdown("### 🌐 Social Media")
             social_cols = st.columns(2)
             with social_cols[0]:
@@ -267,15 +272,12 @@ def main():
                 if pd.notna(deputy_data['website']):
                     st.link_button("🌐 Website", deputy_data['website'])
 
-        # (The rest of the code for the right column and tabs is unchanged and correct)
+        # (The rest of the code for the right column and tabs is unchanged)
         with col_right:
             st.markdown(f"## {deputy_data['informacion_personal_nombre_y_apellidos']}")
-            
             st.markdown("### 💰 Financial Overview")
-            
             salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
             total_salary = sum(extract_currency_value(s.get('euros', 0)) for s in salaries if isinstance(s, dict))
-            
             irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
             tax_rate = (irpf / total_salary * 100) if total_salary > 0 else 0
             properties_count = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
@@ -292,14 +294,14 @@ def main():
             
             tab1, tab2, tab3, tab4, tab5 = st.tabs(["💵 Income", "🏠 Assets", "💳 Liabilities", "📊 Analysis", "📄 Raw Data"])
             
+            # (All tab code remains the same)
             with tab1:
                 st.markdown("#### 💼 Income Sources")
                 salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
                 if salaries:
                     for i, salary in enumerate(salaries):
                         if isinstance(salary, dict):
-                            with st.expander(f"Income Source #{i+1}"):
-                                st.markdown(f"**Concept:** {salary.get('concepto', 'Unknown')}")
+                            with st.expander(f"{salary.get('concepto', f'Income Source #{i+1}')}"):
                                 st.markdown(f"**Amount:** {format_currency(extract_currency_value(salary.get('euros')))}")
                 else:
                     st.info("No income sources declared")
@@ -364,13 +366,6 @@ def main():
                                 st.markdown(f"**Pending Amount:** {format_currency(extract_currency_value(debt.get('saldo_pendiente')))}")
                 else:
                     st.success("✅ No debts declared")
-
-            with tab4:
-                # Analysis tab code...
-                pass
-            with tab5:
-                # Raw data tab code...
-                pass
 
 if __name__ == "__main__":
     main()
