@@ -177,15 +177,34 @@ st.markdown("""
     }
     
     /* Images */
-    .stImage {
+    .stImage > img {
         border-radius: 12px;
-        overflow: hidden;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     
     /* Columns spacing */
     [data-testid="column"] {
         padding: 0 0.5rem;
+    }
+
+    /* --- UPDATE: Custom container for basic info --- */
+    .info-container {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .info-container .stMarkdown {
+        font-size: 0.9rem;
+    }
+    .info-container strong {
+        color: #9aa0a6;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 0.1rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
     }
     
     /* Hide Streamlit branding */
@@ -273,28 +292,25 @@ def format_currency(value):
     if pd.isna(value):
         return "€0"
     if isinstance(value, (int, float)):
-        return f"€{value:,.0f}"
-    if isinstance(value, str):
-        numeric = re.findall(r'[\d,\.]+', value)
-        if numeric:
-            try:
-                num = float(numeric[0].replace(',', '').replace('.', '').replace('€', ''))
-                return f"€{num:,.0f}"
-            except:
-                return str(value)
+        return f"€{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     return str(value)
 
+# --- FIX: Corrected currency parsing logic ---
 def extract_currency_value(value_str):
-    """Extract numeric value from currency string"""
+    """Extract numeric value from currency string, handling Spanish format."""
     if pd.isna(value_str) or value_str == '':
         return 0
     if isinstance(value_str, (int, float)):
         return float(value_str)
-    numeric = re.findall(r'[\d,\.]+', str(value_str))
-    if numeric:
+    
+    # Extract the numeric part of the string
+    numeric_part = re.search(r'[\d.,]+', str(value_str))
+    if numeric_part:
         try:
-            return float(numeric[0].replace(',', '').replace('.', ''))
-        except:
+            # For Spanish format '1.234,56' -> remove '.', replace ',' with '.'
+            cleaned_str = numeric_part.group(0).replace('.', '').replace(',', '.')
+            return float(cleaned_str)
+        except (ValueError, TypeError):
             return 0
     return 0
 
@@ -369,16 +385,20 @@ def main():
             if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
                 st.image(deputy_data['logo_path'], width=100)
             
-            # Basic info
             st.markdown("### 📋 Basic Information")
             
-            info_container = st.container()
-            with info_container:
-                st.markdown(f"**Position:** {deputy_data.get('informacion_personal_cargo', 'Deputy')}")
-                st.markdown(f"**Constituency:** {deputy_data.get('informacion_personal_circunscripcion', 'N/A')}")
-                st.markdown(f"**Civil Status:** {deputy_data.get('informacion_personal_estado_civil', 'N/A')}")
-                st.markdown(f"**Election Date:** {deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')}")
-            
+            # --- UPDATE: More compact layout for basic info ---
+            with st.container():
+                st.markdown('<div class="info-container">', unsafe_allow_html=True)
+                col_info1, col_info2 = st.columns(2)
+                with col_info1:
+                    st.markdown(f"**Position**<br>{deputy_data.get('informacion_personal_cargo', 'Deputy')}", unsafe_allow_html=True)
+                    st.markdown(f"**Civil Status**<br>{deputy_data.get('informacion_personal_estado_civil', 'N/A')}", unsafe_allow_html=True)
+                with col_info2:
+                    st.markdown(f"**Constituency**<br>{deputy_data.get('informacion_personal_circunscripcion', 'N/A')}", unsafe_allow_html=True)
+                    st.markdown(f"**Election Date**<br>{deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')}", unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
             # Hemicycle seat
             if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
                 with st.expander("💺 View Seat Position"):
@@ -445,7 +465,7 @@ def main():
                         if isinstance(salary, dict):
                             with st.expander(f"Income Source #{i+1}"):
                                 st.markdown(f"**Concept:** {salary.get('concepto', 'Unknown')}")
-                                st.markdown(f"**Amount:** {salary.get('euros', 'N/A')}")
+                                st.markdown(f"**Amount:** {format_currency(extract_currency_value(salary.get('euros')))}")
                 else:
                     st.info("No income sources declared")
                 
@@ -456,7 +476,7 @@ def main():
                     for div in dividends:
                         if isinstance(div, dict):
                             with st.expander(div.get('concepto', 'Dividend')):
-                                st.markdown(f"**Amount:** {div.get('euros', 'N/A')}")
+                                st.markdown(f"**Amount:** {format_currency(extract_currency_value(div.get('euros')))}")
             
             with tab2:
                 col1, col2 = st.columns(2)
@@ -495,7 +515,7 @@ def main():
                         if isinstance(account, dict):
                             with st.expander(f"Account #{i+1}"):
                                 st.markdown(f"**Description:** {account.get('descripcion', 'Account')}")
-                                st.markdown(f"**Balance:** {account.get('saldo', 'N/A')}")
+                                st.markdown(f"**Balance:** {format_currency(extract_currency_value(account.get('saldo')))}")
                 else:
                     st.info("No accounts declared")
             
@@ -510,8 +530,8 @@ def main():
                             total_debt += pending
                             with st.expander(f"{debt.get('descripcion', f'Debt #{i+1}')}"):
                                 st.markdown(f"**Grant Date:** {debt.get('fecha_concesion', 'N/A')}")
-                                st.markdown(f"**Original Amount:** {debt.get('importe_concedido', 'N/A')}")
-                                st.markdown(f"**Pending Amount:** {debt.get('saldo_pendiente', 'N/A')}")
+                                st.markdown(f"**Original Amount:** {format_currency(extract_currency_value(debt.get('importe_concedido')))}")
+                                st.markdown(f"**Pending Amount:** {format_currency(pending)}")
                     
                     st.metric("Total Debt", format_currency(total_debt))
                 else:
@@ -604,9 +624,9 @@ def main():
                         
                         # Percentile ranking
                         all_irpf = df['irpf_cantidad_pagada'].dropna()
-                        percentile = (all_irpf < deputy_irpf).sum() / len(all_irpf) * 100
-                        
-                        st.info(f"📊 **Tax Contribution Ranking:** This deputy's IRPF payment is in the **{percentile:.0f}th percentile** among all deputies")
+                        if len(all_irpf) > 0:
+                            percentile = (all_irpf < deputy_irpf).sum() / len(all_irpf) * 100
+                            st.info(f"📊 **Tax Contribution Ranking:** This deputy's IRPF payment is in the **{percentile:.0f}th percentile** among all deputies")
                         
                         # Additional statistics
                         stats_cols = st.columns(3)
@@ -616,7 +636,8 @@ def main():
                             avg_properties = constituency_df.apply(lambda x: len(parse_json_field(x['bienes_patrimoniales_inmuebles_urbanos'])), axis=1).mean()
                             st.metric("Avg Properties (Constituency)", f"{avg_properties:.1f}")
                         with stats_cols[2]:
-                            st.metric("National Ranking", f"#{int((1-percentile/100) * len(df))}")
+                            if len(all_irpf) > 0:
+                                st.metric("National Ranking", f"#{int((1-percentile/100) * len(df))}")
             
             with tab5:
                 st.markdown("#### 📄 Raw Declaration Data")
