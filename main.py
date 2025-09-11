@@ -6,6 +6,7 @@ import plotly.express as px
 from datetime import datetime
 import re
 import os
+import base64 # Import base64 for image encoding
 
 # Page configuration
 st.set_page_config(
@@ -19,7 +20,7 @@ st.set_page_config(
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 
-# Enhanced CSS with glassmorphism
+# Enhanced CSS with glassmorphism (problematic animation removed)
 def apply_css():
     st.markdown("""
     <style>
@@ -66,18 +67,6 @@ def apply_css():
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.3),
                 inset 0 0 30px rgba(255, 255, 255, 0.05);
-            animation: fadeInUp 0.8s ease-out;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
         
         .disclaimer-title {
@@ -146,15 +135,6 @@ def apply_css():
             font-weight: 500 !important;
         }
         
-        /* Glassmorphism cards */
-        .stSelectbox > div > div,
-        .stTextInput > div > div > input,
-        div[data-testid="stHorizontalBlock"],
-        div[data-testid="column"] {
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-        }
-        
         /* Info Grid with glassmorphism */
         .info-grid {
             display: grid;
@@ -164,9 +144,7 @@ def apply_css():
         }
         
         .info-item {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.1) 0%, 
-                rgba(118, 75, 162, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             padding: 1rem;
@@ -178,33 +156,11 @@ def apply_css():
             overflow: hidden;
         }
         
-        .info-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.1), 
-                transparent);
-            transition: left 0.5s ease;
-        }
-        
-        .info-item:hover::before {
-            left: 100%;
-        }
-        
         .info-item:hover {
             transform: translateY(-5px) scale(1.02);
             border-color: rgba(102, 126, 234, 0.4);
-            box-shadow: 
-                0 12px 40px rgba(102, 126, 234, 0.3),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.15) 0%, 
-                rgba(118, 75, 162, 0.08) 100%);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.08) 100%);
         }
         
         .info-label {
@@ -214,24 +170,12 @@ def apply_css():
             letter-spacing: 1px;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            opacity: 0.8;
-            transition: opacity 0.3s ease;
-        }
-        
-        .info-item:hover .info-label {
-            opacity: 1;
-            color: #b4bdc8;
         }
         
         .info-value {
             font-size: 1.1rem;
             color: #ffffff;
             font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .info-item:hover .info-value {
-            transform: translateX(5px);
         }
         
         /* Enhanced Metrics with glassmorphism */
@@ -244,36 +188,11 @@ def apply_css():
             border-radius: 16px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        div[data-testid="metric-container"]::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(
-                circle,
-                rgba(102, 126, 234, 0.1) 0%,
-                transparent 70%
-            );
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        
-        div[data-testid="metric-container"]:hover::after {
-            opacity: 1;
         }
         
         div[data-testid="metric-container"]:hover {
             transform: translateY(-8px) scale(1.05);
-            box-shadow: 
-                0 20px 50px rgba(102, 126, 234, 0.4),
-                inset 0 0 30px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.4), inset 0 0 30px rgba(255, 255, 255, 0.1);
             border-color: rgba(102, 126, 234, 0.5);
             background: rgba(255, 255, 255, 0.08);
         }
@@ -283,12 +202,6 @@ def apply_css():
             font-size: 0.75rem !important;
             text-transform: uppercase !important;
             letter-spacing: 1px !important;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-        
-        div[data-testid="metric-container"]:hover label {
-            opacity: 1;
         }
         
         div[data-testid="metric-container"] div[data-testid="metric-value"] {
@@ -296,12 +209,6 @@ def apply_css():
             font-size: 1.8rem !important;
             font-weight: 600 !important;
             text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-            transition: all 0.3s ease;
-        }
-        
-        div[data-testid="metric-container"]:hover div[data-testid="metric-value"] {
-            transform: scale(1.1);
-            text-shadow: 0 0 30px rgba(102, 126, 234, 0.7);
         }
         
         /* Glassmorphic Tabs */
@@ -313,7 +220,6 @@ def apply_css():
             border-radius: 12px;
             padding: 6px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
         .stTabs [data-baseweb="tab"] {
@@ -323,49 +229,23 @@ def apply_css():
             border: none;
             border-radius: 8px;
             color: #94a3b8;
-            font-size: 0.85rem;
             font-weight: 500;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stTabs [data-baseweb="tab"]::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
-            transform: translate(-50%, -50%);
-            transition: width 0.3s ease, height 0.3s ease;
-        }
-        
-        .stTabs [data-baseweb="tab"]:hover::before {
-            width: 100%;
-            height: 100%;
         }
         
         .stTabs [data-baseweb="tab"]:hover {
             color: #ffffff;
             background: rgba(102, 126, 234, 0.1);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
         
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.2) 0%, 
-                rgba(118, 75, 162, 0.2) 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
             color: #ffffff !important;
             font-weight: 600;
-            box-shadow: 
-                inset 0 2px 4px rgba(255, 255, 255, 0.1),
-                0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
-        /* Enhanced Social Media Pills */
+        /* Social Media Pills */
         .social-pills {
             display: flex;
             gap: 1rem;
@@ -385,39 +265,16 @@ def apply_css():
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .social-pill::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
-            transform: translate(-50%, -50%);
-            transition: width 0.4s ease, height 0.4s ease;
-        }
-        
-        .social-pill:hover::before {
-            width: 120%;
-            height: 120%;
+            transition: all 0.3s ease;
         }
         
         .social-pill:hover {
             background: rgba(102, 126, 234, 0.2);
             transform: scale(1.2) rotate(10deg);
-            box-shadow: 
-                0 8px 25px rgba(102, 126, 234, 0.4),
-                inset 0 0 15px rgba(255, 255, 255, 0.2);
             border-color: rgba(102, 126, 234, 0.5);
         }
         
-        /* Enhanced Input Fields with glassmorphism */
+        /* Input Fields */
         .stSelectbox > div > div, 
         .stTextInput > div > div > input {
             background: rgba(255, 255, 255, 0.05) !important;
@@ -426,220 +283,64 @@ def apply_css():
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             border-radius: 10px !important;
             color: white !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s ease !important;
         }
         
         .stSelectbox > div > div:hover, 
         .stTextInput > div > div > input:hover {
             border-color: rgba(102, 126, 234, 0.5) !important;
-            box-shadow: 
-                0 0 0 3px rgba(102, 126, 234, 0.1),
-                0 8px 25px rgba(102, 126, 234, 0.2) !important;
-            transform: translateY(-2px);
             background: rgba(255, 255, 255, 0.08) !important;
         }
         
-        .stSelectbox > div > div:focus, 
-        .stTextInput > div > div > input:focus {
-            border-color: rgba(102, 126, 234, 0.7) !important;
-            box-shadow: 
-                0 0 0 4px rgba(102, 126, 234, 0.2),
-                0 10px 30px rgba(102, 126, 234, 0.3) !important;
-            background: rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        /* Enhanced Alert Messages */
-        .stSuccess, .stWarning, .stError, .stInfo {
+        /* Alert Messages */
+        .stAlert {
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
+            border-left-width: 4px;
+            border-left-style: solid;
         }
+        .stSuccess { background: rgba(16, 185, 129, 0.1); border-left-color: #10b981; }
+        .stWarning { background: rgba(245, 158, 11, 0.1); border-left-color: #f59e0b; }
+        .stError   { background: rgba(239, 68, 68, 0.1); border-left-color: #ef4444; }
+        .stInfo    { background: rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; }
         
-        .stSuccess:hover, .stWarning:hover, .stError:hover, .stInfo:hover {
-            transform: translateX(10px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .stSuccess {
-            background: linear-gradient(135deg, 
-                rgba(16, 185, 129, 0.1) 0%, 
-                rgba(16, 185, 129, 0.05) 100%);
-            border-left: 4px solid #10b981;
-        }
-        
-        .stWarning {
-            background: linear-gradient(135deg, 
-                rgba(245, 158, 11, 0.1) 0%, 
-                rgba(245, 158, 11, 0.05) 100%);
-            border-left: 4px solid #f59e0b;
-        }
-        
-        .stError {
-            background: linear-gradient(135deg, 
-                rgba(239, 68, 68, 0.1) 0%, 
-                rgba(239, 68, 68, 0.05) 100%);
-            border-left: 4px solid #ef4444;
-        }
-        
-        .stInfo {
-            background: linear-gradient(135deg, 
-                rgba(59, 130, 246, 0.1) 0%, 
-                rgba(59, 130, 246, 0.05) 100%);
-            border-left: 4px solid #3b82f6;
-        }
-        
-        /* Interactive buttons */
+        /* Buttons */
         .stButton > button {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.1) 0%, 
-                rgba(118, 75, 162, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stButton > button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: radial-gradient(circle, 
-                rgba(255, 255, 255, 0.2) 0%, 
-                transparent 70%);
-            transform: translate(-50%, -50%);
-            transition: width 0.5s ease, height 0.5s ease;
-        }
-        
-        .stButton > button:hover::before {
-            width: 300%;
-            height: 300%;
+            transition: all 0.3s ease;
         }
         
         .stButton > button:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 
-                0 10px 30px rgba(102, 126, 234, 0.3),
-                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
             border-color: rgba(102, 126, 234, 0.5);
         }
         
-        /* Accept button special styling */
         .stButton > button[data-testid="baseButton-primary"] {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            font-size: 1.2rem;
-            padding: 1rem 3rem;
-            font-weight: 600;
-            letter-spacing: 1px;
         }
         
         .stButton > button[data-testid="baseButton-primary"]:hover {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            transform: translateY(-3px) scale(1.05);
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
         }
         
-        /* Enhanced text highlighting */
-        strong {
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            transition: all 0.3s ease;
-            position: relative;
-            display: inline-block;
-        }
-        
-        strong:hover {
-            text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-            transform: scale(1.05);
-        }
-        
-        /* Smooth scrollbar */
-        ::-webkit-scrollbar {
-            width: 12px;
-            height: 12px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.4) 0%, 
-                rgba(118, 75, 162, 0.4) 100%);
-            border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, 
-                rgba(102, 126, 234, 0.6) 0%, 
-                rgba(118, 75, 162, 0.6) 100%);
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, rgba(102, 126, 234, 0.4) 0%, rgba(118, 75, 162, 0.4) 100%); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%); }
         
         /* Hide Streamlit branding */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
         
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .social-pill:hover {
-                transform: scale(1.1) rotate(0deg);
-            }
-            
-            .disclaimer-container {
-                padding: 2rem;
-                margin: 1rem;
-            }
-        }
-        
-        /* Performance optimizations */
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        div[data-testid="stVerticalBlock"] > div {
-            animation: fadeIn 0.5s ease-out;
-            animation-fill-mode: both;
-        }
-        
-        div[data-testid="stVerticalBlock"] > div:nth-child(1) { animation-delay: 0.1s; }
-        div[data-testid="stVerticalBlock"] > div:nth-child(2) { animation-delay: 0.2s; }
-        div[data-testid="stVerticalBlock"] > div:nth-child(3) { animation-delay: 0.3s; }
-        div[data-testid="stVerticalBlock"] > div:nth-child(4) { animation-delay: 0.4s; }
     </style>
     """, unsafe_allow_html=True)
 
