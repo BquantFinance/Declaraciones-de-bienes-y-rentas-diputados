@@ -205,7 +205,8 @@ def load_data():
     """Load and preprocess the dataset."""
     df = pd.read_csv('deputies_full_dataset.csv')
     # Keep only the latest declaration for each deputy_id
-    df['declaration_date'] = pd.to_datetime(df['source_file'].str.extract(r'(\d{8})\.json$'), errors='coerce')
+    # Fix: Extract returns a DataFrame, we need to select the first column [0]
+    df['declaration_date'] = pd.to_datetime(df['source_file'].str.extract(r'(\d{8})\.json$')[0], errors='coerce')
     df = df.sort_values('declaration_date', ascending=False).drop_duplicates('deputy_id', keep='first')
     df['informacion_personal_nombre_y_apellidos'] = df['informacion_personal_nombre_y_apellidos'].fillna("Nombre no disponible")
     return df.sort_values('informacion_personal_nombre_y_apellidos')
