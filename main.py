@@ -741,7 +741,7 @@ def show_disclaimer():
         
         st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN**")
         st.write(
-            'Esta aplicación web de consulta de información pública recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
+            'Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
         )
 
         st.markdown('<h3 class="disclaimer-section-title">📋 NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>', unsafe_allow_html=True)
@@ -986,56 +986,26 @@ def main_app():
         with col_right:
             st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
             
-            # Calculate metrics
-            salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
-            total_salary = sum(extract_currency_value(s.get('euros', 0)) for s in salaries if isinstance(s, dict))
-            
-            if total_salary == 0:
-                salary_text = str(deputy_data.get('rentas_percibidas_percepciones_salariales', ''))
-                if "mensual" in salary_text.lower():
-                    monthly_salary = extract_currency_value(salary_text)
-                    total_salary = monthly_salary * 12
-            
+            # Key metrics directly from the data (no calculations)
+            st.markdown("### 📊 Datos Clave de la Declaración")
+            col1, col2, col3, col4 = st.columns(4)
+
             irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
-            tax_rate = (irpf / total_salary * 100) if total_salary > 0 else 0
+            col1.metric("IRPF Pagado", format_currency(irpf))
             
-            # Count all properties
             urban_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
-            rustic_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_rusticos']))
-            total_properties = urban_properties + rustic_properties
-            
+            rustic_properties = len(parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
+            col2.metric("Inmuebles", urban_properties + rustic_properties)
+
             vehicles_count = len(parse_json_field(deputy_data['vehiculos']))
+            col3.metric("Vehículos", vehicles_count)
+            
             debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
-            total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
-            
-            # Financial summary
-            st.markdown("### 💰 Resumen Financiero")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.markdown("**💵 Ingresos**")
-                st.markdown(f"# {format_currency(total_salary)}")
-                st.markdown(f"IRPF: **{format_currency(irpf)}**")
-                st.markdown(f"Tipo: **{tax_rate:.2f}%**")
-            
-            with col2:
-                st.markdown("**🏠 Patrimonio**")
-                st.markdown(f"# {total_properties + vehicles_count}")
-                st.markdown(f"Inmuebles: **{total_properties}**")
-                st.markdown(f"Vehículos: **{vehicles_count}**")
-            
-            with col3:
-                st.markdown("**💳 Deudas**")
-                st.markdown(f"# {format_currency(total_debt)}")
-                if total_debt > 0:
-                    st.markdown(f"Activas: **{len(debts)}**")
-                else:
-                    st.markdown("*Sin deudas*")
-            
+            col4.metric("Deudas", len(debts))
+
             st.markdown("---")
             
-            # Tabs with all information (removed Análisis tab)
+            # Tabs with all information
             tabs = st.tabs([
                 "💵 Ingresos", 
                 "🏠 Inmuebles", 
@@ -1050,10 +1020,7 @@ def main_app():
             with tabs[0]:
                 st.markdown("#### 💵 Todas las Fuentes de Ingresos")
                 
-                if total_salary > 0:
-                    st.success(f"💰 **Total Anual: {format_currency_full(total_salary)}**")
-                    if irpf > 0:
-                        st.info(f"📋 **IRPF: {format_currency_full(irpf)}** ({tax_rate:.2f}%)")
+                st.info(f"📋 **IRPF Pagado (Declarado): {format_currency_full(irpf)}**")
                 
                 col1, col2 = st.columns(2)
                 
@@ -1068,13 +1035,7 @@ def main_app():
                                     concepto = f'Ingreso #{i+1}'
                                 
                                 amount = extract_currency_value(salary.get('euros'))
-                                if amount > 100000:
-                                    st.error(f"💰 **{concepto}**")
-                                elif amount > 50000:
-                                    st.warning(f"💰 **{concepto}**")
-                                else:
-                                    st.info(f"💰 **{concepto}**")
-                                
+                                st.info(f"💰 **{concepto}**")
                                 st.markdown(f"→ **{format_currency_full(amount)}**")
                     else:
                         st.info("Sin salarios declarados")
@@ -1207,7 +1168,7 @@ def main_app():
                     if accounts:
                         total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
                         if total_accounts > 0:
-                            st.success(f"💰 **Total: {format_currency_full(total_accounts)}**")
+                            st.success(f"💰 **Total en cuentas: {format_currency_full(total_accounts)}**")
                         
                         for account in accounts:
                             if isinstance(account, dict):
@@ -1274,6 +1235,7 @@ def main_app():
             # TAB 6: DEUDAS
             with tabs[5]:
                 st.markdown("#### 💸 Deudas y Obligaciones")
+                total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
                 if debts:
                     st.error(f"💰 **Total Pendiente: {format_currency_full(total_debt)}**")
                     
@@ -1301,11 +1263,8 @@ def main_app():
                                     st.markdown(f"Pendiente: **{format_currency_full(pending)}**")
                                 if original > 0 and pending > 0:
                                     paid_pct = ((original - pending) / original) * 100
-                                    if paid_pct > 50:
-                                        st.success(f"✅ Pagado: {paid_pct:.1f}%")
-                                    else:
-                                        st.warning(f"⏳ Pagado: {paid_pct:.1f}%")
-                            
+                                    st.progress(int(paid_pct), text=f"Pagado: {paid_pct:.1f}%")
+
                             st.markdown("---")
                 else:
                     st.success("✅ No se han declarado deudas")
@@ -1336,7 +1295,7 @@ def main_app():
     st.markdown(
         """
         <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
         </div>
         """,
         unsafe_allow_html=True
