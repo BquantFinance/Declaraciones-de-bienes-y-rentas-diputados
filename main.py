@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import re
-import plotly.graph_objects as go
 from datetime import datetime
 
 # --- PAGE CONFIGURATION ---
@@ -40,18 +39,12 @@ def format_currency(value):
     """Format number as currency."""
     if pd.isna(value) or not isinstance(value, (int, float)):
         return "No declarado"
-    return f"{value:,.2f} €"
-
-def get_currency_color(value):
-    """Get color based on currency value."""
-    if value > 100000:
-        return "#00ff88"
-    elif value > 50000:
-        return "#66b3ff"
-    elif value > 10000:
-        return "#ffd700"
+    if value > 1000000:
+        return f"💎 {value:,.2f} €"
+    elif value > 100000:
+        return f"⭐ {value:,.2f} €"
     else:
-        return "#ff6b6b"
+        return f"{value:,.2f} €"
 
 # --- DATA LOADING ---
 @st.cache_data
@@ -61,7 +54,6 @@ def load_data():
         df = pd.read_csv('deputies_full_dataset.csv')
         
         if df.empty:
-            st.error("❌ El archivo de datos está vacío")
             return pd.DataFrame()
         
         if 'source_file' in df.columns:
@@ -78,590 +70,215 @@ def load_data():
         return df
         
     except FileNotFoundError:
-        st.error("❌ No se encontró el archivo 'deputies_full_dataset.csv'")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"❌ Error al cargar los datos: {str(e)}")
+        st.error(f"Error: {str(e)}")
         return pd.DataFrame()
 
-# --- STUNNING CSS DESIGN ---
-def inject_css():
-    st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Poppins', sans-serif;
-        }
-        
-        /* Animated Background */
-        .stApp {
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* Floating particles effect */
-        .stApp::before {
-            content: '';
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
-            animation: float 20s ease-in-out infinite;
-            pointer-events: none;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-        
-        /* Main Header - Ultra Premium */
-        .hero-container {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 30px;
-            padding: 50px;
-            margin: 0 0 40px 0;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.3),
-                inset 0 1px 1px rgba(255, 255, 255, 0.2),
-                0 0 100px rgba(139, 92, 246, 0.1);
-        }
-        
-        .hero-container::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #8b5cf6, #ec4899, #3b82f6, #8b5cf6);
-            border-radius: 30px;
-            opacity: 0.3;
-            z-index: -1;
-            animation: borderRotate 4s linear infinite;
-        }
-        
-        @keyframes borderRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .hero-title {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, #ffffff 0%, #8b5cf6 25%, #ec4899 50%, #3b82f6 75%, #ffffff 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: textShine 3s linear infinite;
-            text-align: center;
-            margin: 0;
-            letter-spacing: -0.02em;
-            text-transform: uppercase;
-        }
-        
-        @keyframes textShine {
-            to { background-position: 200% center; }
-        }
-        
-        .hero-subtitle {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1.2rem;
-            margin-top: 15px;
-            font-weight: 400;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        /* Deputy Name Card */
-        .deputy-card {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15));
-            backdrop-filter: blur(30px) saturate(200%);
-            -webkit-backdrop-filter: blur(30px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 40px;
-            margin: 30px 0;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        
-        .deputy-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 
-                0 30px 60px rgba(139, 92, 246, 0.3),
-                0 0 100px rgba(236, 72, 153, 0.2);
-        }
-        
-        .deputy-name {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin: 0;
-            text-shadow: 
-                0 0 30px rgba(139, 92, 246, 0.5),
-                0 0 60px rgba(236, 72, 153, 0.3);
-            letter-spacing: -0.01em;
-        }
-        
-        .deputy-role {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 10px;
-            font-weight: 500;
-            letter-spacing: 1px;
-        }
-        
-        /* Premium Cards */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 25px;
-            margin: 20px 0;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
-            animation: scanline 3s linear infinite;
-        }
-        
-        @keyframes scanline {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-        
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-3px);
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.2),
-                0 0 30px rgba(139, 92, 246, 0.2);
-            border-color: rgba(139, 92, 246, 0.3);
-        }
-        
-        /* Info Cards with Gradient Borders */
-        .info-card-premium {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.08));
-            border-radius: 20px;
-            padding: 30px;
-            margin: 20px 0;
-            position: relative;
-            border: 1px solid transparent;
-            background-clip: padding-box;
-            transition: all 0.3s ease;
-        }
-        
-        .info-card-premium::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 20px;
-            padding: 1px;
-            background: linear-gradient(135deg, #8b5cf6, #ec4899, #3b82f6);
-            -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0.5;
-        }
-        
-        .info-card-premium:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.2);
-        }
-        
-        /* Data Rows */
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 20px;
-            margin: 12px 0;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05));
-            border-radius: 15px;
-            border-left: 4px solid transparent;
-            border-image: linear-gradient(135deg, #8b5cf6, #ec4899) 1;
-            transition: all 0.3s ease;
-        }
-        
-        .data-row:hover {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
-            transform: translateX(10px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .data-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .data-value {
-            color: #ffffff;
-            font-size: 1.1rem;
-            font-weight: 700;
-            font-family: 'Space Grotesk', monospace;
-        }
-        
-        .data-value-highlight {
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-        }
-        
-        /* Social Media Buttons - Premium */
-        .social-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
-            flex-wrap: wrap;
-        }
-        
-        .social-pill {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 28px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: white !important;
-            text-decoration: none !important;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        
-        .social-pill::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: left 0.5s ease;
-        }
-        
-        .social-pill:hover::before {
-            left: 100%;
-        }
-        
-        .social-pill:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-        
-        .social-facebook {
-            background: linear-gradient(135deg, #1877f2, #0c63d4);
-        }
-        
-        .social-twitter {
-            background: linear-gradient(135deg, #1da1f2, #0c85d0);
-        }
-        
-        .social-instagram {
-            background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
-        }
-        
-        .social-website {
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-        }
-        
-        /* Metrics - Ultra Premium */
-        [data-testid="metric-container"] {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 25px;
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s ease;
-        }
-        
-        [data-testid="metric-container"]:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 
-                0 20px 40px rgba(139, 92, 246, 0.2),
-                0 0 50px rgba(236, 72, 153, 0.1);
-            border-color: rgba(139, 92, 246, 0.4);
-        }
-        
-        [data-testid="metric-container"]::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.1), transparent);
-            animation: pulse 3s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.5); opacity: 0; }
-        }
-        
-        [data-testid="stMetricValue"] {
-            font-size: 2.2rem !important;
-            font-weight: 800 !important;
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-family: 'Space Grotesk', monospace !important;
-        }
-        
-        [data-testid="stMetricLabel"] {
-            color: rgba(255, 255, 255, 0.7) !important;
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        
-        /* Tabs - Premium Style */
-        .stTabs [data-baseweb="tab-list"] {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 20px;
-            padding: 8px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            gap: 10px;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            background: transparent;
-            color: rgba(255, 255, 255, 0.6);
-            border-radius: 15px;
-            padding: 14px 28px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stTabs [data-baseweb="tab"]:hover {
-            background: rgba(139, 92, 246, 0.1);
-            color: white;
-            border-color: rgba(139, 92, 246, 0.3);
-        }
-        
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
-            color: white;
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.2);
-        }
-        
-        /* Sidebar - Premium */
-        section[data-testid="stSidebar"] {
-            background: linear-gradient(180deg, rgba(15, 12, 41, 0.98), rgba(48, 43, 99, 0.98));
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        
-        section[data-testid="stSidebar"] .stButton > button {
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            color: white;
-            border: none;
-            font-weight: 600;
-            border-radius: 15px;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
-        }
-        
-        section[data-testid="stSidebar"] .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
-        }
-        
-        /* Expanders - Premium */
-        .streamlit-expanderHeader {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1)) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            border-radius: 15px !important;
-            padding: 18px 24px !important;
-            font-weight: 600 !important;
-            color: white !important;
-            transition: all 0.3s ease;
-        }
-        
-        .streamlit-expanderHeader:hover {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2)) !important;
-            transform: translateX(5px);
-            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.2);
-        }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            filter: grayscale(50%);
-            opacity: 0.5;
-        }
-        
-        /* Section Headers */
-        .section-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 30px 0 20px 0;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(135deg, #8b5cf6, #ec4899);
-            border-radius: 2px;
-        }
-        
-        /* Premium Badge */
-        .premium-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            background: linear-gradient(135deg, #ffd700, #ffed4e);
-            color: #1a1a2e;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            margin-left: 15px;
-            animation: shine 2s ease-in-out infinite;
-        }
-        
-        @keyframes shine {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        
-        /* Loading Animation */
-        .loading-bar {
-            height: 3px;
-            background: linear-gradient(90deg, #8b5cf6, #ec4899, #8b5cf6);
-            background-size: 200% 100%;
-            animation: loading 2s linear infinite;
-            border-radius: 3px;
-        }
-        
-        @keyframes loading {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 200% 0%; }
-        }
-    </style>
-    """, unsafe_allow_html=True)
+# --- CUSTOM CSS ---
+st.markdown("""
+<style>
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    /* Dark theme base */
+    .stApp {
+        background: linear-gradient(180deg, #0f0f23 0%, #1a1a3e 100%);
+    }
+    
+    /* Custom header */
+    .main-header {
+        background: linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(214, 51, 132, 0.1));
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .main-title {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #5865f2, #d63384);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+    
+    .main-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.2rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Card styles */
+    .custom-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    
+    .deputy-name-card {
+        background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(214, 51, 132, 0.15));
+        border: 1px solid rgba(88, 101, 242, 0.3);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        margin: 2rem 0;
+    }
+    
+    .deputy-name {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+    }
+    
+    .deputy-info {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Social buttons */
+    .social-button {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        margin: 0.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        color: white;
+        font-weight: 600;
+        transition: transform 0.2s;
+    }
+    
+    .social-button:hover {
+        transform: translateY(-2px);
+    }
+    
+    .social-facebook { background: linear-gradient(135deg, #1877f2, #0c63d4); }
+    .social-twitter { background: linear-gradient(135deg, #1da1f2, #0c85d0); }
+    .social-instagram { background: linear-gradient(135deg, #e1306c, #f77737); }
+    .social-website { background: linear-gradient(135deg, #5865f2, #3f51b5); }
+    
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+        border-left: 3px solid #5865f2;
+    }
+    
+    .info-label {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    
+    /* Metrics override */
+    [data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+    
+    [data-testid="stMetricValue"] {
+        color: #5865f2;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 4px;
+        border-radius: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background-color: rgba(88, 101, 242, 0.2);
+        color: white;
+    }
+    
+    /* Sidebar */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(15, 15, 35, 0.95);
+    }
+    
+    /* Text color fixes */
+    .stMarkdown, .stText {
+        color: rgba(255, 255, 255, 0.9);
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- MAIN APP ---
 def main():
-    # Inject CSS
-    inject_css()
-    
-    # Hero Header
-    st.markdown("""
-        <div class="hero-container">
-            <h1 class="hero-title">🏛️ Portal de Transparencia</h1>
-            <p class="hero-subtitle">Congreso de los Diputados de España</p>
-            <div class="loading-bar" style="margin-top: 30px;"></div>
-        </div>
-    """, unsafe_allow_html=True)
-    
     # Load data
     df = load_data()
     
+    # Header
+    st.markdown("""
+        <div class="main-header">
+            <h1 class="main-title">🏛️ Portal de Transparencia</h1>
+            <p class="main-subtitle">Congreso de los Diputados de España</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Check if data is loaded
     if df.empty:
-        st.markdown("""
-            <div class="empty-state">
-                <div class="empty-icon">📁</div>
-                <h2>No hay datos disponibles</h2>
-                <p>Por favor, verifica que el archivo de datos esté disponible.</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.error("⚠️ No se pudo cargar el archivo de datos 'deputies_full_dataset.csv'")
+        st.info("Por favor, asegúrese de que el archivo existe en el directorio del proyecto.")
+        
+        # Show sample structure
+        st.markdown("### 📋 Estructura esperada del archivo CSV:")
+        expected_cols = [
+            "deputy_id",
+            "informacion_personal_nombre_y_apellidos",
+            "informacion_personal_circunscripcion",
+            "informacion_personal_cargo",
+            "informacion_personal_estado_civil",
+            "informacion_personal_fecha_eleccion"
+        ]
+        st.code("\n".join(expected_cols))
         return
+    
+    # Show data info
+    st.success(f"✅ Datos cargados correctamente: {len(df)} diputados encontrados")
     
     # Sidebar
     with st.sidebar:
-        st.markdown("""
-            <div style="text-align: center; padding: 30px 0;">
-                <h2 style="color: #8b5cf6; font-weight: 800;">🎯 Panel de Control</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown("## 🎯 Panel de Control")
         st.markdown("---")
         
-        # Search with icon
-        search = st.text_input("🔍 **Buscar diputado**", placeholder="Escribe un nombre...")
+        # Search
+        search = st.text_input("🔍 Buscar diputado", "")
         
-        # Filter
+        # Filter by constituency
         if 'informacion_personal_circunscripcion' in df.columns:
-            constituencies = ["Todas las circunscripciones"] + sorted(df['informacion_personal_circunscripcion'].dropna().unique().tolist())
-            selected_constituency = st.selectbox("📍 **Filtrar por circunscripción**", constituencies)
+            constituencies = ["Todas"] + sorted(df['informacion_personal_circunscripcion'].dropna().unique().tolist())
+            selected_constituency = st.selectbox("📍 Circunscripción", constituencies)
         else:
-            selected_constituency = "Todas las circunscripciones"
+            selected_constituency = "Todas"
         
         # Apply filters
         filtered_df = df.copy()
@@ -673,40 +290,32 @@ def main():
                 )
             ]
         
-        if selected_constituency != "Todas las circunscripciones" and 'informacion_personal_circunscripcion' in df.columns:
+        if selected_constituency != "Todas" and 'informacion_personal_circunscripcion' in df.columns:
             filtered_df = filtered_df[
                 filtered_df['informacion_personal_circunscripcion'] == selected_constituency
             ]
         
         if filtered_df.empty:
-            st.error("❌ No se encontraron resultados")
+            st.error("No se encontraron resultados")
             return
         
         # Deputy selector
         st.markdown("---")
-        
         if 'informacion_personal_nombre_y_apellidos' in filtered_df.columns:
             deputy_names = filtered_df['informacion_personal_nombre_y_apellidos'].tolist()
-            selected_deputy = st.selectbox("👤 **Seleccionar Diputado/a**", deputy_names)
+            selected_deputy = st.selectbox("👤 Seleccionar Diputado/a", deputy_names)
         else:
-            st.error("Error en los datos")
+            st.error("No se encontró la columna de nombres")
             return
         
         # Statistics
         st.markdown("---")
-        st.markdown("### 📊 **Estadísticas**")
+        st.markdown("### 📊 Estadísticas")
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Total", f"{len(df):,}")
+            st.metric("Total", len(df))
         with col2:
-            st.metric("Filtrados", f"{len(filtered_df):,}")
-        
-        # Premium badge
-        st.markdown("""
-            <div style="text-align: center; margin-top: 30px;">
-                <span class="premium-badge">✨ VERSIÓN PREMIUM</span>
-            </div>
-        """, unsafe_allow_html=True)
+            st.metric("Filtrados", len(filtered_df))
     
     # Main content
     if selected_deputy:
@@ -714,32 +323,32 @@ def main():
             filtered_df['informacion_personal_nombre_y_apellidos'] == selected_deputy
         ].iloc[0]
         
-        # Deputy Card
+        # Deputy header
         st.markdown(f"""
-            <div class="deputy-card">
+            <div class="deputy-name-card">
                 <h1 class="deputy-name">{deputy_data.get('informacion_personal_nombre_y_apellidos', 'Nombre no disponible')}</h1>
-                <p class="deputy-role">
+                <p class="deputy-info">
                     {deputy_data.get('informacion_personal_cargo', 'Diputado/a')} • 
                     {deputy_data.get('informacion_personal_circunscripcion', 'España')}
                 </p>
             </div>
         """, unsafe_allow_html=True)
         
-        # Social Media
+        # Social media
         social_html = ""
         if pd.notna(deputy_data.get('facebook')):
-            social_html += f'<a href="{deputy_data.get("facebook")}" target="_blank" class="social-pill social-facebook">📘 Facebook</a>'
+            social_html += f'<a href="{deputy_data.get("facebook")}" target="_blank" class="social-button social-facebook">📘 Facebook</a>'
         if pd.notna(deputy_data.get('twitter')):
-            social_html += f'<a href="{deputy_data.get("twitter")}" target="_blank" class="social-pill social-twitter">🐦 Twitter</a>'
+            social_html += f'<a href="{deputy_data.get("twitter")}" target="_blank" class="social-button social-twitter">🐦 Twitter</a>'
         if pd.notna(deputy_data.get('instagram')):
-            social_html += f'<a href="{deputy_data.get("instagram")}" target="_blank" class="social-pill social-instagram">📸 Instagram</a>'
+            social_html += f'<a href="{deputy_data.get("instagram")}" target="_blank" class="social-button social-instagram">📸 Instagram</a>'
         if pd.notna(deputy_data.get('website')):
-            social_html += f'<a href="{deputy_data.get("website")}" target="_blank" class="social-pill social-website">🌐 Sitio Web</a>'
+            social_html += f'<a href="{deputy_data.get("website")}" target="_blank" class="social-button social-website">🌐 Web</a>'
         
         if social_html:
-            st.markdown(f'<div class="social-container">{social_html}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align: center; margin: 2rem 0;">{social_html}</div>', unsafe_allow_html=True)
         
-        # Calculate financial metrics
+        # Calculate metrics
         total_rentas = sum(
             parse_currency_value(r.get('euros')) 
             for r in parse_json_field(deputy_data.get('rentas_percibidas_percepciones_salariales', []))
@@ -758,12 +367,11 @@ def main():
         
         irpf_pagado = parse_currency_value(deputy_data.get('irpf_cantidad_pagada'))
         
-        # Financial Overview with Icons
-        st.markdown('<h2 class="section-title">💎 Resumen Financiero</h2>', unsafe_allow_html=True)
-        
+        # Metrics
+        st.markdown("## 💰 Resumen Financiero")
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("💰 Ingresos Salariales", format_currency(total_rentas))
+            st.metric("💵 Ingresos Salariales", format_currency(total_rentas))
         with col2:
             st.metric("📈 Otras Rentas", format_currency(otras_rentas))
         with col3:
@@ -771,205 +379,176 @@ def main():
         with col4:
             st.metric("🏛️ IRPF Pagado", format_currency(irpf_pagado))
         
-        # Premium Tabs
+        st.markdown("---")
+        
+        # Tabs
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
-            "👤 **Personal**",
-            "💰 **Rentas**",
-            "🏠 **Patrimonio**",
-            "📊 **Financiero**",
-            "📋 **Deudas**"
+            "👤 Personal",
+            "💰 Rentas",
+            "🏠 Patrimonio",
+            "📊 Financiero",
+            "📋 Deudas"
         ])
         
         with tab1:
-            st.markdown('<h2 class="section-title">Información Personal</h2>', unsafe_allow_html=True)
+            st.markdown("### 📝 Información Personal")
             
             col1, col2 = st.columns(2)
-            
             with col1:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
                 st.markdown(f"""
-                    <div class="info-card-premium">
-                        <div class="data-row">
-                            <span class="data-label">👤 Estado Civil</span>
-                            <span class="data-value">{deputy_data.get('informacion_personal_estado_civil', 'No declarado')}</span>
-                        </div>
-                        <div class="data-row">
-                            <span class="data-label">📅 Fecha de Elección</span>
-                            <span class="data-value">{deputy_data.get('informacion_personal_fecha_eleccion', 'No declarado')}</span>
-                        </div>
+                    <div class="info-row">
+                        <span class="info-label">Estado Civil</span>
+                        <span class="info-value">{deputy_data.get('informacion_personal_estado_civil', 'No declarado')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Fecha de Elección</span>
+                        <span class="info-value">{deputy_data.get('informacion_personal_fecha_eleccion', 'No declarado')}</span>
                     </div>
                 """, unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             
             with col2:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
                 st.markdown(f"""
-                    <div class="info-card-premium">
-                        <div class="data-row">
-                            <span class="data-label">💍 Régimen Económico</span>
-                            <span class="data-value">{deputy_data.get('informacion_personal_regimen_economico_matrimonial', 'No aplica')}</span>
-                        </div>
-                        <div class="data-row">
-                            <span class="data-label">📋 Fecha Credencial</span>
-                            <span class="data-value">{deputy_data.get('informacion_personal_fecha_presentacion_credencial', 'No declarado')}</span>
-                        </div>
+                    <div class="info-row">
+                        <span class="info-label">Régimen Económico</span>
+                        <span class="info-value">{deputy_data.get('informacion_personal_regimen_economico_matrimonial', 'No aplica')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Fecha Credencial</span>
+                        <span class="info-value">{deputy_data.get('informacion_personal_fecha_presentacion_credencial', 'No declarado')}</span>
                     </div>
                 """, unsafe_allow_html=True)
-            
-            # Visual representation
-            if pd.notna(deputy_data.get('informacion_personal_fecha_eleccion')):
-                st.markdown('<h3 class="section-title">📊 Línea de Tiempo</h3>', unsafe_allow_html=True)
-                st.info(f"🗓️ En el cargo desde: {deputy_data.get('informacion_personal_fecha_eleccion')}")
+                st.markdown('</div>', unsafe_allow_html=True)
         
         with tab2:
-            st.markdown('<h2 class="section-title">Declaración de Rentas 2022</h2>', unsafe_allow_html=True)
+            st.markdown("### 💵 Declaración de Rentas 2022")
             
-            # Create visual cards for each income type
-            rentas_types = [
-                ("💼 Percepciones Salariales", 'rentas_percibidas_percepciones_salariales', "#8b5cf6"),
-                ("📈 Dividendos", 'rentas_percibidas_dividendos_y_participaciones', "#ec4899"),
-                ("🏦 Intereses", 'rentas_percibidas_intereses_financieros', "#3b82f6"),
-                ("📑 Otras Rentas", 'rentas_percibidas_otras_rentas', "#10b981")
-            ]
+            # Salariales
+            salariales = parse_json_field(deputy_data.get('rentas_percibidas_percepciones_salariales'))
+            if salariales:
+                with st.expander(f"💼 Percepciones Salariales ({len(salariales)} registros)", expanded=True):
+                    for item in salariales:
+                        concepto = item.get('concepto', 'Sin descripción')
+                        euros = format_currency(parse_currency_value(item.get('euros')))
+                        st.markdown(f"**{concepto}**: {euros}")
             
-            for title, field, color in rentas_types:
-                data = parse_json_field(deputy_data.get(field))
-                if data:
-                    with st.expander(f"{title} ({len(data)} registros)", expanded=True):
-                        for item in data:
-                            concepto = item.get('concepto', 'Sin descripción')
-                            euros = parse_currency_value(item.get('euros'))
-                            st.markdown(f"""
-                                <div class="data-row">
-                                    <span style="color: rgba(255,255,255,0.8);">{concepto}</span>
-                                    <span class="data-value-highlight">{euros:,.2f} €</span>
-                                </div>
-                            """, unsafe_allow_html=True)
+            # Dividendos
+            dividendos = parse_json_field(deputy_data.get('rentas_percibidas_dividendos_y_participaciones'))
+            if dividendos:
+                with st.expander(f"📈 Dividendos y Participaciones ({len(dividendos)} registros)"):
+                    for item in dividendos:
+                        concepto = item.get('concepto', 'Sin descripción')
+                        euros = format_currency(parse_currency_value(item.get('euros')))
+                        st.markdown(f"**{concepto}**: {euros}")
+            
+            # Intereses
+            intereses = parse_json_field(deputy_data.get('rentas_percibidas_intereses_financieros'))
+            if intereses:
+                with st.expander(f"🏦 Intereses Financieros ({len(intereses)} registros)"):
+                    for item in intereses:
+                        concepto = item.get('concepto', 'Sin descripción')
+                        euros = format_currency(parse_currency_value(item.get('euros')))
+                        st.markdown(f"**{concepto}**: {euros}")
+            
+            # Otras rentas
+            otras = parse_json_field(deputy_data.get('rentas_percibidas_otras_rentas'))
+            if otras:
+                with st.expander(f"📑 Otras Rentas ({len(otras)} registros)"):
+                    for item in otras:
+                        concepto = item.get('concepto', 'Sin descripción')
+                        euros = format_currency(parse_currency_value(item.get('euros')))
+                        st.markdown(f"**{concepto}**: {euros}")
         
         with tab3:
-            st.markdown('<h2 class="section-title">Bienes Patrimoniales</h2>', unsafe_allow_html=True)
+            st.markdown("### 🏘️ Bienes Patrimoniales")
             
-            # Properties with cards
+            # Inmuebles urbanos
             urbanos = parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_urbanos'))
             if urbanos:
-                st.markdown("### 🏢 Inmuebles Urbanos")
+                st.markdown("#### 🏢 Inmuebles Urbanos")
                 for idx, item in enumerate(urbanos, 1):
-                    st.markdown(f"""
-                        <div class="glass-card">
-                            <h4 style="color: #8b5cf6; margin-bottom: 20px;">
-                                📍 Propiedad #{idx}
-                            </h4>
-                            <div class="data-row">
-                                <span class="data-label">Ubicación</span>
-                                <span class="data-value">{item.get('situacion', 'No especificado')}</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">Tipo</span>
-                                <span class="data-value">{item.get('clase_y_caracteristicas', 'No especificado')}</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">Título</span>
-                                <span class="data-value">{item.get('titulo_adquisicion', 'No especificado')}</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">Porcentaje</span>
-                                <span class="data-value-highlight">{item.get('porcentaje_sobre_el_bien', '100')}%</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    with st.expander(f"Propiedad #{idx}"):
+                        st.markdown(f"📍 **Ubicación**: {item.get('situacion', 'No especificado')}")
+                        st.markdown(f"🏠 **Tipo**: {item.get('clase_y_caracteristicas', 'No especificado')}")
+                        st.markdown(f"📄 **Título**: {item.get('titulo_adquisicion', 'No especificado')}")
+                        st.markdown(f"📊 **Porcentaje**: {item.get('porcentaje_sobre_el_bien', '100')}%")
             
-            # Vehicles
+            # Rústicos
+            rusticos = parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos'))
+            if rusticos:
+                st.markdown("#### 🌳 Inmuebles Rústicos")
+                for idx, item in enumerate(rusticos, 1):
+                    with st.expander(f"Propiedad Rústica #{idx}"):
+                        st.markdown(f"📍 **Ubicación**: {item.get('situacion', 'No especificado')}")
+                        st.markdown(f"🌾 **Tipo**: {item.get('clase_y_caracteristicas', 'No especificado')}")
+            
+            # Vehículos
             vehiculos = parse_json_field(deputy_data.get('vehiculos'))
             if vehiculos:
-                st.markdown("### 🚗 Vehículos")
+                st.markdown("#### 🚗 Vehículos")
                 for v in vehiculos:
-                    st.markdown(f"""
-                        <div class="glass-card">
-                            <div class="data-row">
-                                <span class="data-label">🚙 Modelo</span>
-                                <span class="data-value">{v.get('marca_y_modelo', 'No especificado')}</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">📅 Adquisición</span>
-                                <span class="data-value">{v.get('fecha_adquisicion', 'No especificado')}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"🚙 **{v.get('marca_y_modelo', 'No especificado')}** - Adquirido: {v.get('fecha_adquisicion', 'N/A')}")
         
         with tab4:
-            st.markdown('<h2 class="section-title">Activos Financieros</h2>', unsafe_allow_html=True)
+            st.markdown("### 💼 Activos Financieros")
             
-            # Bank accounts with total
+            # Cuentas
             cuentas = parse_json_field(deputy_data.get('depositos_y_cuentas_cuentas'))
             if cuentas:
+                st.markdown("#### 🏦 Cuentas y Depósitos")
                 total_cuentas = sum(parse_currency_value(c.get('saldo')) for c in cuentas)
+                st.info(f"💰 **Total en cuentas**: {format_currency(total_cuentas)}")
                 
-                st.markdown(f"""
-                    <div class="info-card-premium" style="text-align: center; margin-bottom: 30px;">
-                        <h3 style="color: #8b5cf6; margin: 0;">💰 Total en Cuentas</h3>
-                        <p style="font-size: 2.5rem; font-weight: 800; margin: 10px 0;">
-                            <span class="data-value-highlight">{total_cuentas:,.2f} €</span>
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                with st.expander("🏦 Detalle de Cuentas", expanded=True):
-                    for cuenta in cuentas:
-                        tipo = cuenta.get('descripcion', cuenta.get('tipo', 'Cuenta'))
-                        saldo = parse_currency_value(cuenta.get('saldo'))
-                        st.markdown(f"""
-                            <div class="data-row">
-                                <span>{tipo}</span>
-                                <span class="data-value">{saldo:,.2f} €</span>
-                            </div>
-                        """, unsafe_allow_html=True)
+                for cuenta in cuentas:
+                    tipo = cuenta.get('descripcion', cuenta.get('tipo', 'Cuenta'))
+                    saldo = format_currency(parse_currency_value(cuenta.get('saldo')))
+                    st.markdown(f"• **{tipo}**: {saldo}")
+            
+            # Acciones
+            acciones = parse_json_field(deputy_data.get('otros_bienes_y_derechos_acciones_y_participaciones'))
+            if acciones:
+                st.markdown("#### 📈 Acciones y Participaciones")
+                for item in acciones:
+                    desc = item.get('descripcion', 'N/A')
+                    valor = format_currency(parse_currency_value(item.get('valor')))
+                    st.markdown(f"• **{desc}**: {valor}")
+            
+            # Sociedades
+            sociedades = parse_json_field(deputy_data.get('bienes_patrimoniales_bienes_sociedades_no_cotizadas'))
+            if sociedades:
+                st.markdown("#### 🏢 Sociedades no cotizadas")
+                for item in sociedades:
+                    st.markdown(f"• **{item.get('clase_y_caracteristicas', 'N/A')}** - {item.get('situacion', 'N/A')}")
         
         with tab5:
-            st.markdown('<h2 class="section-title">Deudas y Obligaciones</h2>', unsafe_allow_html=True)
+            st.markdown("### 💳 Deudas y Obligaciones")
             
             deudas = parse_json_field(deputy_data.get('deudas_y_obligaciones'))
             if deudas:
                 for deuda in deudas:
                     desc = deuda.get('descripcion', deuda.get('prestamo', 'Deuda'))
-                    importe = parse_currency_value(deuda.get('importe_concedido'))
-                    pendiente = parse_currency_value(deuda.get('saldo_pendiente'))
-                    
-                    # Calculate percentage paid
-                    if importe > 0:
-                        percentage_paid = ((importe - pendiente) / importe) * 100
-                    else:
-                        percentage_paid = 0
-                    
-                    st.markdown(f"""
-                        <div class="glass-card">
-                            <h4 style="color: #ec4899; margin-bottom: 20px;">💳 {desc}</h4>
-                            <div class="data-row">
-                                <span class="data-label">📅 Fecha</span>
-                                <span class="data-value">{deuda.get('fecha_concesion', 'N/A')}</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">💰 Importe Original</span>
-                                <span class="data-value">{importe:,.2f} €</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-label">💳 Saldo Pendiente</span>
-                                <span class="data-value-highlight">{pendiente:,.2f} €</span>
-                            </div>
-                            <div style="margin-top: 20px;">
-                                <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 10px; overflow: hidden;">
-                                    <div style="background: linear-gradient(135deg, #8b5cf6, #ec4899); height: 100%; width: {percentage_paid}%; transition: width 1s ease;"></div>
-                                </div>
-                                <p style="text-align: center; margin-top: 10px; color: rgba(255,255,255,0.6);">
-                                    {percentage_paid:.1f}% pagado
-                                </p>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    with st.expander(f"💳 {desc}"):
+                        st.markdown(f"📅 **Fecha**: {deuda.get('fecha_concesion', 'N/A')}")
+                        st.markdown(f"💰 **Importe original**: {format_currency(parse_currency_value(deuda.get('importe_concedido')))}")
+                        st.markdown(f"💸 **Saldo pendiente**: {format_currency(parse_currency_value(deuda.get('saldo_pendiente')))}")
             else:
-                st.markdown("""
-                    <div class="empty-state">
-                        <div class="empty-icon">✨</div>
-                        <h3>Sin deudas declaradas</h3>
-                        <p>Este diputado no tiene deudas registradas.</p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.success("✅ No hay deudas declaradas")
+            
+            # Observaciones
+            if pd.notna(deputy_data.get('observaciones')) and deputy_data.get('observaciones'):
+                st.markdown("### 📝 Observaciones")
+                st.info(deputy_data.get('observaciones'))
+            
+            # Otros bienes
+            otros = parse_json_field(deputy_data.get('otros_bienes_no_declarados_anteriormente'))
+            if otros:
+                st.markdown("### 📦 Otros Bienes")
+                for item in otros:
+                    desc = item.get('descripcion', 'N/A')
+                    valor = format_currency(parse_currency_value(item.get('valor')))
+                    st.markdown(f"• **{desc}**: {valor}")
 
 if __name__ == "__main__":
     main()
