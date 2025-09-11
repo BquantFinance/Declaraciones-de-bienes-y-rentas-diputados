@@ -302,78 +302,29 @@ def apply_css():
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 3rem;
+            padding: 2rem 3rem 3rem 3rem;
             margin: 2rem auto;
             max-width: 900px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         
-        .disclaimer-title {
-            font-size: 2.5rem;
-            font-weight: 700;
+        h1.disclaimer-title {
+            font-size: 2.5rem !important;
+            font-weight: 700 !important;
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2rem !important;
+            padding-bottom: 0 !important;
         }
 
-        .disclaimer-section-title {
-            color: #f59e0b;
-            margin-top: 2.5rem;
-            margin-bottom: 1rem;
-            padding-left: 2.5rem;
-            position: relative;
-            font-size: 1.2rem;
-        }
-
-        .disclaimer-section-title::before {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.5rem;
-        }
-        
-        .disclaimer-section-title.nature::before { content: '📋'; }
-        .disclaimer-section-title.disclaimer::before { content: '⚠️'; }
-        .disclaimer-section-title.liability::before { content: '📌'; }
-        .disclaimer-section-title.source::before { content: '✅'; }
-        .disclaimer-section-title.privacy::before { content: '👤'; }
-        .disclaimer-section-title.acceptance::before { content: '⚖️'; }
-        
-        .disclaimer-text {
-            color: #e2e8f0;
-            font-size: 1.1rem;
-            line-height: 1.8;
-            text-align: justify;
-            margin-bottom: 1.5rem;
-        }
-        
-        .disclaimer-text strong {
-            color: #fbbf24;
-            font-weight: 600;
-        }
-        
-        .disclaimer-list {
-            list-style: none;
-            padding-left: 0;
-            margin: 1.5rem 0;
-        }
-        
-        .disclaimer-list li {
-            color: #e2e8f0;
-            margin: 1rem 0;
-            padding-left: 2rem;
-            position: relative;
-        }
-        
-        .disclaimer-list li::before {
-            content: '⚠️';
-            position: absolute;
-            left: 0;
-            top: 0;
+        h3.disclaimer-section-title {
+            color: #f59e0b !important;
+            margin-top: 2.5rem !important;
+            margin-bottom: 1rem !important;
+            font-size: 1.2rem !important;
         }
         
         /* Typography */
@@ -777,101 +728,82 @@ def create_image_gallery(deputy_data):
     return gallery_html
 
 def show_disclaimer():
-    """Show the comprehensive legal disclaimer page"""
+    """Show the comprehensive legal disclaimer page using native Streamlit components."""
     apply_css()
     
-    # Center the disclaimer
-    col1, col2, col3 = st.columns([1, 3, 1])
+    col1, col2, col3 = st.columns([1, 4, 1])
     
     with col2:
-        st.markdown("""
-        <div class="disclaimer-container">
-            <h1 class="disclaimer-title">DESCARGO DE RESPONSABILIDAD LEGAL</h1>
-            <div class="disclaimer-text">
-                <p><strong>IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN</strong></p>
-                
-                <p>Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.</p>
-                
-                <h3 class="disclaimer-section-title nature">NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>
-                <p>La información mostrada en esta Aplicación proviene exclusivamente de:</p>
-                <ul class="disclaimer-list">
-                    <li>Declaraciones de bienes y rentas publicadas en el Portal de Transparencia del Congreso de los Diputados</li>
-                    <li>Registros públicos de actividades e intereses de los parlamentarios</li>
-                    <li>Documentación oficial de acceso público disponible en www.congreso.es</li>
-                </ul>
-                
-                <h3 class="disclaimer-section-title disclaimer">DESCARGO DE RESPONSABILIDAD</h3>
-                <p><strong>La Aplicación no pertenece, no está vinculada, afiliada, patrocinada, avalada ni autorizada de ninguna manera por el Congreso de los Diputados</strong>, ni por ninguna institución gubernamental o entidad pública española. Es un proyecto independiente desarrollado con fines informativos y de acceso facilitado a información pública.</p>
-                
-                <p>El contenido mostrado se ofrece únicamente con fines informativos, educativos y de consulta pública. Aunque se realizan esfuerzos razonables para garantizar la precisión y actualización de los datos:</p>
-                
-                <ul class="disclaimer-list">
-                    <li>La Aplicación puede contener <strong>errores, inexactitudes, omisiones o información desactualizada</strong></li>
-                    <li>Los datos pueden no reflejar los cambios más recientes en las declaraciones</li>
-                    <li>Pueden existir discrepancias entre la información mostrada y los documentos originales</li>
-                    <li>La interpretación o procesamiento automatizado de los datos puede introducir errores involuntarios</li>
-                </ul>
-                
-                <h3 class="disclaimer-section-title liability">LIMITACIÓN DE RESPONSABILIDAD</h3>
-                <p>Los desarrolladores y operadores de esta Aplicación:</p>
-                <ul class="disclaimer-list">
-                    <li>No garantizan la exactitud, integridad, actualidad o idoneidad de la información para ningún propósito particular</li>
-                    <li>No asumen responsabilidad por decisiones tomadas basándose en la información aquí presentada</li>
-                    <li>No se responsabilizan de daños directos, indirectos, incidentales o consecuentes derivados del uso de la Aplicación</li>
-                    <li>Se reservan el derecho de modificar, suspender o discontinuar el servicio sin previo aviso</li>
-                </ul>
-                
-                <h3 class="disclaimer-section-title source">FUENTE OFICIAL</h3>
-                <p><strong>Para la consulta oficial, íntegra, auténtica y legalmente válida de las declaraciones de bienes y rentas de los diputados, se debe acudir directamente a:</strong></p>
-                <p style="text-align: center; font-size: 1.2rem; margin: 1.5rem 0;">
-                    <strong>🔗 Portal de Transparencia del Congreso de los Diputados</strong><br>
-                    <span style="color: #3b82f6;">www.congreso.es</span>
-                </p>
-                
-                <h3 class="disclaimer-section-title privacy">PRIVACIDAD Y DATOS PERSONALES</h3>
-                <p>Esta Aplicación muestra únicamente información que ya es de dominio público y ha sido publicada oficialmente por el Congreso de los Diputados en cumplimiento de las obligaciones de transparencia establecidas en la legislación española.</p>
-                
-                <h3 class="disclaimer-section-title acceptance">ACEPTACIÓN DE TÉRMINOS</h3>
-                <p>Al hacer clic en "ACEPTO Y ENTIENDO" y utilizar esta Aplicación, usted reconoce que:</p>
-                <ul class="disclaimer-list">
-                    <li>Ha leído y comprendido este descargo de responsabilidad en su totalidad</li>
-                    <li>Acepta usar la Aplicación bajo su propio riesgo</li>
-                    <li>Comprende las limitaciones de la información presentada</li>
-                    <li>Se compromete a verificar cualquier información crítica en las fuentes oficiales</li>
-                </ul>
-                
-                <p style="margin-top: 2rem; padding: 1rem; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border-left: 4px solid #ef4444;">
-                    <strong>⚠️ ADVERTENCIA FINAL:</strong> El uso de esta aplicación es responsabilidad exclusiva del usuario. Si no está de acuerdo con estos términos, por favor no utilice la Aplicación.
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # We use a markdown 'div' wrapper to apply the border and background from our CSS
+        st.markdown('<div class="disclaimer-container">', unsafe_allow_html=True)
         
+        st.markdown('<h1 class="disclaimer-title">⚖️ DESCARGO DE RESPONSABILIDAD LEGAL</h1>', unsafe_allow_html=True)
+        
+        st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN**")
+        st.write(
+            'Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
+        )
+
+        st.markdown('<h3 class="disclaimer-section-title">📋 NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>', unsafe_allow_html=True)
+        st.write("La información mostrada en esta Aplicación proviene exclusivamente de:")
+        st.markdown("""
+        - Declaraciones de bienes y rentas publicadas en el Portal de Transparencia del Congreso de los Diputados
+        - Registros públicos de actividades e intereses de los parlamentarios
+        - Documentación oficial de acceso público disponible en www.congreso.es
+        """)
+
+        st.markdown('<h3 class="disclaimer-section-title">⚠️ DESCARGO DE RESPONSABILIDAD</h3>', unsafe_allow_html=True)
+        st.write(
+            "**La Aplicación no pertenece, no está vinculada, afiliada, patrocinada, avalada ni autorizada de ninguna manera por el Congreso de los Diputados**, ni por ninguna institución gubernamental o entidad pública española. Es un proyecto independiente desarrollado con fines informativos y de acceso facilitado a información pública."
+        )
+        st.write("El contenido mostrado se ofrece únicamente con fines informativos, educativos y de consulta pública. Aunque se realizan esfuerzos razonables para garantizar la precisión y actualización de los datos:")
+        st.markdown("""
+        - La Aplicación puede contener **errores, inexactitudes, omisiones o información desactualizada**
+        - Los datos pueden no reflejar los cambios más recientes en las declaraciones
+        - Pueden existir discrepancias entre la información mostrada y los documentos originales
+        - La interpretación o procesamiento automatizado de los datos puede introducir errores involuntarios
+        """)
+        
+        st.markdown('<h3 class="disclaimer-section-title">📌 LIMITACIÓN DE RESPONSABILIDAD</h3>', unsafe_allow_html=True)
+        st.write("Los desarrolladores y operadores de esta Aplicación:")
+        st.markdown("""
+        - No garantizan la exactitud, integridad, actualidad o idoneidad de la información para ningún propósito particular
+        - No asumen responsabilidad por decisiones tomadas basándose en la información aquí presentada
+        - No se responsabilizan de daños directos, indirectos, incidentales o consecuentes derivados del uso de la Aplicación
+        - Se reservan el derecho de modificar, suspender o discontinuar el servicio sin previo aviso
+        """)
+
+        st.markdown('<h3 class="disclaimer-section-title">✅ FUENTE OFICIAL</h3>', unsafe_allow_html=True)
+        st.write("**Para la consulta oficial, íntegra, auténtica y legalmente válida de las declaraciones de bienes y rentas de los diputados, se debe acudir directamente a:**")
+        st.info("🔗 **Portal de Transparencia del Congreso de los Diputados:** [www.congreso.es](https://www.congreso.es)")
+
+        st.markdown('<h3 class="disclaimer-section-title">👤 PRIVACIDAD Y DATOS PERSONALES</h3>', unsafe_allow_html=True)
+        st.write("Esta Aplicación muestra únicamente información que ya es de dominio público y ha sido publicada oficialmente por el Congreso de los Diputados en cumplimiento de las obligaciones de transparencia establecidas en la legislación española.")
+
+        st.markdown('<h3 class="disclaimer-section-title">⚖️ ACEPTACIÓN DE TÉRMINOS</h3>', unsafe_allow_html=True)
+        st.write('Al hacer clic en "ACEPTO Y ENTIENDO" y utilizar esta Aplicación, usted reconoce que:')
+        st.markdown("""
+        - Ha leído y comprendido este descargo de responsabilidad en su totalidad
+        - Acepta usar la Aplicación bajo su propio riesgo
+        - Comprende las limitaciones de la información presentada
+        - Se compromete a verificar cualquier información crítica en las fuentes oficiales
+        """)
+
+        st.warning("**ADVERTENCIA FINAL:** El uso de esta aplicación es responsabilidad exclusiva del usuario. Si no está de acuerdo con estos términos, por favor no utilice la Aplicación.")
+
+        # Close the container div
+        st.markdown('</div>', unsafe_allow_html=True)
+
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Centered Accept button and message
-        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-        with col_btn2:
-            if st.button("✅ ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
-                st.session_state.disclaimer_accepted = True
-                st.rerun()
+        # Center the button in its own sub-column layout
+        _, btn_col, _ = st.columns([1, 2, 1])
+        if btn_col.button("✅ ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
+            st.session_state.disclaimer_accepted = True
+            st.rerun()
 
-            st.markdown(
-                """
-                <p style="
-                    margin-top: 1rem; 
-                    padding: 1rem; 
-                    background: rgba(239, 68, 68, 0.1); 
-                    border-radius: 10px; 
-                    border-left: 4px solid #ef4444;
-                    text-align: center;
-                    color: #e2e8f0;
-                ">
-                    Para usar esta aplicación debe aceptar los términos y condiciones.
-                </p>
-                """,
-                unsafe_allow_html=True
-            )
+        st.error("Para usar esta aplicación debe aceptar los términos y condiciones.")
+
 
 def main_app():
     """Main application"""
