@@ -7,14 +7,6 @@ from datetime import datetime
 import re
 import os
 import base64
-from locale import setlocale, LC_TIME
-
-# Set locale to Spanish to parse month names correctly
-try:
-    setlocale(LC_TIME, 'es_ES.UTF-8')
-except:
-    setlocale(LC_TIME, 'Spanish_Spain.1252')
-
 
 # Page configuration
 st.set_page_config(
@@ -128,8 +120,8 @@ def apply_css():
         }
         
         .deputy-photo {
-            width: 190px;
-            height: 240px;
+            width: 200px;
+            height: 250px;
             object-fit: cover;
             display: block;
             transition: transform 0.4s ease;
@@ -892,7 +884,10 @@ def main_app():
                 if date_match:
                     try:
                         doc_date = datetime.strptime(date_match.group(1), '%Y%m%d')
-                        doc_date_str = doc_date.strftime('%d %b %Y')
+                        # Manual formatting to avoid locale issues
+                        spanish_months_abbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+                        month_abbr = spanish_months_abbr[doc_date.month - 1]
+                        doc_date_str = f"{doc_date.day} {month_abbr} {doc_date.year}"
                     except ValueError:
                         pass
                 
@@ -1338,7 +1333,7 @@ def main_app():
     st.markdown(
         """
         <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
         </div>
         """,
         unsafe_allow_html=True
