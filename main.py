@@ -38,6 +38,59 @@ def apply_css():
             max-width: 1600px;
         }
         
+        /* Random Button Special Styling */
+        .random-button-container {
+            margin-top: 27px;
+        }
+        
+        .random-button-container > div > button {
+            background: linear-gradient(135deg, #f59e0b 0%, #dc2626 100%) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+            font-size: 1.2rem !important;
+            padding: 0.65rem !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3) !important;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        
+        .random-button-container > div > button:hover {
+            transform: translateY(-2px) scale(1.05) !important;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5) !important;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%) !important;
+        }
+        
+        .random-button-container > div > button:active {
+            transform: scale(0.98) !important;
+        }
+        
+        @keyframes diceRoll {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .random-button-container > div > button:hover::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 0.5s ease-out;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
         /* Image Gallery Container */
         .image-gallery {
             display: flex;
@@ -623,14 +676,14 @@ def apply_css():
 def load_data():
     """Load and preprocess the deputies data"""
     try:
-        df = pd.read_csv('deputies_full_dataset.csv', encoding='utf-8-sig')
+        df = pd.read_csv('deputies_with_salaries.csv', encoding='utf-8-sig')
         path_columns = ['photo_path', 'logo_path', 'hemiciclo_path']
         for col in path_columns:
             if col in df.columns:
                 df[col] = df[col].str.replace('\\', '/', regex=False).str.strip()
         return df
     except FileNotFoundError:
-        st.error("⚠️ No se encontró el archivo 'deputies_full_dataset.csv'. Por favor, asegúrate de que el archivo esté en el mismo directorio que la aplicación.")
+        st.error("⚠️ No se encontró el archivo 'deputies_with_salaries.csv'. Por favor, asegúrate de que el archivo esté en el mismo directorio que la aplicación.")
         return pd.DataFrame()
     except Exception as e:
         st.error(f"Error al cargar los datos: {str(e)}")
@@ -855,11 +908,12 @@ def main_app():
     deputy_names = filtered_deputies['informacion_personal_nombre_y_apellidos'].tolist()
     
     with random_col:
-        # Add some vertical space to align button with search bar
-        st.markdown('<div style="margin-top: 27px;"></div>', unsafe_allow_html=True)
-        if st.button("🎲", use_container_width=True, help="Seleccionar un diputado al azar de la lista filtrada"):
+        # Enhanced random button with special styling
+        st.markdown('<div class="random-button-container">', unsafe_allow_html=True)
+        if st.button("🎲", use_container_width=True, help="Seleccionar un diputado aleatorio", key="random_deputy"):
             if deputy_names:
                 st.session_state.selected_deputy_name = random.choice(deputy_names)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     
@@ -876,12 +930,26 @@ def main_app():
         except (ValueError, IndexError):
             selected_index = 0
 
-        # Deputy selector
+        # Deputy selector with salary information
+        def format_deputy_option(name):
+            try:
+                deputy_row = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'] == name]
+                if not deputy_row.empty:
+                    salary = deputy_row['scraped_salary'].iloc[0]
+                    if pd.notna(salary) and salary:
+                        formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
+                        return f"👤 {name} - 💰 {formatted_salary}€"
+                    else:
+                        return f"👤 {name} - 💰 Sin datos"
+            except:
+                pass
+            return f"👤 {name}"
+        
         selected_deputy_name = st.selectbox(
             "Seleccionar Diputado:",
             deputy_names,
             index=selected_index,
-            format_func=lambda x: f"👤 {x}"
+            format_func=format_deputy_option
         )
         
         # Update session state with the current selection (from user or from random button)
@@ -982,21 +1050,39 @@ def main_app():
         
         with col_right:
             st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
+            
+            # Display salary if available
+            salary = deputy_data.get('scraped_salary', None)
+            if pd.notna(salary) and salary:
+                formatted_salary = f"{float(salary):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                st.success(f"💰 **Salario Anual: {formatted_salary} €**")
+            else:
+                st.info("💰 **Salario Anual: No disponible**")
+            
             st.markdown("### 📊 Datos Clave de la Declaración")
             
-            metric1, metric2, metric3, metric4 = st.columns(4)
+            metric1, metric2, metric3, metric4, metric5 = st.columns(5)
+            
+            # Display annual salary
+            salary = deputy_data.get('scraped_salary', None)
+            if pd.notna(salary) and salary:
+                formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
+                metric1.metric("Salario Anual", f"{formatted_salary}€")
+            else:
+                metric1.metric("Salario Anual", "N/D")
+            
             irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
-            metric1.metric("IRPF Pagado", format_currency(irpf))
+            metric2.metric("IRPF Pagado", format_currency(irpf))
             
             urban_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
             rustic_properties = len(parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
-            metric2.metric("Inmuebles", urban_properties + rustic_properties)
+            metric3.metric("Inmuebles", urban_properties + rustic_properties)
 
             vehicles_count = len(parse_json_field(deputy_data['vehiculos']))
-            metric3.metric("Vehículos", vehicles_count)
+            metric4.metric("Vehículos", vehicles_count)
             
             debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
-            metric4.metric("Deudas", len(debts))
+            metric5.metric("Deudas", len(debts))
 
             st.markdown("---")
             
