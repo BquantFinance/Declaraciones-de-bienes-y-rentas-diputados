@@ -19,7 +19,6 @@ st.set_page_config(
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 
-# REVISED AND CORRECTED apply_css FUNCTION
 def apply_css():
     st.markdown("""
     <style>
@@ -145,9 +144,6 @@ def apply_css():
             color: #cbd5e1 !important;
             font-weight: 500 !important;
         }
-        
-        /* CORRECTED: Removed glassmorphism from layout containers to prevent visual bugs */
-        /* It is now applied directly to specific components like metrics, info-items etc. */
 
         /* Info Grid with glassmorphism */
         .info-grid {
@@ -299,7 +295,7 @@ def apply_css():
         }
         
         /* Glassmorphic Tabs */
-        .stTabs [data-baseweb="tab-list"] {
+        div[data-testid="stTabs"] [data-baseweb="tab-list"] {
             gap: 4px;
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(10px);
@@ -310,7 +306,7 @@ def apply_css():
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
-        .stTabs [data-baseweb="tab"] {
+        div[data-testid="stTabs"] [data-baseweb="tab"] {
             height: 42px;
             padding: 0 20px;
             background: transparent;
@@ -324,7 +320,7 @@ def apply_css():
             overflow: hidden;
         }
         
-        .stTabs [data-baseweb="tab"]::before {
+        div[data-testid="stTabs"] [data-baseweb="tab"]::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -336,19 +332,19 @@ def apply_css():
             transition: width 0.3s ease, height 0.3s ease;
         }
         
-        .stTabs [data-baseweb="tab"]:hover::before {
+        div[data-testid="stTabs"] [data-baseweb="tab"]:hover::before {
             width: 100%;
             height: 100%;
         }
         
-        .stTabs [data-baseweb="tab"]:hover {
+        div[data-testid="stTabs"] [data-baseweb="tab"]:hover {
             color: #ffffff;
             background: rgba(102, 126, 234, 0.1);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
         
-        .stTabs [aria-selected="true"] {
+        div[data-testid="stTabs"] [aria-selected="true"] {
             background: linear-gradient(135deg, 
                 rgba(102, 126, 234, 0.2) 0%, 
                 rgba(118, 75, 162, 0.2) 100%);
@@ -411,9 +407,9 @@ def apply_css():
             border-color: rgba(102, 126, 234, 0.5);
         }
         
-        /* CORRECTED & ENHANCED: Input Fields with robust data-testid selectors */
-        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div, 
-        div[data-testid="stTextInput"] input {
+        /* REVISED & ENHANCED: Input Fields with robust data-testid selectors */
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
             background: rgba(255, 255, 255, 0.05) !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
@@ -424,8 +420,8 @@ def apply_css():
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
         }
         
-        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover, 
-        div[data-testid="stTextInput"] input:hover {
+        div[data-testid="stTextInput"] input:hover,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
             border-color: rgba(102, 126, 234, 0.5) !important;
             box-shadow: 
                 0 0 0 3px rgba(102, 126, 234, 0.1),
@@ -443,7 +439,7 @@ def apply_css():
             background: rgba(255, 255, 255, 0.1) !important;
         }
         
-        /* Enhanced Alert Messages */
+        /* REVISED: Enhanced Alert Messages using main testid */
         div[data-testid="stAlert"] {
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -459,31 +455,24 @@ def apply_css():
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
         
-        .stSuccess {
-            background: linear-gradient(135deg, 
-                rgba(16, 185, 129, 0.1) 0%, 
-                rgba(16, 185, 129, 0.05) 100%) !important;
+        /* Using data-baseweb attribute to target specific alert types */
+        div[data-testid="stAlert"][data-baseweb="alert-success"] {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
             border-left: 4px solid #10b981;
         }
         
-        .stWarning {
-            background: linear-gradient(135deg, 
-                rgba(245, 158, 11, 0.1) 0%, 
-                rgba(245, 158, 11, 0.05) 100%) !important;
+        div[data-testid="stAlert"][data-baseweb="alert-warning"] {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%) !important;
             border-left: 4px solid #f59e0b;
         }
         
-        .stError {
-            background: linear-gradient(135deg, 
-                rgba(239, 68, 68, 0.1) 0%, 
-                rgba(239, 68, 68, 0.05) 100%) !important;
+        div[data-testid="stAlert"][data-baseweb="alert-error"] {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
             border-left: 4px solid #ef4444;
         }
         
-        .stInfo {
-            background: linear-gradient(135deg, 
-                rgba(59, 130, 246, 0.1) 0%, 
-                rgba(59, 130, 246, 0.05) 100%) !important;
+        div[data-testid="stAlert"][data-baseweb="alert-info"] {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
             border-left: 4px solid #3b82f6;
         }
         
@@ -530,18 +519,18 @@ def apply_css():
             border-color: rgba(102, 126, 234, 0.5);
         }
         
-        /* Accept button special styling */
+        /* REVISED: Accept button special styling using `kind="primary"` */
         .stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            font-size: 1.2rem;
-            padding: 1rem 3rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            border: none;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            font-size: 1.2rem !important;
+            padding: 1rem 3rem !important;
+            font-weight: 600 !important;
+            letter-spacing: 1px !important;
+            border: none !important;
         }
         
         .stButton > button[kind="primary"]:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
         }
@@ -615,7 +604,7 @@ def apply_css():
             -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Animations */
+        /* REVISED: Animations for better targeting */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -627,6 +616,7 @@ def apply_css():
             }
         }
         
+        /* This targets rows/sections more reliably */
         div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
             animation: fadeIn 0.5s ease-out;
             animation-fill-mode: both;
@@ -638,6 +628,7 @@ def apply_css():
         div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"]:nth-child(4) { animation-delay: 0.4s; }
     </style>
     """, unsafe_allow_html=True)
+
 
 @st.cache_data
 def load_data():
