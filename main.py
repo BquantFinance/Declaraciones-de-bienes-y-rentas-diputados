@@ -15,23 +15,86 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Enhanced modern dark theme with gradient accents
+# Enhanced modern dark theme with advanced CSS effects
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* Main App Styling */
+    /* CSS Variables for easy theming */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --dark-gradient: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #16213e 100%);
+        --card-gradient: linear-gradient(135deg, rgba(30, 30, 60, 0.7) 0%, rgba(20, 20, 40, 0.9) 100%);
+        --hover-scale: 1.02;
+        --transition-speed: 0.3s;
+        --glow-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Main App Styling with animated gradient */
     .stApp {
         background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #16213e 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Animated particles background */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(245, 87, 108, 0.05) 0%, transparent 50%);
+        animation: floatingBubbles 20s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    @keyframes floatingBubbles {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
     }
     
     .main .block-container {
         padding-top: 1rem;
         max-width: 1600px;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 0.8s ease-out;
     }
     
-    /* Typography */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Typography with text shadows */
     h1 {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
@@ -39,52 +102,104 @@ st.markdown("""
         font-weight: 700 !important;
         font-size: 2.5rem !important;
         margin-bottom: 0.5rem !important;
+        text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        animation: titleGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes titleGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.2); }
     }
     
     h2 {
         color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 1.8rem !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
     
     h3 {
         color: #e2e8f0 !important;
         font-weight: 500 !important;
+        transition: color 0.3s ease;
     }
     
-    /* Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        backdrop-filter: blur(10px);
+    h3:hover {
+        color: #667eea !important;
     }
     
-    /* Deputy Card Container */
+    /* Deputy Card with advanced effects */
     .deputy-card {
         background: linear-gradient(135deg, rgba(30, 30, 60, 0.7) 0%, rgba(20, 20, 40, 0.9) 100%);
         border-radius: 24px;
         padding: 2.5rem;
         border: 2px solid rgba(102, 126, 234, 0.3);
         backdrop-filter: blur(12px);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        box-shadow: 
+            0 15px 50px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
         margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+        animation: cardEntrance 0.6s ease-out;
     }
     
-    /* Image Gallery */
+    @keyframes cardEntrance {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .deputy-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+            45deg,
+            transparent,
+            rgba(102, 126, 234, 0.1),
+            transparent
+        );
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    /* Image Gallery with hover effects */
     .image-gallery {
         display: flex;
         gap: 1.5rem;
         margin-bottom: 2rem;
         align-items: center;
         justify-content: center;
+        animation: fadeIn 1s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
     
     .main-image-container {
         position: relative;
         flex: 0 0 auto;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .main-image-container:hover {
+        transform: scale(1.05) rotate(2deg);
     }
     
     .main-image {
@@ -92,8 +207,18 @@ st.markdown("""
         height: 280px;
         object-fit: cover;
         border-radius: 15px;
-        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(102, 126, 234, 0.3),
+            0 0 80px rgba(102, 126, 234, 0.1);
         border: 2px solid rgba(102, 126, 234, 0.3);
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .main-image:hover {
+        box-shadow: 
+            0 12px 40px rgba(102, 126, 234, 0.5),
+            0 0 120px rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.6);
     }
     
     .badge-container {
@@ -104,39 +229,34 @@ st.markdown("""
         justify-content: center;
     }
     
-    .party-logo {
+    .party-logo, .seat-indicator {
         width: 140px;
         height: 140px;
         object-fit: contain;
-        background: rgba(255, 255, 255, 0.05);
         padding: 15px;
         border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        position: relative;
     }
     
-    .party-logo:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    .party-logo {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     .seat-indicator {
-        width: 140px;
-        height: 140px;
-        object-fit: contain;
         background: rgba(102, 126, 234, 0.1);
-        padding: 12px;
-        border-radius: 10px;
         border: 1px solid rgba(102, 126, 234, 0.2);
-        transition: all 0.3s ease;
     }
     
-    .seat-indicator:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    .party-logo:hover, .seat-indicator:hover {
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 
+            0 10px 30px rgba(102, 126, 234, 0.4),
+            inset 0 0 20px rgba(102, 126, 234, 0.1);
     }
     
-    /* Compact Info Grid */
+    /* Info Grid with stagger animation */
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -149,13 +269,49 @@ st.markdown("""
         padding: 1rem;
         border-radius: 10px;
         border: 1px solid rgba(102, 126, 234, 0.15);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        animation: slideInLeft 0.6s ease-out backwards;
+    }
+    
+    .info-item:nth-child(1) { animation-delay: 0.1s; }
+    .info-item:nth-child(2) { animation-delay: 0.2s; }
+    .info-item:nth-child(3) { animation-delay: 0.3s; }
+    .info-item:nth-child(4) { animation-delay: 0.4s; }
+    
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .info-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .info-item:hover::before {
+        left: 100%;
     }
     
     .info-item:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px) scale(1.02);
         border-color: rgba(102, 126, 234, 0.3);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        box-shadow: 
+            0 6px 20px rgba(102, 126, 234, 0.2),
+            inset 0 0 15px rgba(102, 126, 234, 0.05);
     }
     
     .info-label {
@@ -173,7 +329,7 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* Enhanced Metrics */
+    /* Enhanced Metrics with pulse effect */
     [data-testid="metric-container"] {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
         border: 1px solid rgba(102, 126, 234, 0.2);
@@ -182,20 +338,32 @@ st.markdown("""
         backdrop-filter: blur(10px);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    [data-testid="metric-container"]::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+        transform: translate(-50%, -50%) scale(0);
+        transition: transform 0.5s ease;
+    }
+    
+    [data-testid="metric-container"]:hover::after {
+        transform: translate(-50%, -50%) scale(2);
     }
     
     [data-testid="metric-container"]:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 
+            0 15px 40px rgba(102, 126, 234, 0.3),
+            inset 0 0 30px rgba(102, 126, 234, 0.05);
         border-color: rgba(102, 126, 234, 0.4);
-    }
-    
-    [data-testid="metric-container"] [data-testid="metric-label"] {
-        color: #94a3b8 !important;
-        font-size: 0.7rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        font-weight: 600 !important;
     }
     
     [data-testid="metric-container"] [data-testid="metric-value"] {
@@ -205,15 +373,23 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        animation: valueGlow 2s ease-in-out infinite;
     }
     
-    /* Improved Tabs */
+    @keyframes valueGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.3); }
+    }
+    
+    /* Tabs with sliding indicator */
     .stTabs [data-baseweb="tab-list"] {
         gap: 4px;
         background: rgba(30, 30, 60, 0.3);
         border-radius: 12px;
         padding: 4px;
         border: 1px solid rgba(102, 126, 234, 0.1);
+        position: relative;
+        backdrop-filter: blur(10px);
     }
     
     .stTabs [data-baseweb="tab"] {
@@ -225,21 +401,43 @@ st.markdown("""
         color: #94a3b8;
         font-size: 0.9rem;
         font-weight: 500;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        z-index: 2;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
         color: #ffffff;
         background: rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
     }
     
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
         color: #ffffff !important;
         font-weight: 600;
+        box-shadow: 
+            0 4px 15px rgba(102, 126, 234, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
     
-    /* Social Media Pills - Circular Emoji Buttons */
+    .stTabs [aria-selected="true"]::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #667eea, transparent);
+        animation: tabGlow 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes tabGlow {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+    
+    /* Social Media Pills with bounce effect */
     .social-pills {
         display: flex;
         gap: 1rem;
@@ -255,96 +453,297 @@ st.markdown("""
         border-radius: 50%;
         font-size: 1.6rem;
         text-decoration: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         color: #ffffff;
         font-weight: bold;
+        position: relative;
+        overflow: hidden;
+        animation: socialBounce 0.6s ease-out backwards;
+    }
+    
+    .social-pill:nth-child(1) { animation-delay: 0.1s; }
+    .social-pill:nth-child(2) { animation-delay: 0.2s; }
+    .social-pill:nth-child(3) { animation-delay: 0.3s; }
+    .social-pill:nth-child(4) { animation-delay: 0.4s; }
+    
+    @keyframes socialBounce {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+    
+    .social-pill::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.3s ease, height 0.3s ease;
+    }
+    
+    .social-pill:hover::before {
+        width: 100%;
+        height: 100%;
     }
     
     .social-pill:hover {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.35) 0%, rgba(118, 75, 162, 0.35) 100%);
-        transform: translateY(-4px) scale(1.1);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.45);
+        transform: translateY(-5px) scale(1.15) rotate(10deg);
+        box-shadow: 
+            0 10px 30px rgba(102, 126, 234, 0.5),
+            inset 0 0 15px rgba(255, 255, 255, 0.1);
         border-color: rgba(102, 126, 234, 0.6);
     }
     
-    /* Expandable Cards */
-    .stExpander {
-        background: rgba(30, 30, 60, 0.3);
-        border: 1px solid rgba(102, 126, 234, 0.15);
-        border-radius: 12px;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stExpander:hover {
-        border-color: rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Input Fields */
+    /* Input Fields with glow effect */
     .stSelectbox > div > div, .stTextInput > div > div > input {
         background: rgba(30, 30, 60, 0.4);
         border: 1px solid rgba(102, 126, 234, 0.2);
         border-radius: 10px;
         color: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .stSelectbox > div > div:hover, .stTextInput > div > div > input:hover {
+        border-color: rgba(102, 126, 234, 0.4);
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+    }
+    
+    .stSelectbox > div > div:focus, .stTextInput > div > div > input:focus {
+        border-color: rgba(102, 126, 234, 0.6);
+        box-shadow: 
+            0 0 0 3px rgba(102, 126, 234, 0.1),
+            0 0 30px rgba(102, 126, 234, 0.3);
+        transform: scale(1.02);
+    }
+    
+    /* Success, Warning, Error messages with animations */
+    .stSuccess, .stWarning, .stError, .stInfo {
+        animation: messageSlide 0.4s ease-out;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+    
+    @keyframes messageSlide {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .stSuccess {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+        border-left: 4px solid #10b981;
+    }
+    
+    .stWarning {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .stError {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(185, 28, 28, 0.1) 100%);
+        border-left: 4px solid #ef4444;
+    }
+    
+    .stInfo {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
+        border-left: 4px solid #3b82f6;
+    }
+    
+    /* Property Cards with slide effect */
+    .property-item {
+        background: rgba(30, 30, 60, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .property-item::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+    
+    .property-item:hover::after {
+        transform: scaleX(1);
+    }
+    
+    .property-item:hover {
+        transform: translateX(10px);
+        border-color: rgba(102, 126, 234, 0.3);
+        box-shadow: 
+            0 5px 20px rgba(102, 126, 234, 0.2),
+            inset 0 0 20px rgba(102, 126, 234, 0.05);
+    }
+    
+    /* Scroll animations trigger */
+    @media (prefers-reduced-motion: no-preference) {
+        [data-testid="stVerticalBlock"] > [data-testid="element-container"] {
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+        
+        [data-testid="stVerticalBlock"] > [data-testid="element-container"]:nth-child(odd) {
+            animation: fadeInLeft 0.6s ease-out backwards;
+        }
+        
+        [data-testid="stVerticalBlock"] > [data-testid="element-container"]:nth-child(even) {
+            animation: fadeInRight 0.6s ease-out backwards;
+        }
+    }
+    
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes fadeInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Loading state */
+    .stSpinner > div {
+        border-color: #667eea !important;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 30, 60, 0.3);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
         transition: all 0.3s ease;
     }
     
-    .stSelectbox > div > div:hover, .stTextInput > div > div > input:focus {
-        border-color: rgba(102, 126, 234, 0.5);
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
     }
     
-    /* Quick Stats Bar */
-    .stats-bar {
-        display: flex;
-        gap: 1rem;
-        padding: 1rem;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-        border-radius: 12px;
-        margin: 1rem 0;
-        border: 1px solid rgba(102, 126, 234, 0.1);
+    /* Responsive design improvements */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding: 1rem 0.5rem;
+        }
+        
+        .deputy-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .social-pills {
+            justify-content: center;
+        }
+        
+        h1 {
+            font-size: 2rem !important;
+        }
+        
+        h2 {
+            font-size: 1.5rem !important;
+        }
     }
     
-    .stat-item {
-        flex: 1;
-        text-align: center;
-        padding: 0.5rem;
-        border-right: 1px solid rgba(102, 126, 234, 0.1);
+    /* Print styles */
+    @media print {
+        .stApp {
+            background: white !important;
+        }
+        
+        * {
+            color: black !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
     }
     
-    .stat-item:last-child {
-        border-right: none;
-    }
-    
-    .stat-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #ffffff;
-    }
-    
-    .stat-label {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 0.25rem;
+    /* Performance optimizations */
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
     
     /* Hide Streamlit Elements */
     #MainMenu, footer, header { visibility: hidden; }
     .viewerBadge_container__1QSob { display: none; }
     
-    /* Loading Animation */
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+    /* Additional hover effects for interactive elements */
+    button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
-    .loading {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    /* Highlight animation for important values */
+    @keyframes highlight {
+        0% { background-color: transparent; }
+        50% { background-color: rgba(102, 126, 234, 0.2); }
+        100% { background-color: transparent; }
+    }
+    
+    strong {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        padding: 0 4px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+    
+    strong:hover {
+        animation: highlight 1s ease;
+        transform: scale(1.05);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -595,13 +994,29 @@ def main():
             
             # Financial Overview - Compact metrics with exact values
             st.markdown("### 💰 Resumen Financiero")
-            metric_cols = st.columns(6)
-            metric_cols[0].metric("Ingresos", format_currency(total_salary), help="Total de ingresos anuales declarados")
-            metric_cols[1].metric("IRPF", format_currency(irpf), help="Impuesto sobre la renta pagado")
-            metric_cols[2].metric("Tipo", f"{tax_rate:.2f}%", help="Tipo impositivo efectivo")
-            metric_cols[3].metric("Inmuebles", str(properties_count), help="Número de propiedades")
-            metric_cols[4].metric("Vehículos", str(vehicles_count), help="Número de vehículos")
-            metric_cols[5].metric("Deudas", format_currency(total_debt), help="Deuda total pendiente")
+            
+            # Display key metrics in a more accessible way
+            col_metrics = st.columns(3)
+            
+            with col_metrics[0]:
+                st.markdown("**💵 Ingresos Totales**")
+                st.markdown(f"# {format_currency(total_salary)}")
+                st.markdown(f"*IRPF Pagado:* **{format_currency(irpf)}**")
+                st.markdown(f"*Tipo Efectivo:* **{tax_rate:.2f}%**")
+            
+            with col_metrics[1]:
+                st.markdown("**🏠 Patrimonio**")
+                st.markdown(f"# {properties_count + vehicles_count}")
+                st.markdown(f"*Inmuebles:* **{properties_count}**")
+                st.markdown(f"*Vehículos:* **{vehicles_count}**")
+            
+            with col_metrics[2]:
+                st.markdown("**💳 Obligaciones**")
+                st.markdown(f"# {format_currency(total_debt)}")
+                if total_debt > 0:
+                    st.markdown(f"*Deudas activas:* **{len(debts)}**")
+                else:
+                    st.markdown("*Sin deudas*")
             
             st.markdown("---")
             
@@ -609,10 +1024,18 @@ def main():
             tab1, tab2, tab3, tab4 = st.tabs(["💵 Ingresos", "🏠 Patrimonio", "💳 Deudas", "📊 Análisis"])
             
             with tab1:
+                st.markdown("#### 💵 **Fuentes de Ingresos Declaradas**")
+                
+                # Show total income at the top
+                if total_salary > 0:
+                    st.success(f"💰 **Ingresos Totales Anuales: {format_currency_full(total_salary)}**")
+                    if irpf > 0:
+                        st.info(f"📋 **IRPF Pagado: {format_currency_full(irpf)}** ({tax_rate:.2f}% tipo efectivo)")
+                
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("#### 💼 Salarios e Ingresos")
+                    st.markdown("##### 💼 Salarios e Ingresos")
                     salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
                     if salaries:
                         for i, salary in enumerate(salaries):
@@ -621,119 +1044,176 @@ def main():
                                 if not concepto or str(concepto).lower() == 'nan':
                                     concepto = f'Fuente de Ingresos #{i+1}'
                                 
-                                with st.expander(f"💰 {concepto}"):
-                                    amount = extract_currency_value(salary.get('euros'))
-                                    display_amount = format_currency_full(amount)
-                                    if "mensual" in str(salary.get('euros', '')).lower():
-                                        display_amount += " (mensual)"
-                                    st.markdown(f"**Importe:** {display_amount}")
+                                amount = extract_currency_value(salary.get('euros'))
+                                display_amount = format_currency_full(amount)
+                                
+                                # Color code based on amount
+                                if amount > 100000:
+                                    st.error(f"💰 **{concepto}**")
+                                elif amount > 50000:
+                                    st.warning(f"💰 **{concepto}**")
+                                else:
+                                    st.info(f"💰 **{concepto}**")
+                                
+                                if "mensual" in str(salary.get('euros', '')).lower():
+                                    st.markdown(f"→ **{display_amount}/mes** ({format_currency_full(amount * 12)}/año)")
+                                else:
+                                    st.markdown(f"→ **{display_amount}**")
+                                st.markdown("")
                     else:
-                        st.info("No se han declarado fuentes de ingresos")
+                        st.info("📭 No se han declarado salarios")
                 
                 with col2:
-                    st.markdown("#### 📈 Rentas del Capital")
+                    st.markdown("##### 📈 Rentas del Capital")
                     dividends = parse_json_field(deputy_data['rentas_percibidas_dividendos_y_participaciones'])
                     if dividends:
+                        total_dividends = sum(extract_currency_value(d.get('euros', 0)) for d in dividends if isinstance(d, dict))
+                        if total_dividends > 0:
+                            st.warning(f"📊 **Total rentas capital: {format_currency_full(total_dividends)}**")
+                        
                         for div in dividends:
                             if isinstance(div, dict):
                                 concepto = div.get('concepto', '')
                                 if not concepto or str(concepto).lower() == 'nan':
                                     concepto = 'Inversión'
                                 
-                                with st.expander(f"📊 {concepto}"):
-                                    rendimientos = extract_currency_value(div.get('euros'))
-                                    if rendimientos > 0:
-                                        st.markdown(f"**Rendimientos:** {format_currency_full(rendimientos)}")
+                                st.markdown(f"**📊 {concepto}**")
+                                rendimientos = extract_currency_value(div.get('euros'))
+                                if rendimientos > 0:
+                                    st.markdown(f"→ **{format_currency_full(rendimientos)}**")
+                                st.markdown("")
                     else:
-                        st.info("No se han declarado rentas del capital")
+                        st.info("📭 No se han declarado rentas del capital")
             
             with tab2:
+                st.markdown("#### 🏠 **Patrimonio Declarado**")
+                
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("#### 🏠 Bienes Inmuebles")
+                    st.markdown("##### 🏢 Bienes Inmuebles")
                     urban = parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])
                     if urban:
                         for i, prop in enumerate(urban):
                             if isinstance(prop, dict):
-                                with st.expander(f"🏢 Inmueble #{i+1}"):
+                                # Create a card-like display
+                                with st.container():
+                                    st.markdown(f"""
+                                    <div style='background: rgba(102, 126, 234, 0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border-left: 3px solid #667eea;'>
+                                    <strong style='color: #667eea; font-size: 1.1rem;'>📍 Inmueble #{i+1}</strong>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                    
                                     tipo = prop.get('clase_y_caracteristicas', '')
                                     if tipo and str(tipo).lower() != 'nan':
                                         st.markdown(f"**Tipo:** {tipo}")
                                     
                                     ubicacion = prop.get('situacion', '')
                                     if ubicacion and str(ubicacion).lower() != 'nan':
-                                        st.markdown(f"**Ubicación:** {ubicacion}")
+                                        st.markdown(f"**📍 Ubicación:** {ubicacion}")
                                     
                                     fecha = prop.get('fecha_adquisicion', '')
                                     if fecha and str(fecha).lower() != 'nan':
-                                        st.markdown(f"**Fecha Adquisición:** {fecha}")
+                                        st.markdown(f"**📅 Adquirido:** {fecha}")
+                                    
+                                    derecho = prop.get('derecho_sobre_el_bien', '')
+                                    if derecho and str(derecho).lower() != 'nan':
+                                        st.markdown(f"**📜 Derecho:** {derecho}")
                     else:
-                        st.info("No se han declarado propiedades")
+                        st.info("📭 No se han declarado propiedades")
                     
-                    st.markdown("#### 💳 Activos Financieros")
+                    st.markdown("##### 💳 Activos Financieros")
                     accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
                     if accounts:
+                        total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
+                        if total_accounts > 0:
+                            st.success(f"💰 **Total en cuentas: {format_currency_full(total_accounts)}**")
+                        
                         for i, account in enumerate(accounts):
                             if isinstance(account, dict):
                                 desc = account.get('descripcion', '')
                                 if not desc or str(desc).lower() == 'nan':
                                     desc = f'Cuenta #{i+1}'
                                 
-                                with st.expander(f"🏦 {desc}"):
-                                    saldo = extract_currency_value(account.get('saldo'))
-                                    if saldo > 0:
-                                        st.markdown(f"**Saldo:** {format_currency_full(saldo)}")
+                                saldo = extract_currency_value(account.get('saldo'))
+                                if saldo > 0:
+                                    st.markdown(f"""
+                                    **🏦 {desc}**  
+                                    → Saldo: **{format_currency_full(saldo)}**
+                                    """)
                     else:
-                        st.info("No se han declarado cuentas")
+                        st.info("📭 No se han declarado cuentas")
                 
                 with col2:
-                    st.markdown("#### 🚗 Vehículos")
+                    st.markdown("##### 🚗 Vehículos")
                     vehicles = parse_json_field(deputy_data['vehiculos'])
                     if vehicles:
+                        st.info(f"🚙 **Total vehículos: {len(vehicles)}**")
+                        
                         for i, vehicle in enumerate(vehicles):
                             if isinstance(vehicle, dict):
-                                desc = vehicle.get('descripcion', f'Vehículo #{i+1}')
-                                with st.expander(f"🚙 {desc}"):
-                                    fecha = vehicle.get('fecha_adquisicion', '')
-                                    if fecha and str(fecha).lower() != 'nan':
-                                        st.markdown(f"**Fecha Adquisición:** {fecha}")
+                                desc = vehicle.get('descripcion', '')
+                                if desc and str(desc).lower() != 'nan':
+                                    st.markdown(f"""
+                                    **🚗 {desc}**
+                                    """)
+                                else:
+                                    st.markdown(f"**🚗 Vehículo #{i+1}**")
+                                
+                                fecha = vehicle.get('fecha_adquisicion', '')
+                                if fecha and str(fecha).lower() != 'nan':
+                                    st.markdown(f"→ Adquirido: {fecha}")
+                                st.markdown("")
                     else:
-                        st.info("No se han declarado vehículos")
+                        st.info("📭 No se han declarado vehículos")
+                    
+                    # Add a summary box if there are multiple vehicles or properties
+                    total_assets = properties_count + vehicles_count
+                    if total_assets > 5:
+                        st.warning(f"⚠️ **Alto patrimonio declarado:** {total_assets} bienes totales")
             
             with tab3:
                 st.markdown("#### 💸 Deudas y Obligaciones")
                 if debts:
                     # Summary card
-                    st.info(f"**Deuda Total Pendiente:** {format_currency_full(total_debt)}")
+                    st.error(f"💰 **Deuda Total Pendiente: {format_currency_full(total_debt)}**")
+                    st.markdown("")
+                    
+                    # Display debts in a grid layout
+                    debt_cols = st.columns(2)
                     
                     for i, debt in enumerate(debts):
                         if isinstance(debt, dict):
-                            desc = debt.get('descripcion', '')
-                            if not desc or str(desc).lower() == 'nan':
-                                desc = f'Deuda #{i+1}'
-                            
-                            with st.expander(f"📄 {desc}"):
-                                col1, col2 = st.columns(2)
-                                with col1:
-                                    importe_original = extract_currency_value(debt.get('importe_concedido'))
-                                    if importe_original > 0:
-                                        st.markdown(f"**Importe Original:** {format_currency_full(importe_original)}")
-                                    
-                                    fecha = debt.get('fecha_concesion', '')
-                                    if fecha and str(fecha).lower() != 'nan':
-                                        st.markdown(f"**Fecha Concesión:** {fecha}")
+                            col_idx = i % 2
+                            with debt_cols[col_idx]:
+                                desc = debt.get('descripcion', '')
+                                if not desc or str(desc).lower() == 'nan':
+                                    desc = f'Deuda #{i+1}'
                                 
-                                with col2:
-                                    importe_pendiente = extract_currency_value(debt.get('saldo_pendiente'))
-                                    if importe_pendiente > 0:
-                                        st.markdown(f"**Importe Pendiente:** {format_currency_full(importe_pendiente)}")
-                                    
-                                    original = extract_currency_value(debt.get('importe_concedido'))
-                                    pending = extract_currency_value(debt.get('saldo_pendiente'))
-                                    if original > 0:
-                                        paid_pct = ((original - pending) / original) * 100
-                                        st.markdown(f"**Pagado:** {paid_pct:.2f}%")
+                                st.markdown(f"**📄 {desc}**")
+                                
+                                importe_original = extract_currency_value(debt.get('importe_concedido'))
+                                if importe_original > 0:
+                                    st.markdown(f"• Original: **{format_currency_full(importe_original)}**")
+                                
+                                importe_pendiente = extract_currency_value(debt.get('saldo_pendiente'))
+                                if importe_pendiente > 0:
+                                    st.markdown(f"• Pendiente: **{format_currency_full(importe_pendiente)}**")
+                                
+                                fecha = debt.get('fecha_concesion', '')
+                                if fecha and str(fecha).lower() != 'nan':
+                                    st.markdown(f"• Fecha: {fecha}")
+                                
+                                original = extract_currency_value(debt.get('importe_concedido'))
+                                pending = extract_currency_value(debt.get('saldo_pendiente'))
+                                if original > 0:
+                                    paid_pct = ((original - pending) / original) * 100
+                                    if paid_pct > 50:
+                                        st.success(f"✅ Pagado: **{paid_pct:.1f}%**")
+                                    else:
+                                        st.warning(f"⏳ Pagado: **{paid_pct:.1f}%**")
+                                
+                                st.markdown("---")
                 else:
                     st.success("✅ No se han declarado deudas")
             
