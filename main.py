@@ -794,7 +794,10 @@ def show_disclaimer():
         # Close the container div
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.info(
+            "💡 **Recomendación de visualización:** Para una experiencia óptima, te recomendamos usar esta aplicación en un ordenador (🖥️) y activar el modo oscuro (🌙) en tu navegador.",
+            icon="✨"
+        )
         
         # Center the button in its own sub-column layout
         _, btn_col, _ = st.columns([1, 2, 1])
@@ -808,7 +811,7 @@ def show_disclaimer():
         st.markdown(
             """
             <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-                Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
+                Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
             </div>
             """,
             unsafe_allow_html=True
@@ -1333,7 +1336,7 @@ def main_app():
     st.markdown(
         """
         <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
         </div>
         """,
         unsafe_allow_html=True
