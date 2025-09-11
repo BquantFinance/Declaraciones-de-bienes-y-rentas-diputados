@@ -128,8 +128,8 @@ def apply_css():
         }
         
         .deputy-photo {
-            width: 200px;
-            height: 250px;
+            width: 190px;
+            height: 240px;
             object-fit: cover;
             display: block;
             transition: transform 0.4s ease;
