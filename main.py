@@ -248,6 +248,15 @@ st.markdown("""
 def load_data():
     """Load and preprocess the deputies data"""
     df = pd.read_csv('deputies_full_dataset.csv')
+    
+    # --- FIX: Normalize file paths for cross-platform compatibility ---
+    path_columns = ['photo_path', 'logo_path', 'hemiciclo_path']
+    for col in path_columns:
+        if col in df.columns:
+            # Replace backslashes with forward slashes and strip whitespace
+            df[col] = df[col].str.replace('\\', '/', regex=False).str.strip()
+    # ----------------------------------------------------------------
+
     return df
 
 def parse_json_field(field_value):
