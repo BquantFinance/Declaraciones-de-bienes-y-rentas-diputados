@@ -731,7 +731,7 @@ def show_disclaimer():
     """Show the comprehensive legal disclaimer page using native Streamlit components."""
     apply_css()
     
-    col1, col2, col3 = st.columns([1, 4, 1])
+    _, col2, _ = st.columns([1, 4, 1])
     
     with col2:
         # We use a markdown 'div' wrapper to apply the border and background from our CSS
@@ -741,7 +741,7 @@ def show_disclaimer():
         
         st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN**")
         st.write(
-            'Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
+            'Esta aplicación web de consulta de información pública recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
         )
 
         st.markdown('<h3 class="disclaimer-section-title">📋 NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>', unsafe_allow_html=True)
@@ -1295,15 +1295,14 @@ def main_app():
     st.markdown(
         """
         <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+            Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
         </div>
         """,
         unsafe_allow_html=True
     )
 
-# Main execution
-if __name__ == "__main__":
-    if not st.session_state.disclaimer_accepted:
-        show_disclaimer()
-    else:
-        main_app()
+# Main execution logic
+if not st.session_state.disclaimer_accepted:
+    show_disclaimer()
+else:
+    main_app()
