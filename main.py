@@ -120,23 +120,6 @@ st.markdown("""
         color: #e8eaed;
     }
     
-    /* Custom button for popover */
-    .stButton > button.popover-button {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #9aa0a6;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        width: 100%;
-        transition: all 0.3s ease;
-    }
-    .stButton > button.popover-button:hover {
-        background: rgba(88, 101, 242, 0.1);
-        border-color: #5865f2;
-        color: #ffffff;
-    }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -195,7 +178,7 @@ def main():
     with col1:
         search_term = st.text_input("🔍 Search", placeholder="Enter deputy name...", label_visibility="collapsed")
     with col2:
-        constituencies = ['All Constituencies'] + sorted([c for c in df['informacion_personal_circunscripcion'].dropna().unique()])
+        constituencies = ['All Constituencies'] + sorted([c for c in df['informacion_personal_circunscripcion'].dropna().unique() if c != 'nan'])
         selected_constituency = st.selectbox("📍 Constituency", constituencies, label_visibility="collapsed")
     with col3:
         civil_status = ['All Status'] + sorted([s for s in df['informacion_personal_estado_civil'].dropna().unique()])
@@ -232,24 +215,18 @@ def main():
         
         with col_left:
             # --- FIX: Compact top row for images ---
-            img_col1, img_col2, img_col3 = st.columns([2,1,1])
-
+            img_col1, img_col2 = st.columns([1.5, 2])
             with img_col1:
                 if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
-                    st.image(deputy_data['photo_path']) # No width needed, it will adapt
+                    st.image(deputy_data['photo_path'])
                 else:
                     st.info("👤 No photo")
-
+            
             with img_col2:
                 if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
-                    st.image(deputy_data['logo_path'])
-            
-            with img_col3:
+                    st.image(deputy_data['logo_path'], width=80)
                 if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
-                    with st.popover("💺 Seat"):
-                        st.image(deputy_data['hemiciclo_path'], caption="Hemicycle Position")
-
-            st.markdown("<br>", unsafe_allow_html=True)
+                    st.image(deputy_data['hemiciclo_path'], width=80)
 
             st.markdown("### 📋 Basic Information")
             st.markdown('<p class="info-label">Position</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_cargo', 'Deputy')), unsafe_allow_html=True)
@@ -278,6 +255,14 @@ def main():
             st.markdown("### 💰 Financial Overview")
             salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
             total_salary = sum(extract_currency_value(s.get('euros', 0)) for s in salaries if isinstance(s, dict))
+            
+            # Handle monthly salaries specified in text
+            if total_salary == 0:
+                salary_text = str(deputy_data.get('rentas_percibidas_percepciones_salariales', ''))
+                if "mensual" in salary_text.lower():
+                    monthly_salary = extract_currency_value(salary_text)
+                    total_salary = monthly_salary * 12
+
             irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
             tax_rate = (irpf / total_salary * 100) if total_salary > 0 else 0
             properties_count = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
@@ -294,7 +279,6 @@ def main():
             
             tab1, tab2, tab3, tab4, tab5 = st.tabs(["💵 Income", "🏠 Assets", "💳 Liabilities", "📊 Analysis", "📄 Raw Data"])
             
-            # (All tab code remains the same)
             with tab1:
                 st.markdown("#### 💼 Income Sources")
                 salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
@@ -302,7 +286,11 @@ def main():
                     for i, salary in enumerate(salaries):
                         if isinstance(salary, dict):
                             with st.expander(f"{salary.get('concepto', f'Income Source #{i+1}')}"):
-                                st.markdown(f"**Amount:** {format_currency(extract_currency_value(salary.get('euros')))}")
+                                amount = extract_currency_value(salary.get('euros'))
+                                display_amount = format_currency(amount)
+                                if "mensual" in str(salary.get('euros', '')).lower():
+                                    display_amount += " (monthly)"
+                                st.markdown(f"**Amount:** {display_amount}")
                 else:
                     st.info("No income sources declared")
                 
@@ -366,6 +354,13 @@ def main():
                                 st.markdown(f"**Pending Amount:** {format_currency(extract_currency_value(debt.get('saldo_pendiente')))}")
                 else:
                     st.success("✅ No debts declared")
+            
+            with tab4:
+                # Analysis tab code...
+                pass
+            with tab5:
+                # Raw data tab code...
+                pass
 
 if __name__ == "__main__":
     main()
