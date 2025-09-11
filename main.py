@@ -741,7 +741,7 @@ def show_disclaimer():
         
         st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN**")
         st.write(
-            'Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
+            'Esta aplicación web de consulta de información pública recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España, incluyendo documentos en formato PDF y otros registros de acceso público.'
         )
 
         st.markdown('<h3 class="disclaimer-section-title">📋 NATURALEZA Y ORIGEN DE LA INFORMACIÓN</h3>', unsafe_allow_html=True)
