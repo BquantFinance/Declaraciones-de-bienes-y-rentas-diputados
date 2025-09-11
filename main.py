@@ -9,7 +9,7 @@ import os
 
 # Page configuration
 st.set_page_config(
-    page_title="Deputies Registry",
+    page_title="Registro de Diputados",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -64,20 +64,22 @@ st.markdown("""
     
     /* Deputy Card Container */
     .deputy-card {
-        background: linear-gradient(135deg, rgba(30, 30, 60, 0.6) 0%, rgba(20, 20, 40, 0.8) 100%);
-        border-radius: 20px;
-        padding: 1.5rem;
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, rgba(30, 30, 60, 0.7) 0%, rgba(20, 20, 40, 0.9) 100%);
+        border-radius: 24px;
+        padding: 2.5rem;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        margin-top: 1rem;
     }
     
     /* Image Gallery */
     .image-gallery {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        align-items: flex-start;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        align-items: center;
+        justify-content: center;
     }
     
     .main-image-container {
@@ -86,8 +88,8 @@ st.markdown("""
     }
     
     .main-image {
-        width: 180px;
-        height: 220px;
+        width: 220px;
+        height: 280px;
         object-fit: cover;
         border-radius: 15px;
         box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
@@ -97,28 +99,41 @@ st.markdown("""
     .badge-container {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        flex: 1;
+        gap: 1.5rem;
+        align-items: center;
+        justify-content: center;
     }
     
     .party-logo {
-        width: 80px;
-        height: 80px;
+        width: 140px;
+        height: 140px;
         object-fit: contain;
         background: rgba(255, 255, 255, 0.05);
-        padding: 10px;
+        padding: 15px;
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .party-logo:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
     }
     
     .seat-indicator {
-        width: 120px;
-        height: 60px;
+        width: 140px;
+        height: 140px;
         object-fit: contain;
         background: rgba(102, 126, 234, 0.1);
-        padding: 8px;
+        padding: 12px;
         border-radius: 10px;
         border: 1px solid rgba(102, 126, 234, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .seat-indicator:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
     }
     
     /* Compact Info Grid */
@@ -131,7 +146,7 @@ st.markdown("""
     
     .info-item {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-        padding: 0.8rem;
+        padding: 1rem;
         border-radius: 10px;
         border: 1px solid rgba(102, 126, 234, 0.15);
         transition: all 0.3s ease;
@@ -144,16 +159,16 @@ st.markdown("""
     }
     
     .info-label {
-        font-size: 0.75rem;
-        color: #94a3b8;
+        font-size: 0.8rem;
+        color: #b4bdc8;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.25rem;
-        font-weight: 600;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
     }
     
     .info-value {
-        font-size: 1rem;
+        font-size: 1.1rem;
         color: #ffffff;
         font-weight: 500;
     }
@@ -359,21 +374,21 @@ def parse_json_field(field_value):
         return []
 
 def format_currency(value):
-    """Format currency values for display"""
+    """Format currency values for display with Spanish notation"""
     if not isinstance(value, (int, float)):
         return "€0"
     if value >= 1000000:
-        return f"€{value/1000000:.1f}M"
+        return f"{value/1000000:.1f}M€"
     elif value >= 1000:
-        return f"€{value/1000:.1f}K"
+        return f"{value/1000:.0f}K€"
     else:
-        return f"€{value:.0f}"
+        return f"{value:.0f}€"
 
 def format_currency_full(value):
-    """Format currency values for detailed display"""
+    """Format currency values for detailed display with Spanish formatting"""
     if not isinstance(value, (int, float)):
-        return "€0,00"
-    return f"€{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return "0,00 €"
+    return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def extract_currency_value(value_str):
     """Extract numeric value from currency string"""
@@ -401,9 +416,9 @@ def create_image_gallery(deputy_data):
         import base64
         with open(deputy_data['photo_path'], "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
-            gallery_html += f'<img src="data:image/jpeg;base64,{img_data}" class="main-image" alt="Deputy Photo">'
+            gallery_html += f'<img src="data:image/jpeg;base64,{img_data}" class="main-image" alt="Foto del Diputado">'
     else:
-        gallery_html += '<div class="main-image" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); display: flex; align-items: center; justify-content: center; color: #94a3b8;">👤 No Photo</div>'
+        gallery_html += '<div class="main-image" style="width: 220px; height: 280px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.2rem; border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.3);">👤<br>Sin Foto</div>'
     gallery_html += '</div>'
     
     # Badges container
@@ -414,62 +429,52 @@ def create_image_gallery(deputy_data):
         import base64
         with open(deputy_data['logo_path'], "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
-            gallery_html += f'<img src="data:image/png;base64,{img_data}" class="party-logo" alt="Party Logo">'
+            gallery_html += f'<img src="data:image/png;base64,{img_data}" class="party-logo" alt="Logo del Partido" title="Partido Político">'
     
     # Seat indicator
     if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
         import base64
         with open(deputy_data['hemiciclo_path'], "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
-            gallery_html += f'<img src="data:image/png;base64,{img_data}" class="seat-indicator" alt="Seat Position">'
+            gallery_html += f'<img src="data:image/png;base64,{img_data}" class="seat-indicator" alt="Posición en el Hemiciclo" title="Escaño en el Hemiciclo">'
     
     gallery_html += '</div></div>'
     return gallery_html
 
 def main():
     # Header with gradient
-    st.markdown('<h1 style="text-align: center; margin-bottom: 0;">⚖️ Deputies Registry</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #94a3b8; font-size: 1rem; margin-top: 0;">SPANISH CONGRESS · Financial Transparency Portal</p>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align: center; margin-bottom: 0;">⚖️ Registro de Diputados</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #94a3b8; font-size: 1rem; margin-top: 0;">CONGRESO DE LOS DIPUTADOS · Portal de Transparencia Financiera</p>', unsafe_allow_html=True)
     
     df = load_data()
     
-    # Search and Filters in a compact layout
+    # Search in a compact layout
     with st.container():
-        col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+        col1, col2 = st.columns([4, 1])
         
         with col1:
-            search_term = st.text_input("🔍", placeholder="Search deputy by name...", label_visibility="collapsed")
-        with col2:
-            constituencies = ['All Constituencies'] + sorted([c for c in df['informacion_personal_circunscripcion'].dropna().unique() if c != 'nan'])
-            selected_constituency = st.selectbox("📍", constituencies, label_visibility="collapsed")
-        with col3:
-            civil_status = ['All Status'] + sorted([s for s in df['informacion_personal_estado_civil'].dropna().unique()])
-            selected_status = st.selectbox("💑", civil_status, label_visibility="collapsed")
+            search_term = st.text_input("🔍 Búsqueda", placeholder="Buscar diputado por nombre...", label_visibility="visible")
         
         # Filter data
         filtered_df = df.copy()
         if search_term:
             filtered_df = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
-        if selected_constituency != 'All Constituencies':
-            filtered_df = filtered_df[filtered_df['informacion_personal_circunscripcion'] == selected_constituency]
-        if selected_status != 'All Status':
-            filtered_df = filtered_df[filtered_df['informacion_personal_estado_civil'] == selected_status]
         
-        with col4:
-            st.metric("", f"{len(filtered_df)} Results", label_visibility="collapsed")
+        with col2:
+            st.metric("Resultados", f"{len(filtered_df)}", label_visibility="visible")
     
     st.markdown("---")
     
     if len(filtered_df) == 0:
-        st.warning("🔍 No deputies found matching your criteria")
+        st.warning("🔍 No se encontraron diputados con ese criterio de búsqueda")
     else:
         # Deputy selector with better formatting
         deputy_names = filtered_df['informacion_personal_nombre_y_apellidos'].tolist()
         selected_deputy = st.selectbox(
-            "Select Deputy:",
+            "**Seleccionar Diputado:**",
             deputy_names,
             format_func=lambda x: f"👤 {x}",
-            label_visibility="collapsed"
+            label_visibility="visible"
         )
         
         deputy_data = filtered_df[filtered_df['informacion_personal_nombre_y_apellidos'] == selected_deputy].iloc[0]
@@ -478,30 +483,31 @@ def main():
         st.markdown('<div class="deputy-card">', unsafe_allow_html=True)
         
         # Create two-column layout with image gallery on left
-        col_left, col_right = st.columns([1.2, 2])
+        col_left, col_right = st.columns([1.6, 2])
         
         with col_left:
             # Compact image gallery
             st.markdown(create_image_gallery(deputy_data), unsafe_allow_html=True)
             
             # Basic info in compact grid
+            st.markdown("### 📋 Información Básica")
             st.markdown(f"""
             <div class="info-grid">
                 <div class="info-item">
-                    <div class="info-label">📋 Position</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_cargo', 'Deputy')}</div>
+                    <div class="info-label">📋 CARGO</div>
+                    <div class="info-value">{deputy_data.get('informacion_personal_cargo', 'Diputado')}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">📍 Constituency</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_circunscripcion', 'N/A')}</div>
+                    <div class="info-label">📍 CIRCUNSCRIPCIÓN</div>
+                    <div class="info-value">{deputy_data.get('informacion_personal_circunscripcion', 'No especificada')}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">💑 Status</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_estado_civil', 'N/A')}</div>
+                    <div class="info-label">💑 ESTADO CIVIL</div>
+                    <div class="info-value">{deputy_data.get('informacion_personal_estado_civil', 'No especificado')}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">📅 Election</div>
-                    <div class="info-value">{deputy_data.get('informacion_personal_fecha_eleccion', 'N/A')}</div>
+                    <div class="info-label">📅 FECHA DE ELECCIÓN</div>
+                    <div class="info-value">{deputy_data.get('informacion_personal_fecha_eleccion', 'No especificada')}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -511,13 +517,13 @@ def main():
                 "𝕏": deputy_data.get('twitter'),
                 "Facebook": deputy_data.get('facebook'),
                 "Instagram": deputy_data.get('instagram'),
-                "Website": deputy_data.get('website')
+                "Sitio Web": deputy_data.get('website')
             }
             
             valid_links = {label: url for label, url in social_links.items() if pd.notna(url)}
             
             if valid_links:
-                st.markdown("**🌐 Social Media**")
+                st.markdown("### 🌐 Redes Sociales")
                 social_html = '<div class="social-pills">'
                 for label, url in valid_links.items():
                     social_html += f'<a href="{url}" target="_blank" class="social-pill">{label}</a>'
@@ -526,7 +532,7 @@ def main():
         
         with col_right:
             # Deputy name with style
-            st.markdown(f"## {deputy_data['informacion_personal_nombre_y_apellidos']}")
+            st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
             
             # Calculate financial metrics
             salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
@@ -546,111 +552,111 @@ def main():
             total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
             
             # Financial Overview - Compact metrics
-            st.markdown("### 💰 Financial Overview")
+            st.markdown("### 💰 Resumen Financiero")
             metric_cols = st.columns(6)
-            metric_cols[0].metric("Income", format_currency(total_salary), help="Annual income")
-            metric_cols[1].metric("IRPF", format_currency(irpf), help="Taxes paid")
-            metric_cols[2].metric("Tax Rate", f"{tax_rate:.1f}%", help="Effective tax rate")
-            metric_cols[3].metric("Properties", f"{properties_count}", help="Real estate owned")
-            metric_cols[4].metric("Vehicles", f"{vehicles_count}", help="Vehicles owned")
-            metric_cols[5].metric("Debt", format_currency(total_debt), help="Total outstanding debt")
+            metric_cols[0].metric("Ingresos", format_currency(total_salary), help="Total de ingresos anuales declarados")
+            metric_cols[1].metric("IRPF", format_currency(irpf), help="Impuesto sobre la renta pagado")
+            metric_cols[2].metric("Tipo", f"{tax_rate:.1f}%", help="Tipo impositivo efectivo")
+            metric_cols[3].metric("Inmuebles", str(properties_count), help="Número de propiedades")
+            metric_cols[4].metric("Vehículos", str(vehicles_count), help="Número de vehículos")
+            metric_cols[5].metric("Deudas", format_currency(total_debt), help="Deuda total pendiente")
             
             st.markdown("---")
             
             # Compact tabs
-            tab1, tab2, tab3, tab4 = st.tabs(["💵 Income", "🏠 Assets", "💳 Liabilities", "📊 Analysis"])
+            tab1, tab2, tab3, tab4 = st.tabs(["💵 Ingresos", "🏠 Patrimonio", "💳 Deudas", "📊 Análisis"])
             
             with tab1:
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("#### 💼 Salary & Income")
+                    st.markdown("#### 💼 Salarios e Ingresos")
                     salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
                     if salaries:
                         for i, salary in enumerate(salaries):
                             if isinstance(salary, dict):
-                                with st.expander(f"💰 {salary.get('concepto', f'Income #{i+1}')}"):
+                                with st.expander(f"💰 {salary.get('concepto', f'Fuente de Ingresos #{i+1}')}"):
                                     amount = extract_currency_value(salary.get('euros'))
                                     display_amount = format_currency_full(amount)
                                     if "mensual" in str(salary.get('euros', '')).lower():
-                                        display_amount += " (monthly)"
-                                    st.markdown(f"**Amount:** {display_amount}")
+                                        display_amount += " (mensual)"
+                                    st.markdown(f"**Importe:** {display_amount}")
                     else:
-                        st.info("No income sources declared")
+                        st.info("No se han declarado fuentes de ingresos")
                 
                 with col2:
-                    st.markdown("#### 📈 Investment Income")
+                    st.markdown("#### 📈 Rentas del Capital")
                     dividends = parse_json_field(deputy_data['rentas_percibidas_dividendos_y_participaciones'])
                     if dividends:
                         for div in dividends:
                             if isinstance(div, dict):
-                                with st.expander(f"📊 {div.get('concepto', 'Investment')}"):
-                                    st.markdown(f"**Returns:** {format_currency_full(extract_currency_value(div.get('euros')))}")
+                                with st.expander(f"📊 {div.get('concepto', 'Inversión')}"):
+                                    st.markdown(f"**Rendimientos:** {format_currency_full(extract_currency_value(div.get('euros')))}")
                     else:
-                        st.info("No investment income declared")
+                        st.info("No se han declarado rentas del capital")
             
             with tab2:
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("#### 🏠 Real Estate")
+                    st.markdown("#### 🏠 Bienes Inmuebles")
                     urban = parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])
                     if urban:
                         for i, prop in enumerate(urban):
                             if isinstance(prop, dict):
-                                with st.expander(f"🏢 Property #{i+1}"):
-                                    st.markdown(f"**Type:** {prop.get('clase_y_caracteristicas', 'Property')}")
-                                    st.markdown(f"**Location:** {prop.get('situacion', 'N/A')}")
-                                    st.markdown(f"**Acquired:** {prop.get('fecha_adquisicion', 'N/A')}")
+                                with st.expander(f"🏢 Inmueble #{i+1}"):
+                                    st.markdown(f"**Tipo:** {prop.get('clase_y_caracteristicas', 'Propiedad')}")
+                                    st.markdown(f"**Ubicación:** {prop.get('situacion', 'No especificada')}")
+                                    st.markdown(f"**Fecha Adquisición:** {prop.get('fecha_adquisicion', 'No especificada')}")
                     else:
-                        st.info("No properties declared")
+                        st.info("No se han declarado propiedades")
                     
-                    st.markdown("#### 💳 Financial Assets")
+                    st.markdown("#### 💳 Activos Financieros")
                     accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
                     if accounts:
                         for i, account in enumerate(accounts):
                             if isinstance(account, dict):
-                                with st.expander(f"🏦 {account.get('descripcion', f'Account #{i+1}')}"):
-                                    st.markdown(f"**Balance:** {format_currency_full(extract_currency_value(account.get('saldo')))}")
+                                with st.expander(f"🏦 {account.get('descripcion', f'Cuenta #{i+1}')}"):
+                                    st.markdown(f"**Saldo:** {format_currency_full(extract_currency_value(account.get('saldo')))}")
                     else:
-                        st.info("No accounts declared")
+                        st.info("No se han declarado cuentas")
                 
                 with col2:
-                    st.markdown("#### 🚗 Vehicles")
+                    st.markdown("#### 🚗 Vehículos")
                     vehicles = parse_json_field(deputy_data['vehiculos'])
                     if vehicles:
                         for i, vehicle in enumerate(vehicles):
                             if isinstance(vehicle, dict):
-                                with st.expander(f"🚙 {vehicle.get('descripcion', f'Vehicle #{i+1}')}"):
-                                    st.markdown(f"**Acquired:** {vehicle.get('fecha_adquisicion', 'N/A')}")
+                                with st.expander(f"🚙 {vehicle.get('descripcion', f'Vehículo #{i+1}')}"):
+                                    st.markdown(f"**Fecha Adquisición:** {vehicle.get('fecha_adquisicion', 'No especificada')}")
                     else:
-                        st.info("No vehicles declared")
+                        st.info("No se han declarado vehículos")
             
             with tab3:
-                st.markdown("#### 💸 Outstanding Debts")
+                st.markdown("#### 💸 Deudas y Obligaciones")
                 if debts:
                     # Summary card
-                    st.info(f"**Total Outstanding Debt:** {format_currency_full(total_debt)}")
+                    st.info(f"**Deuda Total Pendiente:** {format_currency_full(total_debt)}")
                     
                     for i, debt in enumerate(debts):
                         if isinstance(debt, dict):
-                            with st.expander(f"📄 {debt.get('descripcion', f'Debt #{i+1}')}"):
+                            with st.expander(f"📄 {debt.get('descripcion', f'Deuda #{i+1}')}"):
                                 col1, col2 = st.columns(2)
                                 with col1:
-                                    st.markdown(f"**Original:** {format_currency_full(extract_currency_value(debt.get('importe_concedido')))}")
-                                    st.markdown(f"**Grant Date:** {debt.get('fecha_concesion', 'N/A')}")
+                                    st.markdown(f"**Importe Original:** {format_currency_full(extract_currency_value(debt.get('importe_concedido')))}")
+                                    st.markdown(f"**Fecha Concesión:** {debt.get('fecha_concesion', 'No especificada')}")
                                 with col2:
-                                    st.markdown(f"**Outstanding:** {format_currency_full(extract_currency_value(debt.get('saldo_pendiente')))}")
+                                    st.markdown(f"**Importe Pendiente:** {format_currency_full(extract_currency_value(debt.get('saldo_pendiente')))}")
                                     original = extract_currency_value(debt.get('importe_concedido'))
                                     pending = extract_currency_value(debt.get('saldo_pendiente'))
                                     if original > 0:
                                         paid_pct = ((original - pending) / original) * 100
-                                        st.markdown(f"**Paid:** {paid_pct:.1f}%")
+                                        st.markdown(f"**Pagado:** {paid_pct:.1f}%")
                 else:
-                    st.success("✅ No debts declared")
+                    st.success("✅ No se han declarado deudas")
             
             with tab4:
-                st.markdown("#### 📊 Financial Analysis")
+                st.markdown("#### 📊 Análisis Financiero")
                 
                 # Create analysis visualizations
                 col1, col2 = st.columns(2)
@@ -658,7 +664,7 @@ def main():
                 with col1:
                     # Asset Distribution Pie Chart
                     fig_assets = go.Figure(data=[go.Pie(
-                        labels=['Properties', 'Vehicles', 'Cash/Accounts'],
+                        labels=['Propiedades', 'Vehículos', 'Efectivo/Cuentas'],
                         values=[
                             properties_count * 150000,  # Estimated avg property value
                             vehicles_count * 20000,     # Estimated avg vehicle value
@@ -668,7 +674,7 @@ def main():
                         marker_colors=['#667eea', '#764ba2', '#f093fb']
                     )])
                     fig_assets.update_layout(
-                        title="Asset Distribution (Estimated)",
+                        title="Distribución de Patrimonio (Estimado)",
                         showlegend=True,
                         height=300,
                         paper_bgcolor='rgba(0,0,0,0)',
@@ -682,7 +688,7 @@ def main():
                     fig_tax = go.Figure(go.Indicator(
                         mode="gauge+number",
                         value=tax_rate,
-                        title={'text': "Effective Tax Rate"},
+                        title={'text': "Tipo Impositivo Efectivo"},
                         domain={'x': [0, 1], 'y': [0, 1]},
                         gauge={
                             'axis': {'range': [None, 50]},
