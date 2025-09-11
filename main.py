@@ -120,6 +120,11 @@ st.markdown("""
         color: #e8eaed;
     }
     
+    /* Center images in the sub-columns */
+    div[data-testid="column"]:nth-of-type(1) div[data-testid="stHorizontalBlock"] {
+        align-items: center;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -214,19 +219,22 @@ def main():
         col_left, col_right = st.columns([1, 2.5])
         
         with col_left:
-            # --- FIX: Compact top row for images ---
-            img_col1, img_col2 = st.columns([1.5, 2])
-            with img_col1:
-                if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
-                    st.image(deputy_data['photo_path'])
-                else:
-                    st.info("👤 No photo")
-            
-            with img_col2:
+            # --- FIX: Proportional and Aligned Image Layout ---
+            if pd.notna(deputy_data['photo_path']) and os.path.exists(deputy_data['photo_path']):
+                st.image(deputy_data['photo_path'], width=200)
+            else:
+                st.info("👤 No photo available")
+
+            logo_col, seat_col = st.columns(2)
+            with logo_col:
                 if pd.notna(deputy_data['logo_path']) and os.path.exists(deputy_data['logo_path']):
-                    st.image(deputy_data['logo_path'], width=80)
-                if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
-                    st.image(deputy_data['hemiciclo_path'], width=80)
+                    st.image(deputy_data['logo_path'], width=100)
+            
+            with seat_col:
+                 if pd.notna(deputy_data['hemiciclo_path']) and os.path.exists(deputy_data['hemiciclo_path']):
+                    st.image(deputy_data['hemiciclo_path'], width=100)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
 
             st.markdown("### 📋 Basic Information")
             st.markdown('<p class="info-label">Position</p><p class="info-value">{}</p>'.format(deputy_data.get('informacion_personal_cargo', 'Deputy')), unsafe_allow_html=True)
@@ -237,17 +245,21 @@ def main():
             st.markdown("<br>", unsafe_allow_html=True)
 
             st.markdown("### 🌐 Social Media")
-            social_cols = st.columns(2)
-            with social_cols[0]:
-                if pd.notna(deputy_data['twitter']):
-                    st.link_button("𝕏 Twitter", deputy_data['twitter'])
-                if pd.notna(deputy_data['facebook']):
-                    st.link_button("📘 Facebook", deputy_data['facebook'])
-            with social_cols[1]:
-                if pd.notna(deputy_data['instagram']):
-                    st.link_button("📷 Instagram", deputy_data['instagram'])
-                if pd.notna(deputy_data['website']):
-                    st.link_button("🌐 Website", deputy_data['website'])
+            # This layout avoids single buttons taking up full width
+            social_links = {
+                "𝕏 Twitter": deputy_data.get('twitter'),
+                "📘 Facebook": deputy_data.get('facebook'),
+                "📷 Instagram": deputy_data.get('instagram'),
+                "🌐 Website": deputy_data.get('website')
+            }
+            valid_links = {label: url for label, url in social_links.items() if pd.notna(url)}
+            
+            num_links = len(valid_links)
+            if num_links > 0:
+                cols = st.columns(num_links)
+                for i, (label, url) in enumerate(valid_links.items()):
+                    cols[i].link_button(label, url)
+
 
         # (The rest of the code for the right column and tabs is unchanged)
         with col_right:
