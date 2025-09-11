@@ -808,7 +808,7 @@ def show_disclaimer():
         st.markdown(
             """
             <div style="text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 2rem;">
-                Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a> en X.
+                Una aplicación desarrollada por <a href="https://x.com/Gsnchez" target="_blank" style="color: #667eea; text-decoration: none;">@Gsnchez</a>.
             </div>
             """,
             unsafe_allow_html=True
