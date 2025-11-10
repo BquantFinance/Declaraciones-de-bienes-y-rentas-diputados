@@ -1112,15 +1112,21 @@ def get_deputy_photo_html(photo_path, size="small"):
         return '<div class="screener-photo-placeholder">👤</div>'
 
 def prepare_screener_data(df):
-    """Prepare data for screener with all metrics calculated"""
-    # Get unique deputies (latest declaration for each)
-    unique_deputies = df.sort_values('source_file').groupby('informacion_personal_nombre_y_apellidos').last().reset_index()
+    """Prepare data for screener with all metrics calculated - properly deduplicated"""
+    # Create a normalized name column for grouping
+    df_copy = df.copy()
+    df_copy['normalized_name'] = df_copy['informacion_personal_nombre_y_apellidos'].apply(normalize_name)
+    
+    # Get unique deputies (latest declaration for each, using normalized names)
+    # Sort by source_file to get the most recent declaration
+    df_sorted = df_copy.sort_values('source_file', ascending=True)
+    unique_deputies = df_sorted.groupby('normalized_name').last().reset_index()
     
     screener_data = []
     
     for idx, row in unique_deputies.iterrows():
         deputy_info = {
-            'name': row['informacion_personal_nombre_y_apellidos'],
+            'name': row['informacion_personal_nombre_y_apellidos'],  # Use original name for display
             'photo_path': row.get('photo_path', ''),
             'party': row.get('informacion_personal_cargo', 'Diputado'),
             'salary': 0,
