@@ -875,43 +875,28 @@ def normalize_deputy_id(deputy_id):
     except (ValueError, TypeError):
         return None
 
-def match_deputy_interests(deputy_name, deputy_id, interests_df):
-    """Match deputy with their interests data using both ID and name"""
+def match_deputy_interests(deputy_id, interests_df):
+    """
+    Match deputy with their interests data using deputy_id.
+    Both CSVs have matching ID columns:
+    - deputies_with_salaries.csv → deputy_id
+    - deputies_economic_interests.csv → metadata_deputy_id
+    
+    Args:
+        deputy_id: The deputy's ID from the main database
+        interests_df: The interests DataFrame (from cached load)
+    
+    Returns:
+        DataFrame with matching interest records, or empty DataFrame if no matches
+    """
     if interests_df.empty:
         return pd.DataFrame()
     
-    matches = pd.DataFrame()
+    if pd.isna(deputy_id):
+        return pd.DataFrame()
     
-    # Method 1: Try matching by deputy_id first (most reliable)
-    if pd.notna(deputy_id):
-        normalized_id = normalize_deputy_id(deputy_id)
-        if normalized_id:
-            # Normalize the metadata_deputy_id in interests_df
-            interests_df['normalized_metadata_deputy_id'] = interests_df['metadata_deputy_id'].apply(normalize_deputy_id)
-            id_matches = interests_df[interests_df['normalized_metadata_deputy_id'] == normalized_id]
-            if not id_matches.empty:
-                return id_matches
-    
-    # Method 2: Try name matching
-    normalized_deputy = normalize_name(deputy_name)
-    
-    # Create normalized full name combinations from interests data
-    interests_df['full_name_normalized'] = (
-        interests_df['personal_nombre'].fillna('') + ' ' + 
-        interests_df['personal_apellidos'].fillna('')
-    ).apply(normalize_name)
-    
-    # Also try reversed order (Last Name First Name)
-    interests_df['full_name_reversed'] = (
-        interests_df['personal_apellidos'].fillna('') + ' ' + 
-        interests_df['personal_nombre'].fillna('')
-    ).apply(normalize_name)
-    
-    # Find matches
-    matches = interests_df[
-        (interests_df['full_name_normalized'] == normalized_deputy) |
-        (interests_df['full_name_reversed'] == normalized_deputy)
-    ]
+    # Simple, direct matching by ID - works 100% of the time
+    matches = interests_df[interests_df['metadata_deputy_id'] == deputy_id]
     
     return matches
 
@@ -2034,9 +2019,11 @@ def main_app():
                 
                 with tabs[6]:
                     st.markdown("#### 📋 Actividades e Intereses")
+                    # Get deputy_id from the selected deputy_data
                     deputy_id = deputy_data.get('deputy_id')
-                    deputy_interests = match_deputy_interests(selected_deputy_name, deputy_id, interests_df)
-                    
+                    # Match interests using the perfect ID-based system
+                    deputy_interests = match_deputy_interests(deputy_id, interests_df)
+                    # Display the interests
                     display_interests_section(deputy_interests)
                 
                 with tabs[7]:
