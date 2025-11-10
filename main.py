@@ -1197,8 +1197,11 @@ def prepare_screener_data(df):
             'max_account': 0,
             'max_debt': 0,
             'total_assets': 0,
+            'max_property_score': 0,
             'max_property_desc': '',
-            'max_vehicle_desc': ''
+            'max_vehicle_score': 0,
+            'max_vehicle_desc': '',
+            'max_debt_desc': ''
         }
         
         # Salary
@@ -1213,90 +1216,136 @@ def prepare_screener_data(df):
         irpf = extract_currency_value(row.get('irpf_cantidad_pagada', 0))
         deputy_info['irpf'] = irpf
         
-        # Properties
+        # Properties with scoring
         urban_properties = parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos'])
         rustic_properties = parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))
         all_properties = urban_properties + rustic_properties
         deputy_info['properties_count'] = len(all_properties)
         
-        # Get most "valuable" property description (heuristic based on keywords)
+        # Score properties to find the most valuable
         if all_properties:
             property_scores = []
             for prop in all_properties:
                 if isinstance(prop, dict):
                     desc = str(prop.get('clase_y_caracteristicas', '') or prop.get('clase', '')).lower()
+                    situacion = str(prop.get('situacion', '')).lower()
                     score = 0
-                    # Score based on property type keywords
-                    if any(word in desc for word in ['chalet', 'villa', 'unifamiliar', 'pareado']):
-                        score += 10
-                    if any(word in desc for word in ['piso', 'vivienda', 'casa']):
+                    
+                    # Property type scoring
+                    if any(word in desc for word in ['chalet', 'villa', 'palacio', 'mansion']):
+                        score += 100
+                    elif any(word in desc for word in ['unifamiliar', 'adosado', 'pareado']):
+                        score += 50
+                    elif any(word in desc for word in ['piso', 'vivienda', 'casa', 'apartamento']):
+                        score += 30
+                    elif any(word in desc for word in ['local', 'oficina']):
+                        score += 20
+                    elif any(word in desc for word in ['garaje', 'parking', 'plaza']):
                         score += 5
-                    if any(word in desc for word in ['local', 'garaje', 'trastero', 'almacen']):
-                        score += 2
-                    if any(word in desc for word in ['rustico', 'finca', 'terreno', 'parcela']):
+                    elif any(word in desc for word in ['trastero', 'almacen']):
                         score += 3
-                    property_scores.append((score, desc))
+                    elif any(word in desc for word in ['rustico', 'finca', 'terreno', 'parcela']):
+                        score += 25
+                    
+                    # Location premium (major cities)
+                    if any(city in situacion for city in ['madrid', 'barcelona', 'valencia', 'sevilla', 'bilbao', 'málaga']):
+                        score += 30
+                    
+                    # Additional features
+                    if any(word in desc for word in ['piscina', 'jardin', 'jardín']):
+                        score += 10
+                    if 'duplex' in desc or 'dúplex' in desc or 'ático' in desc or 'atico' in desc:
+                        score += 15
+                    
+                    full_desc = f"{desc.title()}"
+                    if situacion:
+                        full_desc += f" ({situacion.title()})"
+                    
+                    property_scores.append((score, full_desc[:80]))
             
             if property_scores:
-                property_scores.sort(reverse=True)
-                deputy_info['max_property_desc'] = property_scores[0][1].title()[:50]
+                property_scores.sort(reverse=True, key=lambda x: x[0])
+                deputy_info['max_property_score'] = property_scores[0][0]
+                deputy_info['max_property_desc'] = property_scores[0][1]
         
-        # Vehicles
+        # Vehicles with scoring
         vehicles = parse_json_field(row['vehiculos'])
         deputy_info['vehicles_count'] = len(vehicles)
         
-        # Get most "valuable" vehicle description (heuristic based on brand)
+        # Score vehicles to find the most valuable
         if vehicles:
             vehicle_scores = []
-            luxury_brands = ['mercedes', 'bmw', 'audi', 'porsche', 'lexus', 'tesla', 'jaguar', 
-                           'maserati', 'ferrari', 'lamborghini', 'bentley', 'rolls', 'range rover',
-                           'volvo', 'alfa romeo', 'land rover', 'infiniti', 'cadillac']
-            premium_brands = ['volkswagen', 'ford', 'toyota', 'honda', 'mazda', 'hyundai', 
-                            'kia', 'nissan', 'peugeot', 'renault', 'citroen', 'seat', 'opel', 'fiat']
+            luxury_brands = {
+                'ferrari': 150, 'lamborghini': 150, 'bugatti': 150, 'mclaren': 150,
+                'bentley': 140, 'rolls': 140, 'rolls-royce': 140, 'aston': 140,
+                'porsche': 120, 'maserati': 120, 'tesla': 110,
+                'mercedes': 100, 'bmw': 95, 'audi': 90, 'lexus': 85,
+                'jaguar': 80, 'land rover': 75, 'range rover': 90, 'volvo': 70,
+                'alfa romeo': 65, 'infiniti': 60, 'cadillac': 60, 'lincoln': 55
+            }
+            premium_brands = {
+                'volkswagen': 40, 'ford': 35, 'toyota': 40, 'honda': 35, 
+                'mazda': 35, 'hyundai': 30, 'kia': 30, 'nissan': 35, 
+                'peugeot': 30, 'renault': 30, 'citroen': 30, 'seat': 25, 
+                'opel': 25, 'fiat': 20, 'skoda': 30
+            }
             
             for vehicle in vehicles:
                 if isinstance(vehicle, dict):
                     desc = str(vehicle.get('descripcion', '')).lower()
-                    score = 1
+                    score = 10  # Base score
                     
                     # Check for luxury brands
-                    for brand in luxury_brands:
+                    for brand, brand_score in luxury_brands.items():
                         if brand in desc:
-                            score = 10
+                            score = brand_score
                             break
                     
                     # Check for premium brands if not luxury
-                    if score == 1:
-                        for brand in premium_brands:
+                    if score == 10:
+                        for brand, brand_score in premium_brands.items():
                             if brand in desc:
-                                score = 5
+                                score = brand_score
                                 break
                     
-                    # Check for vehicle type
+                    # Vehicle type bonuses
                     if any(word in desc for word in ['suv', '4x4', 'todoterreno']):
-                        score += 2
-                    if any(word in desc for word in ['deportivo', 'sport', 'gt']):
-                        score += 3
-                    if 'electrico' in desc or 'eléctrico' in desc or 'hybrid' in desc or 'hibrido' in desc:
-                        score += 2
+                        score += 15
+                    if any(word in desc for word in ['deportivo', 'sport', 'gt', 'coupe', 'coupé']):
+                        score += 25
+                    if any(word in desc for word in ['electrico', 'eléctrico', 'electric']):
+                        score += 20
+                    if any(word in desc for word in ['hybrid', 'hibrido', 'híbrido', 'phev']):
+                        score += 10
+                    if 'turbo' in desc:
+                        score += 10
                     
-                    vehicle_scores.append((score, vehicle.get('descripcion', 'Vehículo')))
+                    # Model indicators
+                    if any(word in desc for word in ['amg', 'm sport', 's line', 'rs', 'gtd', 'gti']):
+                        score += 20
+                    
+                    vehicle_scores.append((score, vehicle.get('descripcion', 'Vehículo')[:60]))
             
             if vehicle_scores:
-                vehicle_scores.sort(reverse=True)
-                deputy_info['max_vehicle_desc'] = vehicle_scores[0][1][:50]
+                vehicle_scores.sort(reverse=True, key=lambda x: x[0])
+                deputy_info['max_vehicle_score'] = vehicle_scores[0][0]
+                deputy_info['max_vehicle_desc'] = vehicle_scores[0][1]
         
-        # Debts - get both total and max individual debt
+        # Debts - get both total and max individual debt with description
         debts = parse_json_field(row['deudas_y_obligaciones'])
         debt_amounts = []
         for debt in debts:
             if isinstance(debt, dict):
                 pending = extract_currency_value(debt.get('saldo_pendiente', 0))
                 if pending > 0:
-                    debt_amounts.append(pending)
+                    desc = debt.get('descripcion', 'Préstamo')
+                    debt_amounts.append((pending, desc))
         
-        deputy_info['debt_total'] = sum(debt_amounts)
-        deputy_info['max_debt'] = max(debt_amounts) if debt_amounts else 0
+        deputy_info['debt_total'] = sum(d[0] for d in debt_amounts)
+        if debt_amounts:
+            debt_amounts.sort(reverse=True, key=lambda x: x[0])
+            deputy_info['max_debt'] = debt_amounts[0][0]
+            deputy_info['max_debt_desc'] = debt_amounts[0][1][:60]
         
         # Accounts - get both total and max individual account
         accounts = parse_json_field(row['depositos_y_cuentas_cuentas'])
@@ -1310,7 +1359,7 @@ def prepare_screener_data(df):
         deputy_info['accounts_balance'] = sum(account_balances)
         deputy_info['max_account'] = max(account_balances) if account_balances else 0
         
-        # Calculate total liquid assets (accounts + investments)
+        # Calculate total liquid assets
         total_assets = deputy_info['accounts_balance']
         
         # Add other financial assets
@@ -1346,15 +1395,17 @@ def show_screener(df):
     
     with col1:
         metric_options = {
-            '💰 Salario Anual': ('salary', 'positive', 'currency'),
-            '💵 IRPF Pagado': ('irpf', 'positive', 'currency'),
-            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number'),
-            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number'),
-            '💳 Deuda Total': ('debt_total', 'negative', 'currency'),
-            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency'),
-            '💎 Cuenta Individual Más Grande': ('max_account', 'positive', 'currency'),
-            '⚠️ Deuda Individual Más Alta': ('max_debt', 'negative', 'currency'),
-            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency'),
+            '💰 Salario Anual': ('salary', 'positive', 'currency', None),
+            '💵 IRPF Pagado': ('irpf', 'positive', 'currency', None),
+            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number', 'max_property_desc'),
+            '🏰 Inmueble Más Valioso': ('max_property_score', 'positive', 'score', 'max_property_desc'),
+            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number', 'max_vehicle_desc'),
+            '🏎️ Vehículo Más Valioso': ('max_vehicle_score', 'positive', 'score', 'max_vehicle_desc'),
+            '💳 Deuda Total': ('debt_total', 'negative', 'currency', None),
+            '⚠️ Deuda Individual Más Alta': ('max_debt', 'negative', 'currency', 'max_debt_desc'),
+            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency', None),
+            '💎 Cuenta Individual Más Grande': ('max_account', 'positive', 'currency', None),
+            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency', None),
         }
         
         selected_metric_name = st.selectbox(
@@ -1369,7 +1420,7 @@ def show_screener(df):
             horizontal=True
         )
     
-    metric_column, value_class, format_type = metric_options[selected_metric_name]
+    metric_column, value_class, format_type, desc_field = metric_options[selected_metric_name]
     
     st.markdown("---")
     
@@ -1384,12 +1435,14 @@ def show_screener(df):
         st.markdown(f"### 📊 Bottom 10 Diputados - {selected_metric_name}")
     
     # Display summary statistics
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
         avg_value = screener_df[metric_column].mean()
         if format_type == 'currency':
             st.metric("Promedio", format_currency(avg_value))
+        elif format_type == 'score':
+            st.metric("Promedio", f"{avg_value:.0f} pts")
         else:
             st.metric("Promedio", f"{avg_value:.1f}")
     
@@ -1397,15 +1450,10 @@ def show_screener(df):
         max_value = screener_df[metric_column].max()
         if format_type == 'currency':
             st.metric("Máximo", format_currency(max_value))
+        elif format_type == 'score':
+            st.metric("Máximo", f"{int(max_value)} pts")
         else:
             st.metric("Máximo", f"{int(max_value)}")
-    
-    with col3:
-        min_value = screener_df[metric_column].min()
-        if format_type == 'currency':
-            st.metric("Mínimo", format_currency(min_value))
-        else:
-            st.metric("Mínimo", f"{int(min_value)}")
     
     st.markdown("---")
     
@@ -1416,19 +1464,15 @@ def show_screener(df):
         # Format the metric value
         if format_type == 'currency':
             formatted_value = format_currency_full(metric_val)
+        elif format_type == 'score':
+            formatted_value = f"{int(metric_val)} puntos"
         else:
             formatted_value = f"{int(metric_val)}"
         
-        # Add description for certain metrics
+        # Get description if available
         description = ""
-        if metric_column == 'max_vehicle_desc' and deputy['max_vehicle_desc']:
-            description = f"🚗 {deputy['max_vehicle_desc']}"
-        elif metric_column == 'max_property_desc' and deputy['max_property_desc']:
-            description = f"🏠 {deputy['max_property_desc']}"
-        elif metric_column == 'vehicles_count' and deputy['max_vehicle_desc']:
-            description = f"<br><span style='color: #94a3b8; font-size: 0.85rem;'>🚗 Vehículo destacado: {deputy['max_vehicle_desc']}</span>"
-        elif metric_column == 'properties_count' and deputy['max_property_desc']:
-            description = f"<br><span style='color: #94a3b8; font-size: 0.85rem;'>🏠 Inmueble destacado: {deputy['max_property_desc']}</span>"
+        if desc_field and deputy.get(desc_field):
+            description = str(deputy[desc_field])
         
         display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class, description)
     
@@ -1442,6 +1486,8 @@ def show_screener(df):
     # Format text for chart
     if format_type == 'currency':
         text_values = top_deputies[metric_column].apply(lambda x: format_currency(x))
+    elif format_type == 'score':
+        text_values = top_deputies[metric_column].apply(lambda x: f"{int(x)} pts")
     else:
         text_values = top_deputies[metric_column].apply(lambda x: f"{int(x)}")
     
@@ -1488,6 +1534,11 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
     
     photo_html = get_deputy_photo_html(deputy_info['photo_path'])
     
+    # Build description HTML properly if provided
+    description_html = ""
+    if description:
+        description_html = f'<div class="screener-party" style="margin-top: 0.3rem; font-style: italic; color: #10b981;">{description}</div>'
+    
     card_html = f'''
     <div class="screener-card">
         <div class="screener-rank {rank_class}">{medal}#{rank}</div>
@@ -1496,7 +1547,7 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
             <div class="screener-name">{deputy_info['name']}</div>
             <div class="screener-party">{deputy_info['party']}</div>
             <div class="screener-value {value_class}">{metric_value}</div>
-            {description}
+            {description_html}
         </div>
     </div>
     '''
