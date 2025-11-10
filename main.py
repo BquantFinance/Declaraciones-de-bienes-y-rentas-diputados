@@ -9,6 +9,7 @@ import os
 import base64
 import random
 import unicodedata
+import html
 
 # Page configuration
 st.set_page_config(
