@@ -92,6 +92,110 @@ def apply_css():
             100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
         
+        /* Screener Card Styling */
+        .screener-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .screener-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .screener-rank {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .screener-rank.gold {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .screener-rank.silver {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .screener-rank.bronze {
+            background: linear-gradient(135deg, #cd7f32 0%, #e89b5c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .screener-photo {
+            width: 80px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .screener-photo-placeholder {
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            font-size: 2rem;
+        }
+        
+        .screener-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .screener-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+        
+        .screener-party {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .screener-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .screener-value.positive {
+            color: #10b981;
+        }
+        
+        .screener-value.negative {
+            color: #ef4444;
+        }
+        
         /* Activity Card Styling */
         .activity-card {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
@@ -716,6 +820,15 @@ def apply_css():
                 padding: 2rem;
                 margin: 1rem;
             }
+            
+            .screener-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .screener-rank {
+                min-width: auto;
+            }
         }
     </style>
     """, unsafe_allow_html=True)
@@ -981,6 +1094,226 @@ def create_image_gallery(deputy_data):
     gallery_html += '</div></div>'
     return gallery_html
 
+def get_deputy_photo_html(photo_path, size="small"):
+    """Get deputy photo HTML for screener cards"""
+    if size == "small":
+        width, height = 80, 100
+    else:
+        width, height = 200, 250
+        
+    if pd.notna(photo_path) and str(photo_path).lower() != 'nan' and os.path.exists(str(photo_path)):
+        try:
+            with open(photo_path, "rb") as f:
+                img_data = base64.b64encode(f.read()).decode()
+                return f'<img src="data:image/jpeg;base64,{img_data}" class="screener-photo" alt="Foto del diputado">'
+        except:
+            return '<div class="screener-photo-placeholder">👤</div>'
+    else:
+        return '<div class="screener-photo-placeholder">👤</div>'
+
+def prepare_screener_data(df):
+    """Prepare data for screener with all metrics calculated"""
+    # Get unique deputies (latest declaration for each)
+    unique_deputies = df.sort_values('source_file').groupby('informacion_personal_nombre_y_apellidos').last().reset_index()
+    
+    screener_data = []
+    
+    for idx, row in unique_deputies.iterrows():
+        deputy_info = {
+            'name': row['informacion_personal_nombre_y_apellidos'],
+            'photo_path': row.get('photo_path', ''),
+            'party': row.get('informacion_personal_cargo', 'Diputado'),
+            'salary': 0,
+            'irpf': 0,
+            'properties': 0,
+            'vehicles': 0,
+            'debt': 0,
+            'accounts_balance': 0
+        }
+        
+        # Salary
+        salary = row.get('scraped_salary', None)
+        if pd.notna(salary) and salary:
+            try:
+                deputy_info['salary'] = float(salary)
+            except:
+                deputy_info['salary'] = 0
+        
+        # IRPF
+        irpf = extract_currency_value(row.get('irpf_cantidad_pagada', 0))
+        deputy_info['irpf'] = irpf
+        
+        # Properties
+        urban_properties = len(parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos']))
+        rustic_properties = len(parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
+        deputy_info['properties'] = urban_properties + rustic_properties
+        
+        # Vehicles
+        vehicles = parse_json_field(row['vehiculos'])
+        deputy_info['vehicles'] = len(vehicles)
+        
+        # Debt
+        debts = parse_json_field(row['deudas_y_obligaciones'])
+        total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
+        deputy_info['debt'] = total_debt
+        
+        # Accounts balance
+        accounts = parse_json_field(row['depositos_y_cuentas_cuentas'])
+        total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
+        deputy_info['accounts_balance'] = total_accounts
+        
+        screener_data.append(deputy_info)
+    
+    return pd.DataFrame(screener_data)
+
+def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class=""):
+    """Display a single screener card"""
+    rank_class = ""
+    medal = ""
+    if rank == 1:
+        rank_class = "gold"
+        medal = "🥇 "
+    elif rank == 2:
+        rank_class = "silver"
+        medal = "🥈 "
+    elif rank == 3:
+        rank_class = "bronze"
+        medal = "🥉 "
+    
+    photo_html = get_deputy_photo_html(deputy_info['photo_path'])
+    
+    card_html = f'''
+    <div class="screener-card">
+        <div class="screener-rank {rank_class}">{medal}#{rank}</div>
+        {photo_html}
+        <div class="screener-info">
+            <div class="screener-name">{deputy_info['name']}</div>
+            <div class="screener-party">{deputy_info['party']}</div>
+            <div class="screener-value {value_class}">{metric_value}</div>
+        </div>
+    </div>
+    '''
+    st.markdown(card_html, unsafe_allow_html=True)
+
+def show_screener(df):
+    """Display the screener interface"""
+    st.markdown('<h1 style="text-align: center;">🔍 Screening de Diputados</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #94a3b8;">Explora y compara las métricas financieras de los diputados</p>', unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # Prepare screener data
+    screener_df = prepare_screener_data(df)
+    
+    # Controls
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        metric_options = {
+            '💰 Salario Anual': ('salary', 'positive'),
+            '💵 IRPF Pagado': ('irpf', 'positive'),
+            '🏠 Número de Inmuebles': ('properties', 'positive'),
+            '🚗 Número de Vehículos': ('vehicles', 'positive'),
+            '💳 Deuda Total': ('debt', 'negative'),
+            '🏦 Saldo en Cuentas': ('accounts_balance', 'positive')
+        }
+        
+        selected_metric_name = st.selectbox(
+            "Seleccionar Métrica:",
+            list(metric_options.keys())
+        )
+    
+    with col2:
+        ranking_type = st.radio(
+            "Tipo de Ranking:",
+            ["🔝 Top 10", "🔻 Bottom 10"],
+            horizontal=True
+        )
+    
+    metric_column, value_class = metric_options[selected_metric_name]
+    
+    st.markdown("---")
+    
+    # Sort and filter
+    ascending = ranking_type == "🔻 Bottom 10"
+    top_deputies = screener_df.nlargest(10, metric_column) if not ascending else screener_df.nsmallest(10, metric_column)
+    
+    # Display header
+    if ranking_type == "🔝 Top 10":
+        st.markdown(f"### 🏆 Top 10 Diputados - {selected_metric_name}")
+    else:
+        st.markdown(f"### 📊 Bottom 10 Diputados - {selected_metric_name}")
+    
+    # Display summary statistics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        avg_value = screener_df[metric_column].mean()
+        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
+            st.metric("Promedio", format_currency(avg_value))
+        else:
+            st.metric("Promedio", f"{avg_value:.1f}")
+    
+    with col2:
+        max_value = screener_df[metric_column].max()
+        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
+            st.metric("Máximo", format_currency(max_value))
+        else:
+            st.metric("Máximo", f"{int(max_value)}")
+    
+    with col3:
+        min_value = screener_df[metric_column].min()
+        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
+            st.metric("Mínimo", format_currency(min_value))
+        else:
+            st.metric("Mínimo", f"{int(min_value)}")
+    
+    st.markdown("---")
+    
+    # Display cards
+    for idx, (_, deputy) in enumerate(top_deputies.iterrows(), 1):
+        # Format the metric value
+        metric_val = deputy[metric_column]
+        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
+            formatted_value = format_currency_full(metric_val)
+        else:
+            formatted_value = f"{int(metric_val)}"
+        
+        display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class)
+    
+    st.markdown("---")
+    
+    # Add visualization
+    st.markdown("### 📊 Visualización Comparativa")
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=top_deputies['name'],
+        y=top_deputies[metric_column],
+        marker=dict(
+            color=top_deputies[metric_column],
+            colorscale='Viridis',
+            showscale=True
+        ),
+        text=top_deputies[metric_column].apply(lambda x: format_currency(x) if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance'] else f"{int(x)}"),
+        textposition='auto',
+    ))
+    
+    fig.update_layout(
+        title=f"{selected_metric_name} - {ranking_type}",
+        xaxis_title="Diputado",
+        yaxis_title=selected_metric_name,
+        template="plotly_dark",
+        height=500,
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#ffffff'),
+        xaxis=dict(tickangle=-45)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
 def show_disclaimer():
     """Show the comprehensive legal disclaimer page using native Streamlit components."""
     apply_css()
@@ -1084,432 +1417,429 @@ def main_app():
     if df.empty:
         st.stop()
     
-    # Get unique deputies by name
-    unique_deputies = df.groupby('informacion_personal_nombre_y_apellidos').first().reset_index()
+    # Main navigation
+    st.markdown("---")
+    main_tab = st.radio(
+        "Navegación:",
+        ["👤 Consulta Individual", "🔍 Screening Comparativo"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
     
-    # Search bar and controls
-    search_col, metric_col, random_col = st.columns([8, 2, 1])
-    
-    with search_col:
-        search_term = st.text_input(
-            "Buscar diputado",
-            placeholder="🔍 Buscar diputado por nombre...",
-            key="search",
-            label_visibility="collapsed"
-        )
-    
-    # Filter unique deputies
-    filtered_deputies = unique_deputies.copy()
-    if search_term:
-        filtered_deputies = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
-    
-    with metric_col:
-        st.metric("Diputados Encontrados", len(filtered_deputies))
-        
-    deputy_names = filtered_deputies['informacion_personal_nombre_y_apellidos'].tolist()
-    
-    with random_col:
-        # Enhanced random button with special styling
-        st.markdown('<div class="random-button-container">', unsafe_allow_html=True)
-        if st.button("🎲", use_container_width=True, help="Seleccionar un diputado aleatorio", key="random_deputy"):
-            if deputy_names:
-                st.session_state.selected_deputy_name = random.choice(deputy_names)
-        st.markdown('</div>', unsafe_allow_html=True)
-
     st.markdown("---")
     
-    if not deputy_names:
-        st.warning("🔍 No se encontraron diputados con ese criterio de búsqueda")
+    if main_tab == "🔍 Screening Comparativo":
+        show_screener(df)
     else:
-        # Initialize session state if it's the first run or if the selected deputy is no longer in the filtered list
-        if 'selected_deputy_name' not in st.session_state or st.session_state.selected_deputy_name not in deputy_names:
-            st.session_state.selected_deputy_name = deputy_names[0]
-
-        # Find the index for the selectbox based on session state
-        try:
-            selected_index = deputy_names.index(st.session_state.selected_deputy_name)
-        except (ValueError, IndexError):
-            selected_index = 0
-
-        # Deputy selector with salary information
-        def format_deputy_option(name):
-            try:
-                deputy_row = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'] == name]
-                if not deputy_row.empty:
-                    salary = deputy_row['scraped_salary'].iloc[0]
-                    if pd.notna(salary) and salary:
-                        formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
-                        return f"👤 {name} - 💰 {formatted_salary}€"
-                    else:
-                        return f"👤 {name} - 💰 Sin datos"
-            except:
-                pass
-            return f"👤 {name}"
+        # Get unique deputies by name
+        unique_deputies = df.groupby('informacion_personal_nombre_y_apellidos').first().reset_index()
         
-        selected_deputy_name = st.selectbox(
-            "Seleccionar Diputado:",
-            deputy_names,
-            index=selected_index,
-            format_func=format_deputy_option
-        )
+        # Search bar and controls
+        search_col, metric_col, random_col = st.columns([8, 2, 1])
         
-        # Update session state with the current selection (from user or from random button)
-        st.session_state.selected_deputy_name = selected_deputy_name
-        
-        # Get all declarations for selected deputy
-        deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name].sort_values(by='source_file', ascending=True)
-        
-        # Declaration selector (if multiple)
-        if len(deputy_declarations) > 1:
-            st.info(f"📋 Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
-            
-            declaration_options = []
-            for i, (idx, row) in enumerate(deputy_declarations.iterrows()):
-                declaration_number = i + 1
-                label_parts = [f"📄 Declaración {declaration_number}"]
-
-                cargo = row.get('informacion_personal_cargo', '')
-                if pd.notna(cargo):
-                    label_parts.append(f"({cargo.strip()})")
-
-                doc_date_str = "Fecha Desconocida"
-                source_file = row.get('source_file', '')
-                date_match = re.search(r'_(\d{8})\.json$', source_file)
-                if date_match:
-                    try:
-                        doc_date = datetime.strptime(date_match.group(1), '%Y%m%d')
-                        spanish_months_abbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-                        month_abbr = spanish_months_abbr[doc_date.month - 1]
-                        doc_date_str = f"{doc_date.day} {month_abbr} {doc_date.year}"
-                    except ValueError:
-                        pass
-                
-                label_parts.append(f"- Doc: {doc_date_str}")
-                
-                observaciones = row.get('observaciones', '')
-                if pd.notna(observaciones) and ('modificación' in observaciones.lower() or 'remito a' in observaciones.lower() or 'actualizar' in observaciones.lower()):
-                    label_parts.append("[Modificación]")
-                
-                label = " ".join(label_parts)
-                declaration_options.append((idx, label))
-            
-            selected_idx = st.selectbox(
-                "Seleccionar Declaración:",
-                [opt[0] for opt in declaration_options],
-                format_func=lambda x: next((opt[1] for opt in declaration_options if opt[0] == x), "Seleccionar")
+        with search_col:
+            search_term = st.text_input(
+                "Buscar diputado",
+                placeholder="🔍 Buscar diputado por nombre...",
+                key="search",
+                label_visibility="collapsed"
             )
-            
-            deputy_data = deputy_declarations.loc[selected_idx]
-        else:
-            deputy_data = deputy_declarations.iloc[0]
         
+        # Filter unique deputies
+        filtered_deputies = unique_deputies.copy()
+        if search_term:
+            filtered_deputies = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
+        
+        with metric_col:
+            st.metric("Diputados Encontrados", len(filtered_deputies))
+            
+        deputy_names = filtered_deputies['informacion_personal_nombre_y_apellidos'].tolist()
+        
+        with random_col:
+            # Enhanced random button with special styling
+            st.markdown('<div class="random-button-container">', unsafe_allow_html=True)
+            if st.button("🎲", use_container_width=True, help="Seleccionar un diputado aleatorio", key="random_deputy"):
+                if deputy_names:
+                    st.session_state.selected_deputy_name = random.choice(deputy_names)
+            st.markdown('</div>', unsafe_allow_html=True)
+
         st.markdown("---")
         
-        # Layout
-        col_left, col_right = st.columns([1.5, 2])
-        
-        with col_left:
-            st.markdown(create_image_gallery(deputy_data), unsafe_allow_html=True)
-            st.markdown("### 📋 Información Personal")
-            
-            info_html = '<div class="info-grid">'
-            personal_fields = [
-                ('📋 CARGO', 'informacion_personal_cargo', 'Diputado'),
-                ('📍 CIRCUNSCRIPCIÓN', 'informacion_personal_circunscripcion', None),
-                ('💑 ESTADO CIVIL', 'informacion_personal_estado_civil', None),
-                ('💍 RÉGIMEN ECONÓMICO', 'informacion_personal_regimen_economico_matrimonial', None),
-                ('📅 FECHA ELECCIÓN', 'informacion_personal_fecha_eleccion', None),
-                ('📜 PRESENTACIÓN CREDENCIAL', 'informacion_personal_fecha_presentacion_credencial', None),
-            ]
-            
-            for label, field, default in personal_fields:
-                value = deputy_data.get(field, default)
-                if value and str(value).lower() != 'nan':
-                    if not value and default: value = default
-                    info_html += f'<div class="info-item"><div class="info-label">{label}</div><div class="info-value">{value}</div></div>'
-            
-            info_html += '</div>'
-            st.markdown(info_html, unsafe_allow_html=True)
-            
-            social_links = { "𝕏": deputy_data.get('twitter'), "📘": deputy_data.get('facebook'), "📸": deputy_data.get('instagram'), "🌐": deputy_data.get('website') }
-            valid_links = {emoji: url for emoji, url in social_links.items() if pd.notna(url) and str(url).lower() != 'nan'}
-            
-            if valid_links:
-                st.markdown("### 🌐 Redes Sociales")
-                social_html = '<div class="social-pills">'
-                emoji_titles = { "𝕏": "X (Twitter)", "📘": "Facebook", "📸": "Instagram", "🌐": "Sitio Web" }
-                for emoji, url in valid_links.items():
-                    title = emoji_titles.get(emoji, "")
-                    social_html += f'<a href="{url}" target="_blank" class="social-pill" title="{title}">{emoji}</a>'
-                social_html += '</div>'
-                st.markdown(social_html, unsafe_allow_html=True)
-            
-            observaciones = deputy_data.get('observaciones', '')
-            if observaciones and str(observaciones).lower() != 'nan':
-                st.markdown("### 📝 Observaciones")
-                st.info(observaciones)
-        
-        with col_right:
-            st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
-            
-            # Display salary if available
-            salary = deputy_data.get('scraped_salary', None)
-            if pd.notna(salary) and salary:
-                formatted_salary = f"{float(salary):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                st.success(f"💰 **Salario Anual: {formatted_salary} €**")
-            else:
-                st.info("💰 **Salario Anual: No disponible**")
-            
-            st.markdown("### 📊 Datos Clave de la Declaración")
-            
-            metric1, metric2, metric3, metric4, metric5 = st.columns(5)
-            
-            # Display annual salary
-            salary = deputy_data.get('scraped_salary', None)
-            if pd.notna(salary) and salary:
-                formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
-                metric1.metric("Salario Anual", f"{formatted_salary}€")
-            else:
-                metric1.metric("Salario Anual", "N/D")
-            
-            irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
-            metric2.metric("IRPF Pagado", format_currency(irpf))
-            
-            urban_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
-            rustic_properties = len(parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
-            metric3.metric("Inmuebles", urban_properties + rustic_properties)
+        if not deputy_names:
+            st.warning("🔍 No se encontraron diputados con ese criterio de búsqueda")
+        else:
+            # Initialize session state if it's the first run or if the selected deputy is no longer in the filtered list
+            if 'selected_deputy_name' not in st.session_state or st.session_state.selected_deputy_name not in deputy_names:
+                st.session_state.selected_deputy_name = deputy_names[0]
 
-            vehicles_count = len(parse_json_field(deputy_data['vehiculos']))
-            metric4.metric("Vehículos", vehicles_count)
-            
-            debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
-            metric5.metric("Deudas", len(debts))
+            # Find the index for the selectbox based on session state
+            try:
+                selected_index = deputy_names.index(st.session_state.selected_deputy_name)
+            except (ValueError, IndexError):
+                selected_index = 0
 
+            # Deputy selector with salary information
+            def format_deputy_option(name):
+                try:
+                    deputy_row = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'] == name]
+                    if not deputy_row.empty:
+                        salary = deputy_row['scraped_salary'].iloc[0]
+                        if pd.notna(salary) and salary:
+                            formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
+                            return f"👤 {name} - 💰 {formatted_salary}€"
+                        else:
+                            return f"👤 {name} - 💰 Sin datos"
+                except:
+                    pass
+                return f"👤 {name}"
+            
+            selected_deputy_name = st.selectbox(
+                "Seleccionar Diputado:",
+                deputy_names,
+                index=selected_index,
+                format_func=format_deputy_option
+            )
+            
+            # Update session state with the current selection (from user or from random button)
+            st.session_state.selected_deputy_name = selected_deputy_name
+            
+            # Get all declarations for selected deputy
+            deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name].sort_values(by='source_file', ascending=True)
+            
+            # Declaration selector (if multiple)
+            if len(deputy_declarations) > 1:
+                st.info(f"📋 Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
+                
+                declaration_options = []
+                for i, (idx, row) in enumerate(deputy_declarations.iterrows()):
+                    declaration_number = i + 1
+                    label_parts = [f"📄 Declaración {declaration_number}"]
+
+                    cargo = row.get('informacion_personal_cargo', '')
+                    if pd.notna(cargo):
+                        label_parts.append(f"({cargo.strip()})")
+
+                    doc_date_str = "Fecha Desconocida"
+                    source_file = row.get('source_file', '')
+                    date_match = re.search(r'_(\d{8})\.json$', source_file)
+                    if date_match:
+                        try:
+                            doc_date = datetime.strptime(date_match.group(1), '%Y%m%d')
+                            spanish_months_abbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+                            month_abbr = spanish_months_abbr[doc_date.month - 1]
+                            doc_date_str = f"{doc_date.day} {month_abbr} {doc_date.year}"
+                        except ValueError:
+                            pass
+                    
+                    label_parts.append(f"- Doc: {doc_date_str}")
+                    
+                    observaciones = row.get('observaciones', '')
+                    if pd.notna(observaciones) and ('modificación' in observaciones.lower() or 'remito a' in observaciones.lower() or 'actualizar' in observaciones.lower()):
+                        label_parts.append("[Modificación]")
+                    
+                    label = " ".join(label_parts)
+                    declaration_options.append((idx, label))
+                
+                selected_idx = st.selectbox(
+                    "Seleccionar Declaración:",
+                    [opt[0] for opt in declaration_options],
+                    format_func=lambda x: next((opt[1] for opt in declaration_options if opt[0] == x), "Seleccionar")
+                )
+                
+                deputy_data = deputy_declarations.loc[selected_idx]
+            else:
+                deputy_data = deputy_declarations.iloc[0]
+            
             st.markdown("---")
             
-            tabs = st.tabs(["💵 Ingresos", "🏠 Inmuebles", "💼 Sociedades", "💰 Activos", "🚗 Vehículos", "💳 Deudas", "📋 Actividades", "📄 Otros"])
+            # Layout
+            col_left, col_right = st.columns([1.5, 2])
             
-            with tabs[0]:
-                st.markdown("#### 💵 Todas las Fuentes de Ingresos")
-                st.info(f"📋 **IRPF Pagado (Declarado): {format_currency_full(irpf)}**")
+            with col_left:
+                st.markdown(create_image_gallery(deputy_data), unsafe_allow_html=True)
+                st.markdown("### 📋 Información Personal")
                 
-                tcol1, tcol2 = st.columns(2)
-                with tcol1:
-                    st.markdown("##### 💼 Salarios")
-                    salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
-                    if salaries:
-                        for i, salary in enumerate(salaries):
-                            if isinstance(salary, dict):
-                                concepto = salary.get('concepto', f'Ingreso #{i+1}')
-                                if str(concepto).lower() == 'nan': concepto = f'Ingreso #{i+1}'
-                                amount = extract_currency_value(salary.get('euros'))
-                                st.info(f"💰 **{concepto}**")
-                                st.markdown(f"→ **{format_currency_full(amount)}**")
-                    else: st.info("Sin salarios declarados")
+                info_html = '<div class="info-grid">'
+                personal_fields = [
+                    ('📋 CARGO', 'informacion_personal_cargo', 'Diputado'),
+                    ('📍 CIRCUNSCRIPCIÓN', 'informacion_personal_circunscripcion', None),
+                    ('💑 ESTADO CIVIL', 'informacion_personal_estado_civil', None),
+                    ('💍 RÉGIMEN ECONÓMICO', 'informacion_personal_regimen_economico_matrimonial', None),
+                    ('📅 FECHA ELECCIÓN', 'informacion_personal_fecha_eleccion', None),
+                    ('📜 PRESENTACIÓN CREDENCIAL', 'informacion_personal_fecha_presentacion_credencial', None),
+                ]
+                
+                for label, field, default in personal_fields:
+                    value = deputy_data.get(field, default)
+                    if value and str(value).lower() != 'nan':
+                        if not value and default: value = default
+                        info_html += f'<div class="info-item"><div class="info-label">{label}</div><div class="info-value">{value}</div></div>'
+                
+                info_html += '</div>'
+                st.markdown(info_html, unsafe_allow_html=True)
+                
+                social_links = { "𝕏": deputy_data.get('twitter'), "📘": deputy_data.get('facebook'), "📸": deputy_data.get('instagram'), "🌐": deputy_data.get('website') }
+                valid_links = {emoji: url for emoji, url in social_links.items() if pd.notna(url) and str(url).lower() != 'nan'}
+                
+                if valid_links:
+                    st.markdown("### 🌐 Redes Sociales")
+                    social_html = '<div class="social-pills">'
+                    emoji_titles = { "𝕏": "X (Twitter)", "📘": "Facebook", "📸": "Instagram", "🌐": "Sitio Web" }
+                    for emoji, url in valid_links.items():
+                        title = emoji_titles.get(emoji, "")
+                        social_html += f'<a href="{url}" target="_blank" class="social-pill" title="{title}">{emoji}</a>'
+                    social_html += '</div>'
+                    st.markdown(social_html, unsafe_allow_html=True)
+                
+                observaciones = deputy_data.get('observaciones', '')
+                if observaciones and str(observaciones).lower() != 'nan':
+                    st.markdown("### 📝 Observaciones")
+                    st.info(observaciones)
+            
+            with col_right:
+                st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
+                
+                # Display salary if available
+                salary = deputy_data.get('scraped_salary', None)
+                if pd.notna(salary) and salary:
+                    formatted_salary = f"{float(salary):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    st.success(f"💰 **Salario Anual: {formatted_salary} €**")
+                else:
+                    st.info("💰 **Salario Anual: No disponible**")
+                
+                st.markdown("### 📊 Datos Clave de la Declaración")
+                
+                metric1, metric2, metric3, metric4, metric5 = st.columns(5)
+                
+                # Display annual salary
+                salary = deputy_data.get('scraped_salary', None)
+                if pd.notna(salary) and salary:
+                    formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
+                    metric1.metric("Salario Anual", f"{formatted_salary}€")
+                else:
+                    metric1.metric("Salario Anual", "N/D")
+                
+                irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
+                metric2.metric("IRPF Pagado", format_currency(irpf))
+                
+                urban_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
+                rustic_properties = len(parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
+                metric3.metric("Inmuebles", urban_properties + rustic_properties)
+
+                vehicles_count = len(parse_json_field(deputy_data['vehiculos']))
+                metric4.metric("Vehículos", vehicles_count)
+                
+                debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
+                metric5.metric("Deudas", len(debts))
+
+                st.markdown("---")
+                
+                tabs = st.tabs(["💵 Ingresos", "🏠 Inmuebles", "💼 Sociedades", "💰 Activos", "🚗 Vehículos", "💳 Deudas", "📋 Actividades", "📄 Otros"])
+                
+                with tabs[0]:
+                    st.markdown("#### 💵 Todas las Fuentes de Ingresos")
+                    st.info(f"📋 **IRPF Pagado (Declarado): {format_currency_full(irpf)}**")
                     
-                    st.markdown("##### 💸 Otras Rentas")
-                    otras = parse_json_field(deputy_data.get('rentas_percibidas_otras_rentas', ''))
-                    if otras:
-                        for item in otras:
-                            if isinstance(item, dict):
-                                concepto = item.get('concepto', 'Otra renta'); importe = extract_currency_value(item.get('euros', 0))
-                                if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
-                    else: st.info("Sin otras rentas")
-                
-                with tcol2:
-                    st.markdown("##### 📈 Dividendos y Participaciones")
-                    dividends = parse_json_field(deputy_data['rentas_percibidas_dividendos_y_participaciones'])
-                    if dividends:
-                        for div in dividends:
-                            if isinstance(div, dict):
-                                concepto = div.get('concepto', 'Inversión')
-                                if str(concepto).lower() == 'nan': concepto = 'Inversión'
-                                st.markdown(f"**📊 {concepto}**")
-                                rendimientos = extract_currency_value(div.get('euros'))
-                                if rendimientos > 0: st.markdown(f"→ **{format_currency_full(rendimientos)}**")
-                    else: st.info("Sin dividendos")
-                    
-                    st.markdown("##### 🏦 Intereses Financieros")
-                    intereses = parse_json_field(deputy_data.get('rentas_percibidas_intereses_financieros', ''))
-                    if intereses:
-                        for item in intereses:
-                            if isinstance(item, dict):
-                                concepto = item.get('concepto', 'Interés'); importe = extract_currency_value(item.get('euros', 0))
-                                if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
-                    else: st.info("Sin intereses financieros")
-            
-            with tabs[1]:
-                st.markdown("#### 🏠 Bienes Inmuebles")
-                tcol1, tcol2 = st.columns(2)
-                with tcol1:
-                    st.markdown("##### 🏢 Inmuebles Urbanos")
-                    urban = parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])
-                    if urban:
-                        for i, prop in enumerate(urban):
-                            if isinstance(prop, dict):
-                                st.markdown(f"**📍 Inmueble Urbano #{i+1}**")
-                                for key, value in prop.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                                st.markdown("")
-                    else: st.info("Sin inmuebles urbanos")
-                with tcol2:
-                    st.markdown("##### 🌾 Inmuebles Rústicos")
-                    rusticos = parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', ''))
-                    if rusticos:
-                        for i, prop in enumerate(rusticos):
-                            if isinstance(prop, dict):
-                                st.markdown(f"**🚜 Inmueble Rústico #{i+1}**")
-                                for key, value in prop.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                                st.markdown("")
-                    else: st.info("Sin inmuebles rústicos")
-            
-            with tabs[2]:
-                st.markdown("#### 💼 Sociedades y Participaciones")
-                tcol1, tcol2 = st.columns(2)
-                with tcol1:
-                    st.markdown("##### 🏢 Sociedades No Cotizadas")
-                    sociedades = parse_json_field(deputy_data.get('bienes_patrimoniales_bienes_sociedades_no_cotizadas', ''))
-                    if sociedades:
-                        for i, soc in enumerate(sociedades):
-                            if isinstance(soc, dict):
-                                st.markdown(f"**🏭 Sociedad #{i+1}**")
-                                for key, value in soc.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                                st.markdown("")
-                    else: st.info("Sin sociedades no cotizadas")
-                with tcol2:
-                    st.markdown("##### 📊 Participaciones >5%")
-                    participaciones = parse_json_field(deputy_data.get('otros_bienes_y_derechos_sociedades_participadas_mas_5_por_ciento', ''))
-                    if participaciones:
-                        for i, part in enumerate(participaciones):
-                            if isinstance(part, dict):
-                                st.markdown(f"**📈 Participación #{i+1}**")
-                                for key, value in part.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                                st.markdown("")
-                    else: st.info("Sin participaciones superiores al 5%")
-            
-            with tabs[3]:
-                st.markdown("#### 💰 Activos Financieros")
-                tcol1, tcol2 = st.columns(2)
-                with tcol1:
-                    st.markdown("##### 🏦 Cuentas y Depósitos")
-                    accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
-                    if accounts:
-                        total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
-                        if total_accounts > 0: st.success(f"💰 **Total en cuentas: {format_currency_full(total_accounts)}**")
-                        for account in accounts:
-                            if isinstance(account, dict):
-                                desc = account.get('descripcion', 'Cuenta')
-                                if str(desc).lower() == 'nan': desc = 'Cuenta'
-                                saldo = extract_currency_value(account.get('saldo'))
-                                if saldo > 0:
-                                    st.markdown(f"**🏦 {desc}**"); st.markdown(f"Saldo: **{format_currency_full(saldo)}**")
-                    else: st.info("Sin cuentas declaradas")
-                    
-                    st.markdown("##### 📈 Acciones y Participaciones")
-                    acciones = parse_json_field(deputy_data.get('otros_bienes_y_derechos_acciones_y_participaciones', ''))
-                    if acciones:
-                        for i, accion in enumerate(acciones):
-                            if isinstance(accion, dict):
-                                st.markdown(f"**📊 Acción/Participación #{i+1}**")
-                                for key, value in accion.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                    else: st.info("Sin acciones declaradas")
-                
-                with tcol2:
-                    st.markdown("##### 📜 Deuda Pública y Valores")
-                    deuda_publica = parse_json_field(deputy_data.get('otros_bienes_y_derechos_deuda_publica_y_valores', ''))
-                    if deuda_publica:
-                        for i, item in enumerate(deuda_publica):
-                            if isinstance(item, dict):
-                                st.markdown(f"**💼 Valor #{i+1}**")
-                                for key, value in item.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                    else: st.info("Sin deuda pública o valores")
-            
-            with tabs[4]:
-                st.markdown("#### 🚗 Vehículos")
-                vehicles = parse_json_field(deputy_data['vehiculos'])
-                if vehicles:
-                    st.info(f"🚙 **Total vehículos: {len(vehicles)}**")
-                    cols = st.columns(2)
-                    for i, vehicle in enumerate(vehicles):
-                        if isinstance(vehicle, dict):
-                            with cols[i % 2]:
-                                desc = vehicle.get('descripcion', f'Vehículo #{i+1}')
-                                if str(desc).lower() == 'nan': desc = f'Vehículo #{i+1}'
-                                st.markdown(f"**🚗 {desc}**")
-                                fecha = vehicle.get('fecha_adquisicion', '')
-                                if fecha and str(fecha).lower() != 'nan': st.markdown(f"Adquirido: {fecha}")
-                                st.markdown("")
-                else: st.info("Sin vehículos declarados")
-            
-            with tabs[5]:
-                st.markdown("#### 💸 Deudas y Obligaciones")
-                total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
-                if debts:
-                    st.error(f"💰 **Total Pendiente: {format_currency_full(total_debt)}**")
-                    for i, debt in enumerate(debts):
-                        if isinstance(debt, dict):
-                            desc = debt.get('descripcion', f'Deuda #{i+1}')
-                            if str(desc).lower() == 'nan': desc = f'Deuda #{i+1}'
-                            st.markdown(f"**📄 {desc}**")
-                            original = extract_currency_value(debt.get('importe_concedido'))
-                            pending = extract_currency_value(debt.get('saldo_pendiente'))
-                            tcol1, tcol2 = st.columns(2)
-                            with tcol1:
-                                if original > 0: st.markdown(f"Original: **{format_currency_full(original)}**")
-                                fecha = debt.get('fecha_concesion', '')
-                                if fecha and str(fecha).lower() != 'nan': st.markdown(f"Fecha: {fecha}")
-                            with tcol2:
-                                if pending > 0: st.markdown(f"Pendiente: **{format_currency_full(pending)}**")
-                                if original > 0 and pending > 0:
-                                    paid_pct = ((original - pending) / original) * 100
-                                    st.progress(int(paid_pct), text=f"Pagado: {paid_pct:.1f}%")
-                            st.markdown("---")
-                else: st.success("✅ No se han declarado deudas")
-            
-            with tabs[6]:
-                st.markdown("#### 📋 Actividades e Intereses")
-                # Match and display interests data using both ID and name
-                deputy_id = deputy_data.get('deputy_id')
-                deputy_interests = match_deputy_interests(selected_deputy_name, deputy_id, interests_df)
-                
-                # Debug info (can be removed in production)
-                if deputy_interests.empty:
-                    with st.expander("🔍 Información de depuración", expanded=False):
-                        st.write(f"**Nombre del diputado:** {selected_deputy_name}")
-                        st.write(f"**Deputy ID:** {deputy_id}")
-                        st.write(f"**Deputy ID normalizado:** {normalize_deputy_id(deputy_id)}")
-                        st.write(f"**Nombre normalizado:** {normalize_name(selected_deputy_name)}")
+                    tcol1, tcol2 = st.columns(2)
+                    with tcol1:
+                        st.markdown("##### 💼 Salarios")
+                        salaries = parse_json_field(deputy_data['rentas_percibidas_percepciones_salariales'])
+                        if salaries:
+                            for i, salary in enumerate(salaries):
+                                if isinstance(salary, dict):
+                                    concepto = salary.get('concepto', f'Ingreso #{i+1}')
+                                    if str(concepto).lower() == 'nan': concepto = f'Ingreso #{i+1}'
+                                    amount = extract_currency_value(salary.get('euros'))
+                                    st.info(f"💰 **{concepto}**")
+                                    st.markdown(f"→ **{format_currency_full(amount)}**")
+                        else: st.info("Sin salarios declarados")
                         
-                        # Show sample of interests data for debugging
-                        if not interests_df.empty:
-                            st.write("**Muestra de datos de intereses (primeros 3 registros):**")
-                            sample = interests_df.head(3)[['metadata_deputy_id', 'personal_nombre', 'personal_apellidos']].copy()
-                            sample['normalized_id'] = sample['metadata_deputy_id'].apply(normalize_deputy_id)
-                            sample['full_name'] = sample['personal_nombre'] + ' ' + sample['personal_apellidos']
-                            sample['normalized_name'] = sample['full_name'].apply(normalize_name)
-                            st.dataframe(sample)
+                        st.markdown("##### 💸 Otras Rentas")
+                        otras = parse_json_field(deputy_data.get('rentas_percibidas_otras_rentas', ''))
+                        if otras:
+                            for item in otras:
+                                if isinstance(item, dict):
+                                    concepto = item.get('concepto', 'Otra renta'); importe = extract_currency_value(item.get('euros', 0))
+                                    if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
+                        else: st.info("Sin otras rentas")
+                    
+                    with tcol2:
+                        st.markdown("##### 📈 Dividendos y Participaciones")
+                        dividends = parse_json_field(deputy_data['rentas_percibidas_dividendos_y_participaciones'])
+                        if dividends:
+                            for div in dividends:
+                                if isinstance(div, dict):
+                                    concepto = div.get('concepto', 'Inversión')
+                                    if str(concepto).lower() == 'nan': concepto = 'Inversión'
+                                    st.markdown(f"**📊 {concepto}**")
+                                    rendimientos = extract_currency_value(div.get('euros'))
+                                    if rendimientos > 0: st.markdown(f"→ **{format_currency_full(rendimientos)}**")
+                        else: st.info("Sin dividendos")
+                        
+                        st.markdown("##### 🏦 Intereses Financieros")
+                        intereses = parse_json_field(deputy_data.get('rentas_percibidas_intereses_financieros', ''))
+                        if intereses:
+                            for item in intereses:
+                                if isinstance(item, dict):
+                                    concepto = item.get('concepto', 'Interés'); importe = extract_currency_value(item.get('euros', 0))
+                                    if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
+                        else: st.info("Sin intereses financieros")
                 
-                display_interests_section(deputy_interests)
-            
-            with tabs[7]:
-                st.markdown("#### 📄 Otros Bienes y Derechos")
-                otros_bienes = deputy_data.get('otros_bienes_no_declarados_anteriormente', '')
-                if otros_bienes and str(otros_bienes).lower() != 'nan':
-                    st.markdown("##### 📦 Otros Bienes No Declarados Anteriormente")
-                    otros_parsed = parse_json_field(otros_bienes)
-                    if otros_parsed:
-                        for i, item in enumerate(otros_parsed):
-                            if isinstance(item, dict):
-                                st.markdown(f"**Item #{i+1}**")
-                                for key, value in item.items():
-                                    if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
-                    else: st.write(otros_bienes)
-                else: st.info("No hay otros bienes declarados")
+                with tabs[1]:
+                    st.markdown("#### 🏠 Bienes Inmuebles")
+                    tcol1, tcol2 = st.columns(2)
+                    with tcol1:
+                        st.markdown("##### 🏢 Inmuebles Urbanos")
+                        urban = parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])
+                        if urban:
+                            for i, prop in enumerate(urban):
+                                if isinstance(prop, dict):
+                                    st.markdown(f"**📍 Inmueble Urbano #{i+1}**")
+                                    for key, value in prop.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                                    st.markdown("")
+                        else: st.info("Sin inmuebles urbanos")
+                    with tcol2:
+                        st.markdown("##### 🌾 Inmuebles Rústicos")
+                        rusticos = parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', ''))
+                        if rusticos:
+                            for i, prop in enumerate(rusticos):
+                                if isinstance(prop, dict):
+                                    st.markdown(f"**🚜 Inmueble Rústico #{i+1}**")
+                                    for key, value in prop.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                                    st.markdown("")
+                        else: st.info("Sin inmuebles rústicos")
+                
+                with tabs[2]:
+                    st.markdown("#### 💼 Sociedades y Participaciones")
+                    tcol1, tcol2 = st.columns(2)
+                    with tcol1:
+                        st.markdown("##### 🏢 Sociedades No Cotizadas")
+                        sociedades = parse_json_field(deputy_data.get('bienes_patrimoniales_bienes_sociedades_no_cotizadas', ''))
+                        if sociedades:
+                            for i, soc in enumerate(sociedades):
+                                if isinstance(soc, dict):
+                                    st.markdown(f"**🏭 Sociedad #{i+1}**")
+                                    for key, value in soc.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                                    st.markdown("")
+                        else: st.info("Sin sociedades no cotizadas")
+                    with tcol2:
+                        st.markdown("##### 📊 Participaciones >5%")
+                        participaciones = parse_json_field(deputy_data.get('otros_bienes_y_derechos_sociedades_participadas_mas_5_por_ciento', ''))
+                        if participaciones:
+                            for i, part in enumerate(participaciones):
+                                if isinstance(part, dict):
+                                    st.markdown(f"**📈 Participación #{i+1}**")
+                                    for key, value in part.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                                    st.markdown("")
+                        else: st.info("Sin participaciones superiores al 5%")
+                
+                with tabs[3]:
+                    st.markdown("#### 💰 Activos Financieros")
+                    tcol1, tcol2 = st.columns(2)
+                    with tcol1:
+                        st.markdown("##### 🏦 Cuentas y Depósitos")
+                        accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
+                        if accounts:
+                            total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
+                            if total_accounts > 0: st.success(f"💰 **Total en cuentas: {format_currency_full(total_accounts)}**")
+                            for account in accounts:
+                                if isinstance(account, dict):
+                                    desc = account.get('descripcion', 'Cuenta')
+                                    if str(desc).lower() == 'nan': desc = 'Cuenta'
+                                    saldo = extract_currency_value(account.get('saldo'))
+                                    if saldo > 0:
+                                        st.markdown(f"**🏦 {desc}**"); st.markdown(f"Saldo: **{format_currency_full(saldo)}**")
+                        else: st.info("Sin cuentas declaradas")
+                        
+                        st.markdown("##### 📈 Acciones y Participaciones")
+                        acciones = parse_json_field(deputy_data.get('otros_bienes_y_derechos_acciones_y_participaciones', ''))
+                        if acciones:
+                            for i, accion in enumerate(acciones):
+                                if isinstance(accion, dict):
+                                    st.markdown(f"**📊 Acción/Participación #{i+1}**")
+                                    for key, value in accion.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                        else: st.info("Sin acciones declaradas")
+                    
+                    with tcol2:
+                        st.markdown("##### 📜 Deuda Pública y Valores")
+                        deuda_publica = parse_json_field(deputy_data.get('otros_bienes_y_derechos_deuda_publica_y_valores', ''))
+                        if deuda_publica:
+                            for i, item in enumerate(deuda_publica):
+                                if isinstance(item, dict):
+                                    st.markdown(f"**💼 Valor #{i+1}**")
+                                    for key, value in item.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                        else: st.info("Sin deuda pública o valores")
+                
+                with tabs[4]:
+                    st.markdown("#### 🚗 Vehículos")
+                    vehicles = parse_json_field(deputy_data['vehiculos'])
+                    if vehicles:
+                        st.info(f"🚙 **Total vehículos: {len(vehicles)}**")
+                        cols = st.columns(2)
+                        for i, vehicle in enumerate(vehicles):
+                            if isinstance(vehicle, dict):
+                                with cols[i % 2]:
+                                    desc = vehicle.get('descripcion', f'Vehículo #{i+1}')
+                                    if str(desc).lower() == 'nan': desc = f'Vehículo #{i+1}'
+                                    st.markdown(f"**🚗 {desc}**")
+                                    fecha = vehicle.get('fecha_adquisicion', '')
+                                    if fecha and str(fecha).lower() != 'nan': st.markdown(f"Adquirido: {fecha}")
+                                    st.markdown("")
+                    else: st.info("Sin vehículos declarados")
+                
+                with tabs[5]:
+                    st.markdown("#### 💸 Deudas y Obligaciones")
+                    total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
+                    if debts:
+                        st.error(f"💰 **Total Pendiente: {format_currency_full(total_debt)}**")
+                        for i, debt in enumerate(debts):
+                            if isinstance(debt, dict):
+                                desc = debt.get('descripcion', f'Deuda #{i+1}')
+                                if str(desc).lower() == 'nan': desc = f'Deuda #{i+1}'
+                                st.markdown(f"**📄 {desc}**")
+                                original = extract_currency_value(debt.get('importe_concedido'))
+                                pending = extract_currency_value(debt.get('saldo_pendiente'))
+                                tcol1, tcol2 = st.columns(2)
+                                with tcol1:
+                                    if original > 0: st.markdown(f"Original: **{format_currency_full(original)}**")
+                                    fecha = debt.get('fecha_concesion', '')
+                                    if fecha and str(fecha).lower() != 'nan': st.markdown(f"Fecha: {fecha}")
+                                with tcol2:
+                                    if pending > 0: st.markdown(f"Pendiente: **{format_currency_full(pending)}**")
+                                    if original > 0 and pending > 0:
+                                        paid_pct = ((original - pending) / original) * 100
+                                        st.progress(int(paid_pct), text=f"Pagado: {paid_pct:.1f}%")
+                                st.markdown("---")
+                    else: st.success("✅ No se han declarado deudas")
+                
+                with tabs[6]:
+                    st.markdown("#### 📋 Actividades e Intereses")
+                    # Match and display interests data using both ID and name
+                    deputy_id = deputy_data.get('deputy_id')
+                    deputy_interests = match_deputy_interests(selected_deputy_name, deputy_id, interests_df)
+                    
+                    display_interests_section(deputy_interests)
+                
+                with tabs[7]:
+                    st.markdown("#### 📄 Otros Bienes y Derechos")
+                    otros_bienes = deputy_data.get('otros_bienes_no_declarados_anteriormente', '')
+                    if otros_bienes and str(otros_bienes).lower() != 'nan':
+                        st.markdown("##### 📦 Otros Bienes No Declarados Anteriormente")
+                        otros_parsed = parse_json_field(otros_bienes)
+                        if otros_parsed:
+                            for i, item in enumerate(otros_parsed):
+                                if isinstance(item, dict):
+                                    st.markdown(f"**Item #{i+1}**")
+                                    for key, value in item.items():
+                                        if value and str(value).lower() != 'nan': st.markdown(f"• {key.replace('_', ' ').title()}: {value}")
+                        else: st.write(otros_bienes)
+                    else: st.info("No hay otros bienes declarados")
     
     st.markdown("---")
     st.markdown(
