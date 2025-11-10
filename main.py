@@ -1061,60 +1061,38 @@ def format_currency_full(value):
         return f"{formatted} €"
 
 def extract_irpf_value(value):
-    """Extract IRPF value with corruption detection and correction"""
+    """
+    Extract IRPF value with corruption detection and correction.
+    
+    Database corruption pattern: Spanish thousands separator (.) was interpreted as decimal point.
+    Examples:
+    - 23.117 in DB → should be 23,117€ (multiply by 1000)
+    - 291.95 in DB → should be 291,950€ (multiply by 1000)
+    - 5701.66 in DB → correct as is (5,701.66€)
+    """
     if pd.isna(value) or value == '':
         return 0
     
     if isinstance(value, (int, float)):
         value = float(value)
-        value_str = str(value)
         
-        # Case 1: Extremely high values (> 200,000) with suspicious decimals
-        if value > 200000:
-            if '.' in value_str:
-                parts = value_str.split('.')
-                full_digits = parts[0] + parts[1].rstrip('0')
-                
-                if len(full_digits) >= 7:
-                    middle_start = 1
-                    middle_end = 6
-                    if len(full_digits) >= middle_end + 2:
-                        corrected = full_digits[middle_start:middle_end] + '.' + full_digits[middle_end:middle_end+2]
-                        return float(corrected)
-            
-            value_str_int = str(int(value))
-            if len(value_str_int) >= 3:
-                corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
-                return float(corrected)
+        # CRITICAL FIX: All IRPF values under 1000 are corrupted
+        # The Spanish thousands separator (23.117 = 23,117) was interpreted as decimal point
+        # IRPF for a deputy realistically ranges from 5,000€ to 50,000€, never < 1,000€
+        if 0 < value < 1000:
+            return value * 1000
         
-        # Case 2: Values with dot as thousands separator and extra decimals
-        if 10 < value < 200000 and '.' in value_str:
-            parts = value_str.split('.')
-            if len(parts) == 2:
-                integer_part = parts[0]
-                decimal_part = parts[1]
-                
-                if len(decimal_part) >= 3:
-                    combined = integer_part + decimal_part
-                    corrected = combined[:-2] + '.' + combined[-2:]
-                    return float(corrected)
-                
-                elif len(decimal_part) == 3:
-                    return float(integer_part + decimal_part)
-        
-        # Case 3: Very small values with dot
-        if 20 < value < 100 and '.' in value_str:
-            return float(value_str.replace('.', ''))
-        
+        # Values >= 1000 are generally correct (already went through proper conversion)
         return value
     
-    # If it's a string, parse it
+    # String parsing fallback (rarely needed)
     value_str = str(value).strip()
     value_str = re.sub(r'[€$£\s]', '', value_str)
     numeric_part = re.search(r'[\d.,]+', value_str)
     
     if numeric_part:
         num_str = numeric_part.group(0)
+        # Spanish format: dot = thousands, comma = decimal
         if ',' in num_str:
             return float(num_str.replace('.', '').replace(',', '.'))
         else:
