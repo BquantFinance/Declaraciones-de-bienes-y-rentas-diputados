@@ -901,7 +901,7 @@ def match_deputy_interests(deputy_id, interests_df):
     return matches
 
 def display_interests_section(deputy_interests):
-    """Display the interests and activities section with updated column names"""
+    """Display the interests and activities section with proper HTML escaping"""
     if deputy_interests.empty:
         st.info("📋 No hay información de registro de intereses disponible para este diputado.")
         return
@@ -926,9 +926,8 @@ def display_interests_section(deputy_interests):
         with st.expander(f"{section_title} ({len(section_data)})", expanded=(section_name == 'actividades')):
             
             if section_name == 'actividades':
-                # Display activities with updated column names
+                # Display activities
                 for idx, row in section_data.iterrows():
-                    # Use the correct column names from the CSV
                     activity_sector = row.get('actividad_sector', 'Sin especificar')
                     activity_empleador = row.get('actividad_empleador', '')
                     activity_periodo = row.get('actividad_periodo', '')
@@ -945,20 +944,18 @@ def display_interests_section(deputy_interests):
                         elif 'privada' in activity_sector_lower or 'docente' in activity_sector_lower:
                             badge_class = 'badge-actividad'
                     
-                    # Create activity card
-                    card_html = f'''
-                    <div class="activity-card">
-                        <div class="activity-type-badge {badge_class}">{activity_sector if pd.notna(activity_sector) else 'Sin especificar'}</div>
-                    '''
+                    # Create activity card with proper HTML escaping
+                    card_html = f'<div class="activity-card">'
+                    card_html += f'<div class="activity-type-badge {badge_class}">{html.escape(str(activity_sector)) if pd.notna(activity_sector) else "Sin especificar"}</div>'
                     
                     if pd.notna(activity_empleador) and str(activity_empleador).strip():
-                        card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {activity_empleador}</p>'
+                        card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {html.escape(str(activity_empleador))}</p>'
                     
                     if pd.notna(activity_desc) and str(activity_desc).strip():
-                        card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{activity_desc}</p>'
+                        card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{html.escape(str(activity_desc))}</p>'
                     
                     if pd.notna(activity_periodo) and str(activity_periodo).strip():
-                        card_html += f'<p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">📅 {activity_periodo}</p>'
+                        card_html += f'<p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">📅 {html.escape(str(activity_periodo))}</p>'
                     
                     card_html += '</div>'
                     st.markdown(card_html, unsafe_allow_html=True)
@@ -968,39 +965,51 @@ def display_interests_section(deputy_interests):
                 for idx, row in section_data.iterrows():
                     otros_texto = row.get('otros_texto', '')
                     if pd.notna(otros_texto) and str(otros_texto).strip():
+                        # Escape HTML but preserve line breaks
+                        texto_escaped = html.escape(str(otros_texto))
                         st.markdown(f"""
                         <div class="activity-card">
-                            <p style="color: #e2e8f0; white-space: pre-wrap;">{otros_texto}</p>
+                            <p style="color: #e2e8f0; white-space: pre-wrap;">{texto_escaped}</p>
                         </div>
                         """, unsafe_allow_html=True)
             
             elif section_name == 'donaciones':
-                # Display donations
+                # Display donations with proper HTML escaping
                 for idx, row in section_data.iterrows():
                     benefactor = row.get('donacion_benefactor', '')
                     descripcion = row.get('donacion_descripcion', '')
+                    
                     if pd.notna(benefactor) or pd.notna(descripcion):
-                        st.markdown(f"""
-                        <div class="activity-card">
-                            <div class="activity-type-badge badge-otros">Donación</div>
-                            {f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🎁 De: {benefactor}</p>' if pd.notna(benefactor) else ''}
-                            {f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{descripcion}</p>' if pd.notna(descripcion) else ''}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        card_html = '<div class="activity-card">'
+                        card_html += '<div class="activity-type-badge badge-otros">Donación</div>'
+                        
+                        if pd.notna(benefactor) and str(benefactor).strip():
+                            card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🎁 De: {html.escape(str(benefactor))}</p>'
+                        
+                        if pd.notna(descripcion) and str(descripcion).strip():
+                            card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{html.escape(str(descripcion))}</p>'
+                        
+                        card_html += '</div>'
+                        st.markdown(card_html, unsafe_allow_html=True)
             
             elif section_name == 'fundaciones':
-                # Display foundations
+                # Display foundations with proper HTML escaping
                 for idx, row in section_data.iterrows():
                     destinatario = row.get('fundacion_destinatario', '')
                     descripcion = row.get('fundacion_descripcion', '')
+                    
                     if pd.notna(destinatario) or pd.notna(descripcion):
-                        st.markdown(f"""
-                        <div class="activity-card">
-                            <div class="activity-type-badge badge-actividad">Fundación</div>
-                            {f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {destinatario}</p>' if pd.notna(destinatario) else ''}
-                            {f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{descripcion}</p>' if pd.notna(descripcion) else ''}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        card_html = '<div class="activity-card">'
+                        card_html += '<div class="activity-type-badge badge-actividad">Fundación</div>'
+                        
+                        if pd.notna(destinatario) and str(destinatario).strip():
+                            card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {html.escape(str(destinatario))}</p>'
+                        
+                        if pd.notna(descripcion) and str(descripcion).strip():
+                            card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{html.escape(str(descripcion))}</p>'
+                        
+                        card_html += '</div>'
+                        st.markdown(card_html, unsafe_allow_html=True)
             
             else:
                 # Generic display for other sections
