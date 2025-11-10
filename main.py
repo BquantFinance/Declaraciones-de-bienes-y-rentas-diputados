@@ -1043,11 +1043,51 @@ def extract_currency_value(value_str):
     if isinstance(value_str, (int, float)):
         return float(value_str)
     
-    numeric_part = re.search(r'[\d.,]+', str(value_str))
+    value_str = str(value_str).strip()
+    numeric_part = re.search(r'[\d.,]+', value_str)
     if numeric_part:
         try:
-            cleaned_str = numeric_part.group(0).replace('.', '').replace(',', '.')
-            return float(cleaned_str)
+            num_str = numeric_part.group(0)
+            
+            # Count dots and commas to determine the format
+            dot_count = num_str.count('.')
+            comma_count = num_str.count(',')
+            
+            # Determine the format based on separator positions
+            if comma_count == 0 and dot_count == 0:
+                # No separators, just a number
+                return float(num_str)
+            elif comma_count == 0 and dot_count == 1:
+                # Could be either decimal (31135.60) or thousands (1.234)
+                # If the dot is followed by 1-2 digits at the end, it's a decimal
+                if re.search(r'\.\d{1,2}$', num_str):
+                    return float(num_str)
+                else:
+                    # Otherwise treat as thousands separator
+                    return float(num_str.replace('.', ''))
+            elif dot_count == 0 and comma_count == 1:
+                # Spanish format with comma as decimal (31135,60)
+                return float(num_str.replace(',', '.'))
+            elif dot_count > 0 and comma_count > 0:
+                # Both present - determine which is decimal
+                last_dot_pos = num_str.rfind('.')
+                last_comma_pos = num_str.rfind(',')
+                
+                if last_comma_pos > last_dot_pos:
+                    # Spanish format: dots are thousands, comma is decimal (1.234.567,89)
+                    return float(num_str.replace('.', '').replace(',', '.'))
+                else:
+                    # US format: commas are thousands, dot is decimal (1,234,567.89)
+                    return float(num_str.replace(',', ''))
+            elif dot_count > 1:
+                # Multiple dots = European thousands separator (1.234.567)
+                return float(num_str.replace('.', '').replace(',', '.'))
+            elif comma_count > 1:
+                # Multiple commas = US thousands separator (1,234,567)
+                return float(num_str.replace(',', ''))
+            else:
+                # Fallback
+                return float(num_str.replace('.', '').replace(',', '.'))
         except (ValueError, TypeError):
             return 0
     return 0
