@@ -1064,25 +1064,36 @@ def extract_irpf_value(value):
     """
     Extract IRPF value with corruption detection and correction.
     
-    Database corruption pattern: Spanish thousands separator (.) was interpreted as decimal point.
-    Examples:
-    - 23.117 in DB → should be 23,117€ (multiply by 1000)
-    - 291.95 in DB → should be 291,950€ (multiply by 1000)
-    - 5701.66 in DB → correct as is (5,701.66€)
+    Database has TWO corruption patterns:
+    1. Small values (<1,000): Spanish thousands separator interpreted as decimal
+       - 23.117 → should be 23,117€ (multiply by 1000)
+    2. Large values (>200,000): Decimal point missing, cents stored as integers
+       - 3213560.32 → should be 32,135.60€ (divide by 100)
+    3. Normal values (1,000-200,000): Already correct
     """
     if pd.isna(value) or value == '':
         return 0
     
     if isinstance(value, (int, float)):
         value = float(value)
+        value_str = str(value)
         
-        # CRITICAL FIX: All IRPF values under 1000 are corrupted
-        # The Spanish thousands separator (23.117 = 23,117) was interpreted as decimal point
-        # IRPF for a deputy realistically ranges from 5,000€ to 50,000€, never < 1,000€
+        # CORRUPTION PATTERN 1: Extremely high values (> 200,000)
+        # Missing decimal point - cents stored as whole numbers
+        if value > 200000:
+            # Insert decimal point 2 positions from the right
+            value_str_int = str(int(value))
+            if len(value_str_int) >= 3:
+                corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
+                return float(corrected)
+        
+        # CORRUPTION PATTERN 2: Very low values (< 1,000)
+        # Spanish thousands separator interpreted as decimal point
+        # IRPF realistically ranges from 5,000€ to 50,000€, never < 1,000€
         if 0 < value < 1000:
             return value * 1000
         
-        # Values >= 1000 are generally correct (already went through proper conversion)
+        # NORMAL RANGE: Values between 1,000 and 200,000 are correct
         return value
     
     # String parsing fallback (rarely needed)
