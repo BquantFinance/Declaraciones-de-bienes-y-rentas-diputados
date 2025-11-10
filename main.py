@@ -1102,42 +1102,56 @@ def extract_irpf_value(value):
     
     if isinstance(value, (int, float)):
         value = float(value)
+        value_str = str(value)
         
-        # Detect and fix corrupted values
-        # Normal IRPF range for deputies: 5,000 - 150,000 euros
-        
-        # Case 1: Value too high with suspicious decimal precision (like 3213560.321356)
-        # Pattern: 7+ digits with 5-6 decimal places
+        # Case 1: Extremely high values (> 200,000) with suspicious decimals
+        # Pattern: 3213560.321356 → 31135.60 or 1849074.0 → 18490.74
         if value > 200000:
-            value_str = str(value)
             if '.' in value_str:
                 parts = value_str.split('.')
-                # If we have something like "3213560.321356"
-                # Extract middle digits: 31135.60
-                full_digits = parts[0] + parts[1]
+                full_digits = parts[0] + parts[1].rstrip('0')
+                
+                # For very long corrupted numbers like 3213560321356
                 if len(full_digits) >= 7:
-                    # Take positions that make sense: skip first digit, take next 5, then 2 for decimal
-                    # "3213560321356" -> "31135" + "60"
+                    # Extract middle portion: "3213560321356" → "31135" + "60"
                     middle_start = 1
                     middle_end = 6
                     if len(full_digits) >= middle_end + 2:
                         corrected = full_digits[middle_start:middle_end] + '.' + full_digits[middle_end:middle_end+2]
                         return float(corrected)
-        
-        # Case 2: Value too high without suspicious decimals (like 1849074.0)
-        # Probably decimal point was removed: 1849074 -> 18490.74
-        if value > 200000:
-            value_str = str(int(value))
-            if len(value_str) >= 5:
-                # Insert decimal point 2 positions from the right
-                corrected = value_str[:-2] + '.' + value_str[-2:]
+            
+            # Simple case: remove decimal point 2 positions from right
+            # 1849074 → 18490.74
+            value_str_int = str(int(value))
+            if len(value_str_int) >= 3:
+                corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
                 return float(corrected)
         
-        # Case 3: Small value with dot as thousands (like 23.117)
-        # This is Spanish format where dot is thousands separator
-        if 20 < value < 100 and '.' in str(value):
-            # Remove the dot (thousands separator)
-            return float(str(value).replace('.', ''))
+        # Case 2: Values with dot as thousands separator and extra decimals
+        # Pattern: 38.84977 → 38849.77 (dot is thousands, last digits are decimals)
+        if 10 < value < 200000 and '.' in value_str:
+            parts = value_str.split('.')
+            if len(parts) == 2:
+                integer_part = parts[0]
+                decimal_part = parts[1]
+                
+                # If we have something like "38.84977"
+                # This means 38 thousand + 849.77
+                if len(decimal_part) >= 3:
+                    # Combine: "38" + "84977" → "3884977" → "38849.77"
+                    combined = integer_part + decimal_part
+                    # Insert decimal point 2 positions from right
+                    corrected = combined[:-2] + '.' + combined[-2:]
+                    return float(corrected)
+                
+                # If it's like "23.117" (format español)
+                elif len(decimal_part) == 3:
+                    # Remove the dot: 23117
+                    return float(integer_part + decimal_part)
+        
+        # Case 3: Very small values with dot (like 23.117)
+        if 20 < value < 100 and '.' in value_str:
+            return float(value_str.replace('.', ''))
         
         # Value seems normal
         return value
@@ -1152,7 +1166,6 @@ def extract_irpf_value(value):
         # European format with comma as decimal
         if ',' in num_str:
             return float(num_str.replace('.', '').replace(',', '.'))
-        # US format or simple number
         else:
             return float(num_str.replace(',', ''))
     
