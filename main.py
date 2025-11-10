@@ -1064,12 +1064,12 @@ def extract_irpf_value(value):
     """
     Extract IRPF value with corruption detection and correction.
     
-    Database has TWO corruption patterns:
-    1. Small values (<1,000): Spanish thousands separator interpreted as decimal
-       - 23.117 → should be 23,117€ (multiply by 1000)
-    2. Large values (>200,000): Decimal point missing, cents stored as integers
-       - 3213560.32 → should be 32,135.60€ (divide by 100)
-    3. Normal values (1,000-200,000): Already correct
+    Multiple corruption patterns based on decimal places:
+    - >200,000: Decimal point missing (3213560.32 → 32135.60)
+    - With 3 decimals exactly: Spanish thousands separator (23.117 → 23117)
+    - With 4+ decimals: Complex corruption (38.84977 → 38849.77)
+    - With 2 decimals + small value: Thousands separator (91.32 → 9132)
+    - With 1 decimal: Usually correct (654.4 → 654.4)
     """
     if pd.isna(value) or value == '':
         return 0
@@ -1078,32 +1078,64 @@ def extract_irpf_value(value):
         value = float(value)
         value_str = str(value)
         
-        # CORRUPTION PATTERN 1: Extremely high values (> 200,000)
-        # Missing decimal point - cents stored as whole numbers
+        # Case 1: Extremely high values (> 200,000) with suspicious decimals
         if value > 200000:
-            # Insert decimal point 2 positions from the right
+            if '.' in value_str:
+                parts = value_str.split('.')
+                full_digits = parts[0] + parts[1].rstrip('0')
+                
+                if len(full_digits) >= 7:
+                    # Extract the correct digits
+                    # E.g., "3213560321356" → "32135" + "60"
+                    corrected = full_digits[:5] + '.' + full_digits[5:7]
+                    return float(corrected)
+            
+            # Fallback: insert decimal 2 places from right
             value_str_int = str(int(value))
             if len(value_str_int) >= 3:
                 corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
                 return float(corrected)
         
-        # CORRUPTION PATTERN 2: Very low values (< 1,000)
-        # Spanish thousands separator interpreted as decimal point
-        # IRPF realistically ranges from 5,000€ to 50,000€, never < 1,000€
-        if 0 < value < 1000:
-            return value * 1000
+        # Case 2: Values with dot as thousands separator
+        if 10 < value < 200000 and '.' in value_str:
+            parts = value_str.split('.')
+            if len(parts) == 2:
+                integer_part = parts[0]
+                decimal_part = parts[1]
+                
+                # Case 2a: Exactly 3 decimal places → Spanish thousands separator
+                # 23.117 → 23117
+                if len(decimal_part) == 3:
+                    return float(integer_part + decimal_part)
+                
+                # Case 2b: 4+ decimal places → Complex corruption
+                # 38.84977 → "3884977" → "38849.77"
+                elif len(decimal_part) >= 4:
+                    combined = integer_part + decimal_part
+                    corrected = combined[:-2] + '.' + combined[-2:]
+                    return float(corrected)
+                
+                # Case 2c: 2 decimal places + value < 1000 → Thousands separator
+                # 91.32 → 9132, 119.05 → 11905
+                elif len(decimal_part) == 2 and value < 1000:
+                    return float(integer_part + decimal_part)
+                
+                # Case 2d: 1 decimal place or normal 2 decimals → Keep as is
+                # 654.4 → 654.4, 5701.66 → 5701.66
         
-        # NORMAL RANGE: Values between 1,000 and 200,000 are correct
+        # Case 3: Very small values (20-100) with dot → Remove dot
+        if 20 < value < 100 and '.' in value_str:
+            return float(value_str.replace('.', ''))
+        
         return value
     
-    # String parsing fallback (rarely needed)
+    # String parsing fallback
     value_str = str(value).strip()
     value_str = re.sub(r'[€$£\s]', '', value_str)
     numeric_part = re.search(r'[\d.,]+', value_str)
     
     if numeric_part:
         num_str = numeric_part.group(0)
-        # Spanish format: dot = thousands, comma = decimal
         if ',' in num_str:
             return float(num_str.replace('.', '').replace(',', '.'))
         else:
