@@ -1037,26 +1037,11 @@ def format_currency_full(value):
         return f"{formatted} €"
 
 def extract_currency_value(value_str):
-    """Extract numeric value from currency string with validation"""
+    """Extract numeric value from currency string with validation and corruption handling"""
     if pd.isna(value_str) or value_str == '':
         return 0
     if isinstance(value_str, (int, float)):
-        value = float(value_str)
-        # Validate: IRPF values for deputies are typically between 5,000 and 150,000
-        # If value seems corrupted (too high or weird precision), try to fix it
-        if value > 500000:  # Clearly wrong
-            # Try to extract reasonable value (e.g., 3213560.321356 -> 31135.60)
-            value_str_clean = str(value).replace('.', '')
-            # Look for pattern: take reasonable substring
-            if len(value_str_clean) > 6:
-                # Try middle digits
-                try:
-                    candidate = float(value_str_clean[1:6] + '.' + value_str_clean[6:8])
-                    if 5000 <= candidate <= 150000:
-                        return candidate
-                except:
-                    pass
-        return value
+        return float(value_str)
     
     value_str = str(value_str).strip()
     
@@ -1072,25 +1057,43 @@ def extract_currency_value(value_str):
             dot_count = num_str.count('.')
             comma_count = num_str.count(',')
             
+            # Handle corrupted data with multiple dots (e.g., "137.739.51" should be 137739.51)
+            if dot_count > 1 and comma_count == 0:
+                # Multiple dots without commas - check if last segment is 1-2 digits (decimal)
+                parts = num_str.split('.')
+                if len(parts[-1]) <= 2:
+                    # Last part is decimal, rest are thousands
+                    # "137.739.51" -> "137739.51"
+                    integer_part = ''.join(parts[:-1])
+                    decimal_part = parts[-1]
+                    return float(f"{integer_part}.{decimal_part}")
+                else:
+                    # All dots are thousands separators
+                    return float(num_str.replace('.', ''))
+            
+            # No separators
             if comma_count == 0 and dot_count == 0:
-                # No separators
                 return float(num_str)
+            
+            # Single dot
             elif comma_count == 0 and dot_count == 1:
-                # Single dot: could be decimal or thousands
+                # Check if it's a decimal separator (1-2 digits after dot at end)
                 if re.search(r'\.\d{1,2}$', num_str):
-                    # Decimal separator (e.g., 31135.60)
                     return float(num_str)
                 else:
-                    # Thousands separator (e.g., 1.234)
+                    # Thousands separator
                     return float(num_str.replace('.', ''))
+            
+            # Single comma
             elif dot_count == 0 and comma_count == 1:
-                # Single comma: decimal separator (European format)
+                # Decimal separator (European format)
                 if re.search(r',\d{1,2}$', num_str):
                     return float(num_str.replace(',', '.'))
                 else:
                     return float(num_str.replace(',', ''))
+            
+            # Both dots and commas present
             elif dot_count > 0 and comma_count > 0:
-                # Both present
                 last_dot = num_str.rfind('.')
                 last_comma = num_str.rfind(',')
                 
@@ -1100,14 +1103,19 @@ def extract_currency_value(value_str):
                 else:
                     # US: 1,234,567.89
                     return float(num_str.replace(',', ''))
+            
+            # Multiple dots (European thousands)
             elif dot_count > 1:
-                # Multiple dots = European thousands
                 return float(num_str.replace('.', '').replace(',', '.'))
+            
+            # Multiple commas (US thousands)
             elif comma_count > 1:
-                # Multiple commas = US thousands
                 return float(num_str.replace(',', ''))
+            
             else:
+                # Fallback
                 return float(num_str.replace('.', '').replace(',', '.'))
+                
         except (ValueError, TypeError):
             return 0
     return 0
