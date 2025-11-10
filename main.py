@@ -8,6 +8,7 @@ import re
 import os
 import base64
 import random
+import unicodedata
 
 # Page configuration
 st.set_page_config(
@@ -89,6 +90,53 @@ def apply_css():
         @keyframes shimmer {
             0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
             100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        /* Activity Card Styling */
+        .activity-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .activity-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+        
+        .activity-type-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge-cargo {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        
+        .badge-actividad {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .badge-partido {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .badge-otros {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
         }
         
         /* Image Gallery Container */
@@ -689,6 +737,132 @@ def load_data():
         st.error(f"Error al cargar los datos: {str(e)}")
         return pd.DataFrame()
 
+@st.cache_data
+def load_interests_data():
+    """Load the interests and activities CSV data"""
+    try:
+        df = pd.read_csv('deputies_interests_full.csv', encoding='utf-8-sig')
+        return df
+    except FileNotFoundError:
+        return pd.DataFrame()
+    except Exception as e:
+        return pd.DataFrame()
+
+def normalize_name(name):
+    """Normalize name for matching"""
+    if pd.isna(name):
+        return ""
+    # Remove accents and convert to lowercase
+    name = str(name)
+    name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
+    return name.lower().strip()
+
+def match_deputy_interests(deputy_name, interests_df):
+    """Match deputy with their interests data"""
+    if interests_df.empty:
+        return pd.DataFrame()
+    
+    # Try exact match first
+    normalized_deputy = normalize_name(deputy_name)
+    
+    # Try matching with personal_apellidos and personal_nombre
+    interests_df['full_name_normalized'] = (
+        interests_df['personal_nombre'].fillna('') + ' ' + 
+        interests_df['personal_apellidos'].fillna('')
+    ).apply(normalize_name)
+    
+    # Also try reversed order
+    interests_df['full_name_reversed'] = (
+        interests_df['personal_apellidos'].fillna('') + ' ' + 
+        interests_df['personal_nombre'].fillna('')
+    ).apply(normalize_name)
+    
+    # Find matches
+    matches = interests_df[
+        (interests_df['full_name_normalized'] == normalized_deputy) |
+        (interests_df['full_name_reversed'] == normalized_deputy)
+    ]
+    
+    return matches
+
+def display_interests_section(deputy_interests):
+    """Display the interests and activities section"""
+    if deputy_interests.empty:
+        st.info("📋 No hay información de registro de intereses disponible para este diputado.")
+        return
+    
+    st.markdown(f"### 📋 Registro de Intereses - {len(deputy_interests)} Registros")
+    
+    # Group by section type
+    section_groups = deputy_interests.groupby('seccion')
+    
+    # Create expandable sections for each type
+    for section_name, section_data in section_groups:
+        
+        section_titles = {
+            'actividades_previas': '🏛️ Actividades Previas al Mandato',
+            'donaciones': '🎁 Donaciones y Obsequios',
+            'fundaciones': '🏢 Fundaciones y Asociaciones',
+            'otros_intereses': '📝 Otros Intereses'
+        }
+        
+        section_title = section_titles.get(section_name, f'📌 {section_name.replace("_", " ").title()}')
+        
+        with st.expander(f"{section_title} ({len(section_data)})", expanded=(section_name == 'actividades_previas')):
+            
+            if section_name == 'actividades_previas':
+                # Display activities
+                for idx, row in section_data.iterrows():
+                    activity_type = row.get('actividad_tipo', 'Sin especificar')
+                    activity_desc = row.get('actividad_descripcion', '')
+                    activity_date = row.get('actividad_fecha', '')
+                    
+                    # Determine badge class based on activity type
+                    badge_class = 'badge-otros'
+                    if pd.notna(activity_type):
+                        activity_type_lower = str(activity_type).lower()
+                        if 'cargo' in activity_type_lower and 'público' in activity_type_lower:
+                            badge_class = 'badge-cargo'
+                        elif 'partido' in activity_type_lower or 'grupo parlamentario' in activity_type_lower:
+                            badge_class = 'badge-partido'
+                        elif 'privada' in activity_type_lower or 'docente' in activity_type_lower:
+                            badge_class = 'badge-actividad'
+                    
+                    # Create activity card
+                    card_html = f'''
+                    <div class="activity-card">
+                        <div class="activity-type-badge {badge_class}">{activity_type if pd.notna(activity_type) else 'Sin especificar'}</div>
+                    '''
+                    
+                    if pd.notna(activity_desc) and str(activity_desc).strip():
+                        card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{activity_desc}</p>'
+                    
+                    if pd.notna(activity_date) and str(activity_date).strip():
+                        card_html += f'<p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">📅 {activity_date}</p>'
+                    
+                    card_html += '</div>'
+                    st.markdown(card_html, unsafe_allow_html=True)
+            
+            elif section_name == 'otros_intereses':
+                # Display other interests
+                for idx, row in section_data.iterrows():
+                    otros_texto = row.get('otros_intereses_texto', '')
+                    if pd.notna(otros_texto) and str(otros_texto).strip():
+                        st.markdown(f"""
+                        <div class="activity-card">
+                            <p style="color: #e2e8f0; white-space: pre-wrap;">{otros_texto}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            else:
+                # Generic display for other sections
+                for idx, row in section_data.iterrows():
+                    st.markdown(f"""
+                    <div class="activity-card">
+                        <p style="color: #e2e8f0;">Registro de {section_name.replace('_', ' ')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
 def parse_json_field(field_value):
     """Safely parse JSON fields"""
     if pd.isna(field_value) or field_value in ('[]', ''):
@@ -879,6 +1053,7 @@ def main_app():
     st.markdown('<p style="text-align: center; color: #94a3b8;">Análisis Interactivo de la Transparencia Financiera en el Congreso de los Diputados</p>', unsafe_allow_html=True)
     
     df = load_data()
+    interests_df = load_interests_data()
     
     if df.empty:
         st.stop()
@@ -1086,7 +1261,7 @@ def main_app():
 
             st.markdown("---")
             
-            tabs = st.tabs(["💵 Ingresos", "🏠 Inmuebles", "💼 Sociedades", "💰 Activos", "🚗 Vehículos", "💳 Deudas", "📄 Otros"])
+            tabs = st.tabs(["💵 Ingresos", "🏠 Inmuebles", "💼 Sociedades", "💰 Activos", "🚗 Vehículos", "💳 Deudas", "📋 Actividades", "📄 Otros"])
             
             with tabs[0]:
                 st.markdown("#### 💵 Todas las Fuentes de Ingresos")
@@ -1271,6 +1446,12 @@ def main_app():
                 else: st.success("✅ No se han declarado deudas")
             
             with tabs[6]:
+                st.markdown("#### 📋 Actividades e Intereses")
+                # Match and display interests data
+                deputy_interests = match_deputy_interests(selected_deputy_name, interests_df)
+                display_interests_section(deputy_interests)
+            
+            with tabs[7]:
                 st.markdown("#### 📄 Otros Bienes y Derechos")
                 otros_bienes = deputy_data.get('otros_bienes_no_declarados_anteriormente', '')
                 if otros_bienes and str(otros_bienes).lower() != 'nan':
