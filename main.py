@@ -1196,35 +1196,50 @@ def extract_debt_account_value(value_str):
         # CASE 1: Has comma - comma is ALWAYS decimal separator
         if comma_count > 0:
             # European format: dots=thousands, comma=decimal
-            # Examples: "67.230,26" → 67230.26 or "1.200.000,50" → 1200000.50
             return float(num_str.replace('.', '').replace(',', '.'))
         
         # CASE 2: No comma, only dots
         if dot_count > 0 and comma_count == 0:
             # Multiple dots = ALL are thousands separators
-            # Examples: "1.112.477" → 1112477
             if dot_count > 1:
                 return float(num_str.replace('.', ''))
             
-            # Single dot - need to determine if it's decimal or thousands or corrupted
+            # Single dot - need sophisticated logic
             parts = num_str.split('.')
             integer_part = parts[0]
             decimal_part = parts[1]
             
-            # Corrupted format like "13.15250" (should be 13152.50)
-            if len(decimal_part) >= 3:
-                # If 3-5 digits after dot, it's corrupted
-                # "13.15250" → "1315250" → "13152.50"
+            # Pattern detection for single dot:
+            
+            # Subcase A: Exactly 3 digits after dot
+            if len(decimal_part) == 3:
+                # Check if it ends with "00" or all zeros (15.500, 1.200) → thousands
+                if decimal_part.endswith('00') or decimal_part == '000':
+                    return float(num_str.replace('.', ''))
+                # If 3 digits but NOT ending in 00, and integer part < 100 → likely corrupted
+                # Example: 13.152 should be 131.52? No, this is ambiguous. Let's use value context
+                # For debt values, 13.152 as 13152 makes more sense than 13.152
+                elif int(integer_part) < 1000:
+                    # Likely thousands separator
+                    return float(num_str.replace('.', ''))
+                else:
+                    # Large integer part with 3 decimals is weird, treat as thousands
+                    return float(num_str.replace('.', ''))
+            
+            # Subcase B: 4-5 digits after dot (definitely corrupted format)
+            elif 4 <= len(decimal_part) <= 5:
+                # Example: "13.15250" → "1315250" → "13152.50"
                 combined = integer_part + decimal_part
                 corrected = combined[:-2] + '.' + combined[-2:]
                 return float(corrected)
             
-            # Normal decimal: "70847.8" or "123.45"
+            # Subcase C: 1-2 digits after dot (normal decimal)
             elif len(decimal_part) <= 2:
                 return float(num_str)
             
-            # Fallback: treat as thousands separator
+            # Subcase D: 6+ digits after dot (treat as thousands + corrupted decimal)
             else:
+                # Remove all dots and treat as thousands
                 return float(num_str.replace('.', ''))
         
         # CASE 3: No separators at all
@@ -1234,7 +1249,6 @@ def extract_debt_account_value(value_str):
         return 0
     
     return 0
-
 
 # Update the prepare_screener_data function to use the correct function for each field
 def prepare_screener_data(df):
