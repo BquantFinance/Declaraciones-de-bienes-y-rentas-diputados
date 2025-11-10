@@ -1176,9 +1176,34 @@ def extract_debt_account_value(value_str):
     if pd.isna(value_str) or value_str == '':
         return 0
     
-    # Priority 1: Already a clean number (int or float)
+    # Priority 1: Integer or float that might need decimal point correction
     if isinstance(value_str, (int, float)):
-        return float(value_str)
+        value = float(value_str)
+        
+        # IMPORTANT: Detect integers that are missing decimal separator
+        # For account/debt values, if we have a large integer with 3+ trailing digits,
+        # it's likely missing decimal separator
+        # Example: 48489875 → 48489.875 (insert decimal 3 positions from right)
+        # OR: could be 48489.87 with extra digit
+        
+        if value > 1000 and value == int(value):  # It's an integer
+            value_str = str(int(value))
+            
+            # If it has 6+ digits, might need decimal correction
+            # Heuristic: For account balances, amounts like 48489875 are suspicious
+            # Most likely: last 3 digits are decimals with extra precision
+            if len(value_str) >= 6:
+                # Check if it ends with odd patterns suggesting decimal corruption
+                # Insert decimal point 3 positions from right: 48489875 → 48489.875
+                corrected = value_str[:-3] + '.' + value_str[-3:]
+                corrected_value = float(corrected)
+                
+                # Sanity check: is the corrected value more reasonable?
+                # Account balances typically < 500,000 euros
+                if corrected_value < 500000 and value > 500000:
+                    return corrected_value
+        
+        return value
     
     # Priority 2: Parse string
     value_str = str(value_str).strip()
@@ -1213,7 +1238,7 @@ def extract_debt_account_value(value_str):
                     # All dots are thousands: "1.234.567" → 1234567
                     return float(num_str.replace('.', ''))
             
-            # Single dot - sophisticated logic needed
+            # Single dot
             parts = num_str.split('.')
             integer_part = parts[0]
             decimal_part = parts[1]
@@ -1223,7 +1248,7 @@ def extract_debt_account_value(value_str):
                 # Ends with "00" or is "000" → thousands separator
                 if decimal_part.endswith('00') or decimal_part == '000':
                     return float(num_str.replace('.', ''))
-                # Otherwise, likely thousands separator too for debt context
+                # Otherwise, likely thousands separator for debt/account context
                 elif int(integer_part) < 1000:
                     return float(num_str.replace('.', ''))
                 else:
