@@ -1037,87 +1037,99 @@ def format_currency_full(value):
         return f"{formatted} €"
 
 def extract_currency_value(value_str):
-    """Extract numeric value from currency string with validation and corruption handling"""
+    """Extract numeric value from currency string - handles all cases correctly"""
+    # PRIORITY 1: Already a clean number (like IRPF values)
     if pd.isna(value_str) or value_str == '':
         return 0
+    
     if isinstance(value_str, (int, float)):
+        # Already a number - return as is (this fixes IRPF)
         return float(value_str)
     
+    # PRIORITY 2: It's a string, needs parsing
     value_str = str(value_str).strip()
     
     # Remove currency symbols and whitespace
     value_str = re.sub(r'[€$£\s]', '', value_str)
     
+    # Find numeric part
     numeric_part = re.search(r'[\d.,]+', value_str)
-    if numeric_part:
-        try:
-            num_str = numeric_part.group(0)
-            
-            # Count dots and commas
-            dot_count = num_str.count('.')
-            comma_count = num_str.count(',')
-            
-            # Handle corrupted data with multiple dots (e.g., "137.739.51" should be 137739.51)
-            if dot_count > 1 and comma_count == 0:
-                # Multiple dots without commas - check if last segment is 1-2 digits (decimal)
+    if not numeric_part:
+        return 0
+    
+    try:
+        num_str = numeric_part.group(0)
+        
+        # Count separators
+        dot_count = num_str.count('.')
+        comma_count = num_str.count(',')
+        
+        # CASE 1: No separators (simple integer)
+        if dot_count == 0 and comma_count == 0:
+            return float(num_str)
+        
+        # CASE 2: Only commas
+        if dot_count == 0 and comma_count > 0:
+            # Check if last comma has 1-2 digits after (European decimal)
+            if re.search(r',\d{1,2}$', num_str):
+                # European decimal: 10.803,87 or 1.234.567,89
+                return float(num_str.replace('.', '').replace(',', '.'))
+            else:
+                # US thousands: 1,234,567
+                return float(num_str.replace(',', ''))
+        
+        # CASE 3: Only dots
+        if comma_count == 0 and dot_count > 0:
+            # Multiple dots = European thousands (137.739.51 corrupted data)
+            if dot_count > 1:
                 parts = num_str.split('.')
+                # If last part is 1-2 digits, it's decimal
                 if len(parts[-1]) <= 2:
-                    # Last part is decimal, rest are thousands
-                    # "137.739.51" -> "137739.51"
                     integer_part = ''.join(parts[:-1])
                     decimal_part = parts[-1]
                     return float(f"{integer_part}.{decimal_part}")
                 else:
-                    # All dots are thousands separators
+                    # All dots are thousands
                     return float(num_str.replace('.', ''))
             
-            # No separators
-            if comma_count == 0 and dot_count == 0:
-                return float(num_str)
-            
-            # Single dot
-            elif comma_count == 0 and dot_count == 1:
-                # Check if it's a decimal separator (1-2 digits after dot at end)
-                if re.search(r'\.\d{1,2}$', num_str):
-                    return float(num_str)
-                else:
-                    # Thousands separator
-                    return float(num_str.replace('.', ''))
-            
-            # Single comma
-            elif dot_count == 0 and comma_count == 1:
-                # Decimal separator (European format)
-                if re.search(r',\d{1,2}$', num_str):
-                    return float(num_str.replace(',', '.'))
-                else:
-                    return float(num_str.replace(',', ''))
-            
-            # Both dots and commas present
-            elif dot_count > 0 and comma_count > 0:
-                last_dot = num_str.rfind('.')
-                last_comma = num_str.rfind(',')
-                
-                if last_comma > last_dot:
-                    # European: 1.234.567,89
-                    return float(num_str.replace('.', '').replace(',', '.'))
-                else:
-                    # US: 1,234,567.89
-                    return float(num_str.replace(',', ''))
-            
-            # Multiple dots (European thousands)
-            elif dot_count > 1:
-                return float(num_str.replace('.', '').replace(',', '.'))
-            
-            # Multiple commas (US thousands)
-            elif comma_count > 1:
-                return float(num_str.replace(',', ''))
-            
+            # Single dot - need to determine if decimal or thousands
             else:
-                # Fallback
-                return float(num_str.replace('.', '').replace(',', '.'))
+                # Pattern: digits.3-5digits (corrupted like 13.15250)
+                if re.match(r'^\d+\.\d{3,5}$', num_str):
+                    # Corrupted format: last 2 digits are decimal
+                    match = re.match(r'^(\d+)\.(\d+)$', num_str)
+                    integer_part = match.group(1)
+                    decimal_full = match.group(2)
+                    new_integer = integer_part + decimal_full[:-2]
+                    new_decimal = decimal_full[-2:]
+                    return float(f"{new_integer}.{new_decimal}")
                 
-        except (ValueError, TypeError):
-            return 0
+                # Normal decimal (1-2 digits after dot)
+                elif re.search(r'\.\d{1,2}$', num_str):
+                    return float(num_str)
+                
+                # Thousands separator (3+ digits after dot)
+                else:
+                    return float(num_str.replace('.', ''))
+        
+        # CASE 4: Both dots and commas
+        if dot_count > 0 and comma_count > 0:
+            last_dot_pos = num_str.rfind('.')
+            last_comma_pos = num_str.rfind(',')
+            
+            if last_comma_pos > last_dot_pos:
+                # European: 1.234.567,89 (dots=thousands, comma=decimal)
+                return float(num_str.replace('.', '').replace(',', '.'))
+            else:
+                # US: 1,234,567.89 (commas=thousands, dot=decimal)
+                return float(num_str.replace(',', ''))
+        
+        # Fallback
+        return float(num_str.replace('.', '').replace(',', '.'))
+        
+    except (ValueError, TypeError):
+        return 0
+    
     return 0
 
 def create_image_gallery(deputy_data):
