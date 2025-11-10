@@ -755,23 +755,45 @@ def normalize_name(name):
     # Remove accents and convert to lowercase
     name = str(name)
     name = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('ASCII')
-    return name.lower().strip()
+    # Remove extra whitespace and convert to lowercase
+    return ' '.join(name.lower().split())
 
-def match_deputy_interests(deputy_name, interests_df):
-    """Match deputy with their interests data"""
+def normalize_deputy_id(deputy_id):
+    """Normalize deputy ID for matching (handles both int and zero-padded strings)"""
+    if pd.isna(deputy_id):
+        return None
+    try:
+        # Convert to int to remove leading zeros, then back to string
+        return str(int(deputy_id))
+    except (ValueError, TypeError):
+        return str(deputy_id).strip()
+
+def match_deputy_interests(deputy_name, deputy_id, interests_df):
+    """Match deputy with their interests data using both ID and name"""
     if interests_df.empty:
         return pd.DataFrame()
     
-    # Try exact match first
+    matches = pd.DataFrame()
+    
+    # Method 1: Try matching by deputy_id first (most reliable)
+    if pd.notna(deputy_id):
+        normalized_id = normalize_deputy_id(deputy_id)
+        if normalized_id:
+            interests_df['normalized_metadata_deputy_id'] = interests_df['metadata_deputy_id'].apply(normalize_deputy_id)
+            id_matches = interests_df[interests_df['normalized_metadata_deputy_id'] == normalized_id]
+            if not id_matches.empty:
+                return id_matches
+    
+    # Method 2: Try name matching
     normalized_deputy = normalize_name(deputy_name)
     
-    # Try matching with personal_apellidos and personal_nombre
+    # Create normalized full name combinations from interests data
     interests_df['full_name_normalized'] = (
         interests_df['personal_nombre'].fillna('') + ' ' + 
         interests_df['personal_apellidos'].fillna('')
     ).apply(normalize_name)
     
-    # Also try reversed order
+    # Also try reversed order (Last Name First Name)
     interests_df['full_name_reversed'] = (
         interests_df['personal_apellidos'].fillna('') + ' ' + 
         interests_df['personal_nombre'].fillna('')
@@ -816,6 +838,7 @@ def display_interests_section(deputy_interests):
                     activity_type = row.get('actividad_tipo', 'Sin especificar')
                     activity_desc = row.get('actividad_descripcion', '')
                     activity_date = row.get('actividad_fecha', '')
+                    activity_cargo = row.get('actividad_cargo', '')
                     
                     # Determine badge class based on activity type
                     badge_class = 'badge-otros'
@@ -833,6 +856,9 @@ def display_interests_section(deputy_interests):
                     <div class="activity-card">
                         <div class="activity-type-badge {badge_class}">{activity_type if pd.notna(activity_type) else 'Sin especificar'}</div>
                     '''
+                    
+                    if pd.notna(activity_cargo) and str(activity_cargo).strip():
+                        card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">📌 {activity_cargo}</p>'
                     
                     if pd.notna(activity_desc) and str(activity_desc).strip():
                         card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{activity_desc}</p>'
@@ -1447,8 +1473,27 @@ def main_app():
             
             with tabs[6]:
                 st.markdown("#### 📋 Actividades e Intereses")
-                # Match and display interests data
-                deputy_interests = match_deputy_interests(selected_deputy_name, interests_df)
+                # Match and display interests data using both ID and name
+                deputy_id = deputy_data.get('deputy_id')
+                deputy_interests = match_deputy_interests(selected_deputy_name, deputy_id, interests_df)
+                
+                # Debug info (can be removed in production)
+                if deputy_interests.empty:
+                    with st.expander("🔍 Información de depuración", expanded=False):
+                        st.write(f"**Nombre del diputado:** {selected_deputy_name}")
+                        st.write(f"**Deputy ID:** {deputy_id}")
+                        st.write(f"**Deputy ID normalizado:** {normalize_deputy_id(deputy_id)}")
+                        st.write(f"**Nombre normalizado:** {normalize_name(selected_deputy_name)}")
+                        
+                        # Show sample of interests data for debugging
+                        if not interests_df.empty:
+                            st.write("**Muestra de datos de intereses (primeros 3 registros):**")
+                            sample = interests_df.head(3)[['metadata_deputy_id', 'personal_nombre', 'personal_apellidos']].copy()
+                            sample['normalized_id'] = sample['metadata_deputy_id'].apply(normalize_deputy_id)
+                            sample['full_name'] = sample['personal_nombre'] + ' ' + sample['personal_apellidos']
+                            sample['normalized_name'] = sample['full_name'].apply(normalize_name)
+                            st.dataframe(sample)
+                
                 display_interests_section(deputy_interests)
             
             with tabs[7]:
