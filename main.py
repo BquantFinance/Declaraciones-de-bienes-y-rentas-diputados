@@ -843,13 +843,16 @@ def load_data():
 
 @st.cache_data
 def load_interests_data():
-    """Load the interests and activities CSV data"""
+    """Load the economic interests CSV data"""
     try:
-        df = pd.read_csv('deputies_interests_full.csv', encoding='utf-8-sig')
+        # Updated to use the correct filename
+        df = pd.read_csv('deputies_economic_interests.csv', encoding='utf-8-sig')
         return df
     except FileNotFoundError:
+        st.warning("⚠️ No se encontró el archivo 'deputies_economic_interests.csv'. La sección de intereses no estará disponible.")
         return pd.DataFrame()
     except Exception as e:
+        st.warning(f"Error al cargar los datos de intereses: {str(e)}")
         return pd.DataFrame()
 
 def normalize_name(name):
@@ -868,9 +871,9 @@ def normalize_deputy_id(deputy_id):
         return None
     try:
         # Convert to int to remove leading zeros, then back to string
-        return str(int(deputy_id))
+        return int(deputy_id)
     except (ValueError, TypeError):
-        return str(deputy_id).strip()
+        return None
 
 def match_deputy_interests(deputy_name, deputy_id, interests_df):
     """Match deputy with their interests data using both ID and name"""
@@ -883,6 +886,7 @@ def match_deputy_interests(deputy_name, deputy_id, interests_df):
     if pd.notna(deputy_id):
         normalized_id = normalize_deputy_id(deputy_id)
         if normalized_id:
+            # Normalize the metadata_deputy_id in interests_df
             interests_df['normalized_metadata_deputy_id'] = interests_df['metadata_deputy_id'].apply(normalize_deputy_id)
             id_matches = interests_df[interests_df['normalized_metadata_deputy_id'] == normalized_id]
             if not id_matches.empty:
@@ -912,7 +916,7 @@ def match_deputy_interests(deputy_name, deputy_id, interests_df):
     return matches
 
 def display_interests_section(deputy_interests):
-    """Display the interests and activities section"""
+    """Display the interests and activities section with updated column names"""
     if deputy_interests.empty:
         st.info("📋 No hay información de registro de intereses disponible para este diputado.")
         return
@@ -926,7 +930,7 @@ def display_interests_section(deputy_interests):
     for section_name, section_data in section_groups:
         
         section_titles = {
-            'actividades_previas': '🏛️ Actividades Previas al Mandato',
+            'actividades': '🏛️ Actividades',
             'donaciones': '🎁 Donaciones y Obsequios',
             'fundaciones': '🏢 Fundaciones y Asociaciones',
             'otros_intereses': '📝 Otros Intereses'
@@ -934,41 +938,42 @@ def display_interests_section(deputy_interests):
         
         section_title = section_titles.get(section_name, f'📌 {section_name.replace("_", " ").title()}')
         
-        with st.expander(f"{section_title} ({len(section_data)})", expanded=(section_name == 'actividades_previas')):
+        with st.expander(f"{section_title} ({len(section_data)})", expanded=(section_name == 'actividades')):
             
-            if section_name == 'actividades_previas':
-                # Display activities
+            if section_name == 'actividades':
+                # Display activities with updated column names
                 for idx, row in section_data.iterrows():
-                    activity_type = row.get('actividad_tipo', 'Sin especificar')
+                    # Use the correct column names from the CSV
+                    activity_sector = row.get('actividad_sector', 'Sin especificar')
+                    activity_empleador = row.get('actividad_empleador', '')
+                    activity_periodo = row.get('actividad_periodo', '')
                     activity_desc = row.get('actividad_descripcion', '')
-                    activity_date = row.get('actividad_fecha', '')
-                    activity_cargo = row.get('actividad_cargo', '')
                     
-                    # Determine badge class based on activity type
+                    # Determine badge class based on activity sector
                     badge_class = 'badge-otros'
-                    if pd.notna(activity_type):
-                        activity_type_lower = str(activity_type).lower()
-                        if 'cargo' in activity_type_lower and 'público' in activity_type_lower:
+                    if pd.notna(activity_sector):
+                        activity_sector_lower = str(activity_sector).lower()
+                        if 'cargo' in activity_sector_lower and 'público' in activity_sector_lower:
                             badge_class = 'badge-cargo'
-                        elif 'partido' in activity_type_lower or 'grupo parlamentario' in activity_type_lower:
+                        elif 'partido' in activity_sector_lower or 'grupo parlamentario' in activity_sector_lower:
                             badge_class = 'badge-partido'
-                        elif 'privada' in activity_type_lower or 'docente' in activity_type_lower:
+                        elif 'privada' in activity_sector_lower or 'docente' in activity_sector_lower:
                             badge_class = 'badge-actividad'
                     
                     # Create activity card
                     card_html = f'''
                     <div class="activity-card">
-                        <div class="activity-type-badge {badge_class}">{activity_type if pd.notna(activity_type) else 'Sin especificar'}</div>
+                        <div class="activity-type-badge {badge_class}">{activity_sector if pd.notna(activity_sector) else 'Sin especificar'}</div>
                     '''
                     
-                    if pd.notna(activity_cargo) and str(activity_cargo).strip():
-                        card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">📌 {activity_cargo}</p>'
+                    if pd.notna(activity_empleador) and str(activity_empleador).strip():
+                        card_html += f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {activity_empleador}</p>'
                     
                     if pd.notna(activity_desc) and str(activity_desc).strip():
                         card_html += f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{activity_desc}</p>'
                     
-                    if pd.notna(activity_date) and str(activity_date).strip():
-                        card_html += f'<p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">📅 {activity_date}</p>'
+                    if pd.notna(activity_periodo) and str(activity_periodo).strip():
+                        card_html += f'<p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.5rem;">📅 {activity_periodo}</p>'
                     
                     card_html += '</div>'
                     st.markdown(card_html, unsafe_allow_html=True)
@@ -976,11 +981,39 @@ def display_interests_section(deputy_interests):
             elif section_name == 'otros_intereses':
                 # Display other interests
                 for idx, row in section_data.iterrows():
-                    otros_texto = row.get('otros_intereses_texto', '')
+                    otros_texto = row.get('otros_texto', '')
                     if pd.notna(otros_texto) and str(otros_texto).strip():
                         st.markdown(f"""
                         <div class="activity-card">
                             <p style="color: #e2e8f0; white-space: pre-wrap;">{otros_texto}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            elif section_name == 'donaciones':
+                # Display donations
+                for idx, row in section_data.iterrows():
+                    benefactor = row.get('donacion_benefactor', '')
+                    descripcion = row.get('donacion_descripcion', '')
+                    if pd.notna(benefactor) or pd.notna(descripcion):
+                        st.markdown(f"""
+                        <div class="activity-card">
+                            <div class="activity-type-badge badge-otros">Donación</div>
+                            {f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🎁 De: {benefactor}</p>' if pd.notna(benefactor) else ''}
+                            {f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{descripcion}</p>' if pd.notna(descripcion) else ''}
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            elif section_name == 'fundaciones':
+                # Display foundations
+                for idx, row in section_data.iterrows():
+                    destinatario = row.get('fundacion_destinatario', '')
+                    descripcion = row.get('fundacion_descripcion', '')
+                    if pd.notna(destinatario) or pd.notna(descripcion):
+                        st.markdown(f"""
+                        <div class="activity-card">
+                            <div class="activity-type-badge badge-actividad">Fundación</div>
+                            {f'<p style="color: #ffffff; font-weight: 600; margin: 0.5rem 0;">🏢 {destinatario}</p>' if pd.notna(destinatario) else ''}
+                            {f'<p style="color: #e2e8f0; margin: 0.5rem 0;">{descripcion}</p>' if pd.notna(descripcion) else ''}
                         </div>
                         """, unsafe_allow_html=True)
             
