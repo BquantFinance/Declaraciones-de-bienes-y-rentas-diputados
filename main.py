@@ -1171,17 +1171,16 @@ def extract_irpf_value(value):
     
     return 0
 
-
 def extract_debt_account_value(value_str):
-    """Extract currency value from debt/account fields (comes as strings with European format)"""
+    """Extract currency value from debt/account fields - handles all DB formats correctly"""
     if pd.isna(value_str) or value_str == '':
         return 0
     
-    # If already a number (shouldn't happen for debts/accounts but just in case)
+    # Priority 1: Already a clean number (int or float)
     if isinstance(value_str, (int, float)):
         return float(value_str)
     
-    # It's a string with European format
+    # Priority 2: Parse string
     value_str = str(value_str).strip()
     value_str = re.sub(r'[€$£\s]', '', value_str)
     
@@ -1194,30 +1193,41 @@ def extract_debt_account_value(value_str):
         dot_count = num_str.count('.')
         comma_count = num_str.count(',')
         
-        # European format: dots=thousands, comma=decimal (67.230,26)
+        # CASE 1: Has comma - comma is ALWAYS decimal separator
         if comma_count > 0:
+            # European format: dots=thousands, comma=decimal
+            # Examples: "67.230,26" → 67230.26 or "1.200.000,50" → 1200000.50
             return float(num_str.replace('.', '').replace(',', '.'))
         
-        # Only dots - multiple dots means European thousands
-        if dot_count > 1:
+        # CASE 2: No comma, only dots
+        if dot_count > 0 and comma_count == 0:
+            # Multiple dots = ALL are thousands separators
+            # Examples: "1.112.477" → 1112477
+            if dot_count > 1:
+                return float(num_str.replace('.', ''))
+            
+            # Single dot - need to determine if it's decimal or thousands or corrupted
             parts = num_str.split('.')
-            if len(parts[-1]) <= 2:
-                # Last part is decimal
-                integer_part = ''.join(parts[:-1])
-                decimal_part = parts[-1]
-                return float(f"{integer_part}.{decimal_part}")
-            else:
-                # All are thousands
-                return float(num_str.replace('.', ''))
-        
-        # Single dot - check if decimal or thousands
-        if dot_count == 1:
-            if re.search(r'\.\d{1,2}$', num_str):
+            integer_part = parts[0]
+            decimal_part = parts[1]
+            
+            # Corrupted format like "13.15250" (should be 13152.50)
+            if len(decimal_part) >= 3:
+                # If 3-5 digits after dot, it's corrupted
+                # "13.15250" → "1315250" → "13152.50"
+                combined = integer_part + decimal_part
+                corrected = combined[:-2] + '.' + combined[-2:]
+                return float(corrected)
+            
+            # Normal decimal: "70847.8" or "123.45"
+            elif len(decimal_part) <= 2:
                 return float(num_str)
+            
+            # Fallback: treat as thousands separator
             else:
                 return float(num_str.replace('.', ''))
         
-        # No separators
+        # CASE 3: No separators at all
         return float(num_str)
         
     except (ValueError, TypeError):
