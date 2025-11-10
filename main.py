@@ -820,15 +820,6 @@ def apply_css():
                 padding: 2rem;
                 margin: 1rem;
             }
-            
-            .screener-card {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .screener-rank {
-                min-width: auto;
-            }
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1036,6 +1027,154 @@ def format_currency_full(value):
         formatted = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return f"{formatted} €"
 
+def extract_irpf_value(value):
+    """Extract IRPF value with corruption detection and correction"""
+    if pd.isna(value) or value == '':
+        return 0
+    
+    if isinstance(value, (int, float)):
+        value = float(value)
+        value_str = str(value)
+        
+        # Case 1: Extremely high values (> 200,000) with suspicious decimals
+        if value > 200000:
+            if '.' in value_str:
+                parts = value_str.split('.')
+                full_digits = parts[0] + parts[1].rstrip('0')
+                
+                if len(full_digits) >= 7:
+                    middle_start = 1
+                    middle_end = 6
+                    if len(full_digits) >= middle_end + 2:
+                        corrected = full_digits[middle_start:middle_end] + '.' + full_digits[middle_end:middle_end+2]
+                        return float(corrected)
+            
+            value_str_int = str(int(value))
+            if len(value_str_int) >= 3:
+                corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
+                return float(corrected)
+        
+        # Case 2: Values with dot as thousands separator and extra decimals
+        if 10 < value < 200000 and '.' in value_str:
+            parts = value_str.split('.')
+            if len(parts) == 2:
+                integer_part = parts[0]
+                decimal_part = parts[1]
+                
+                if len(decimal_part) >= 3:
+                    combined = integer_part + decimal_part
+                    corrected = combined[:-2] + '.' + combined[-2:]
+                    return float(corrected)
+                
+                elif len(decimal_part) == 3:
+                    return float(integer_part + decimal_part)
+        
+        # Case 3: Very small values with dot
+        if 20 < value < 100 and '.' in value_str:
+            return float(value_str.replace('.', ''))
+        
+        return value
+    
+    # If it's a string, parse it
+    value_str = str(value).strip()
+    value_str = re.sub(r'[€$£\s]', '', value_str)
+    numeric_part = re.search(r'[\d.,]+', value_str)
+    
+    if numeric_part:
+        num_str = numeric_part.group(0)
+        if ',' in num_str:
+            return float(num_str.replace('.', '').replace(',', '.'))
+        else:
+            return float(num_str.replace(',', ''))
+    
+    return 0
+
+def extract_debt_account_value(value_str):
+    """Extract currency value from debt/account fields - handles all DB formats correctly"""
+    if pd.isna(value_str) or value_str == '':
+        return 0
+    
+    # Priority 1: Integer or float that might need decimal point correction
+    if isinstance(value_str, (int, float)):
+        value = float(value_str)
+        
+        if value > 1000 and value == int(value):
+            value_str_int = str(int(value))
+            
+            if len(value_str_int) >= 6:
+                corrected = value_str_int[:-3] + '.' + value_str_int[-3:]
+                corrected_value = float(corrected)
+                
+                if corrected_value < 500000 and value > 500000:
+                    return corrected_value
+        
+        return value
+    
+    # Priority 2: Parse string
+    value_str = str(value_str).strip()
+    value_str = re.sub(r'[€$£\s]', '', value_str)
+    
+    numeric_part = re.search(r'[\d.,]+', value_str)
+    if not numeric_part:
+        return 0
+    
+    try:
+        num_str = numeric_part.group(0)
+        dot_count = num_str.count('.')
+        comma_count = num_str.count(',')
+        
+        # CASE 1: Has comma - comma is ALWAYS decimal separator
+        if comma_count > 0:
+            return float(num_str.replace('.', '').replace(',', '.'))
+        
+        # CASE 2: No comma, only dots
+        if dot_count > 0 and comma_count == 0:
+            # Multiple dots
+            if dot_count > 1:
+                parts = num_str.split('.')
+                if len(parts[-1]) <= 2:
+                    integer_part = ''.join(parts[:-1])
+                    decimal_part = parts[-1]
+                    return float(f"{integer_part}.{decimal_part}")
+                else:
+                    return float(num_str.replace('.', ''))
+            
+            # Single dot
+            parts = num_str.split('.')
+            integer_part = parts[0]
+            decimal_part = parts[1]
+            
+            # Exactly 3 digits after dot
+            if len(decimal_part) == 3:
+                if decimal_part.endswith('00') or decimal_part == '000':
+                    return float(num_str.replace('.', ''))
+                elif int(integer_part) < 1000:
+                    return float(num_str.replace('.', ''))
+                else:
+                    return float(num_str.replace('.', ''))
+            
+            # 4-5 digits after dot (corrupted)
+            elif 4 <= len(decimal_part) <= 5:
+                combined = integer_part + decimal_part
+                corrected = combined[:-2] + '.' + combined[-2:]
+                return float(corrected)
+            
+            # 1-2 digits after dot (normal decimal)
+            elif len(decimal_part) <= 2:
+                return float(num_str)
+            
+            # 6+ digits
+            else:
+                return float(num_str.replace('.', ''))
+        
+        # CASE 3: No separators
+        return float(num_str)
+        
+    except (ValueError, TypeError):
+        return 0
+    
+    return 0
+
 def create_image_gallery(deputy_data):
     """Create enhanced image gallery with effects"""
     gallery_html = '<div class="image-gallery">'
@@ -1095,189 +1234,6 @@ def get_deputy_photo_html(photo_path, size="small"):
     else:
         return '<div class="screener-photo-placeholder">👤</div>'
 
-def extract_irpf_value(value):
-    """Extract IRPF value with corruption detection and correction"""
-    if pd.isna(value) or value == '':
-        return 0
-    
-    if isinstance(value, (int, float)):
-        value = float(value)
-        value_str = str(value)
-        
-        # Case 1: Extremely high values (> 200,000) with suspicious decimals
-        # Pattern: 3213560.321356 → 31135.60 or 1849074.0 → 18490.74
-        if value > 200000:
-            if '.' in value_str:
-                parts = value_str.split('.')
-                full_digits = parts[0] + parts[1].rstrip('0')
-                
-                # For very long corrupted numbers like 3213560321356
-                if len(full_digits) >= 7:
-                    # Extract middle portion: "3213560321356" → "31135" + "60"
-                    middle_start = 1
-                    middle_end = 6
-                    if len(full_digits) >= middle_end + 2:
-                        corrected = full_digits[middle_start:middle_end] + '.' + full_digits[middle_end:middle_end+2]
-                        return float(corrected)
-            
-            # Simple case: remove decimal point 2 positions from right
-            # 1849074 → 18490.74
-            value_str_int = str(int(value))
-            if len(value_str_int) >= 3:
-                corrected = value_str_int[:-2] + '.' + value_str_int[-2:]
-                return float(corrected)
-        
-        # Case 2: Values with dot as thousands separator and extra decimals
-        # Pattern: 38.84977 → 38849.77 (dot is thousands, last digits are decimals)
-        if 10 < value < 200000 and '.' in value_str:
-            parts = value_str.split('.')
-            if len(parts) == 2:
-                integer_part = parts[0]
-                decimal_part = parts[1]
-                
-                # If we have something like "38.84977"
-                # This means 38 thousand + 849.77
-                if len(decimal_part) >= 3:
-                    # Combine: "38" + "84977" → "3884977" → "38849.77"
-                    combined = integer_part + decimal_part
-                    # Insert decimal point 2 positions from right
-                    corrected = combined[:-2] + '.' + combined[-2:]
-                    return float(corrected)
-                
-                # If it's like "23.117" (format español)
-                elif len(decimal_part) == 3:
-                    # Remove the dot: 23117
-                    return float(integer_part + decimal_part)
-        
-        # Case 3: Very small values with dot (like 23.117)
-        if 20 < value < 100 and '.' in value_str:
-            return float(value_str.replace('.', ''))
-        
-        # Value seems normal
-        return value
-    
-    # If it's a string, parse it
-    value_str = str(value).strip()
-    value_str = re.sub(r'[€$£\s]', '', value_str)
-    numeric_part = re.search(r'[\d.,]+', value_str)
-    
-    if numeric_part:
-        num_str = numeric_part.group(0)
-        # European format with comma as decimal
-        if ',' in num_str:
-            return float(num_str.replace('.', '').replace(',', '.'))
-        else:
-            return float(num_str.replace(',', ''))
-    
-    return 0
-
-def extract_debt_account_value(value_str):
-    """Extract currency value from debt/account fields - handles all DB formats correctly"""
-    if pd.isna(value_str) or value_str == '':
-        return 0
-    
-    # Priority 1: Integer or float that might need decimal point correction
-    if isinstance(value_str, (int, float)):
-        value = float(value_str)
-        
-        # IMPORTANT: Detect integers that are missing decimal separator
-        # For account/debt values, if we have a large integer with 3+ trailing digits,
-        # it's likely missing decimal separator
-        # Example: 48489875 → 48489.875 (insert decimal 3 positions from right)
-        # OR: could be 48489.87 with extra digit
-        
-        if value > 1000 and value == int(value):  # It's an integer
-            value_str = str(int(value))
-            
-            # If it has 6+ digits, might need decimal correction
-            # Heuristic: For account balances, amounts like 48489875 are suspicious
-            # Most likely: last 3 digits are decimals with extra precision
-            if len(value_str) >= 6:
-                # Check if it ends with odd patterns suggesting decimal corruption
-                # Insert decimal point 3 positions from right: 48489875 → 48489.875
-                corrected = value_str[:-3] + '.' + value_str[-3:]
-                corrected_value = float(corrected)
-                
-                # Sanity check: is the corrected value more reasonable?
-                # Account balances typically < 500,000 euros
-                if corrected_value < 500000 and value > 500000:
-                    return corrected_value
-        
-        return value
-    
-    # Priority 2: Parse string
-    value_str = str(value_str).strip()
-    value_str = re.sub(r'[€$£\s]', '', value_str)
-    
-    numeric_part = re.search(r'[\d.,]+', value_str)
-    if not numeric_part:
-        return 0
-    
-    try:
-        num_str = numeric_part.group(0)
-        dot_count = num_str.count('.')
-        comma_count = num_str.count(',')
-        
-        # CASE 1: Has comma - comma is ALWAYS decimal separator
-        if comma_count > 0:
-            # European format: dots=thousands, comma=decimal
-            return float(num_str.replace('.', '').replace(',', '.'))
-        
-        # CASE 2: No comma, only dots
-        if dot_count > 0 and comma_count == 0:
-            # Multiple dots - check if last segment is decimal (1-2 digits)
-            if dot_count > 1:
-                parts = num_str.split('.')
-                # If last part has 1-2 digits, it's the decimal
-                if len(parts[-1]) <= 2:
-                    # Example: "137.739.51" → "137739.51"
-                    integer_part = ''.join(parts[:-1])
-                    decimal_part = parts[-1]
-                    return float(f"{integer_part}.{decimal_part}")
-                else:
-                    # All dots are thousands: "1.234.567" → 1234567
-                    return float(num_str.replace('.', ''))
-            
-            # Single dot
-            parts = num_str.split('.')
-            integer_part = parts[0]
-            decimal_part = parts[1]
-            
-            # Exactly 3 digits after dot
-            if len(decimal_part) == 3:
-                # Ends with "00" or is "000" → thousands separator
-                if decimal_part.endswith('00') or decimal_part == '000':
-                    return float(num_str.replace('.', ''))
-                # Otherwise, likely thousands separator for debt/account context
-                elif int(integer_part) < 1000:
-                    return float(num_str.replace('.', ''))
-                else:
-                    return float(num_str.replace('.', ''))
-            
-            # 4-5 digits after dot (corrupted format)
-            elif 4 <= len(decimal_part) <= 5:
-                # Example: "13.15250" → "13152.50"
-                combined = integer_part + decimal_part
-                corrected = combined[:-2] + '.' + combined[-2:]
-                return float(corrected)
-            
-            # 1-2 digits after dot (normal decimal)
-            elif len(decimal_part) <= 2:
-                return float(num_str)
-            
-            # 6+ digits (treat as thousands)
-            else:
-                return float(num_str.replace('.', ''))
-        
-        # CASE 3: No separators at all
-        return float(num_str)
-        
-    except (ValueError, TypeError):
-        return 0
-    
-    return 0
-
-# Update the prepare_screener_data function to use the correct function for each field
 def prepare_screener_data(df):
     """Prepare data for screener with all metrics calculated - properly deduplicated"""
     df_copy = df.copy()
@@ -1326,7 +1282,7 @@ def prepare_screener_data(df):
         vehicles = parse_json_field(row['vehiculos'])
         deputy_info['vehicles_count'] = len(vehicles)
         
-        # Debts - USE SPECIFIC FUNCTION FOR DEBT/ACCOUNT FIELDS
+        # Debts - USE SPECIFIC FUNCTION
         debts = parse_json_field(row['deudas_y_obligaciones'])
         debt_pending = []
         debt_original = []
@@ -1501,7 +1457,7 @@ def show_screener(df):
     st.plotly_chart(fig, use_container_width=True)
 
 def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class=""):
-    """Display a single screener card - FIXED VERSION"""
+    """Display a single screener card"""
     rank_class = ""
     medal = ""
     if rank == 1:
@@ -1536,7 +1492,6 @@ def show_disclaimer():
     _, col2, _ = st.columns([1, 4, 1])
     
     with col2:
-        # We use a markdown 'div' wrapper to apply the border and background from our CSS
         st.markdown('<div class="disclaimer-container">', unsafe_allow_html=True)
         
         st.markdown('<h1 class="disclaimer-title">⚖️ DESCARGO DE RESPONSABILIDAD LEGAL</h1>', unsafe_allow_html=True)
@@ -1593,7 +1548,6 @@ def show_disclaimer():
 
         st.warning("**ADVERTENCIA FINAL:** El uso de esta aplicación es responsabilidad exclusiva del usuario. Si no está de acuerdo con estos términos, por favor no utilice la Aplicación.")
 
-        # Close the container div
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.info(
@@ -1601,7 +1555,6 @@ def show_disclaimer():
             icon="✨"
         )
         
-        # Center the button in its own sub-column layout
         _, btn_col, _ = st.columns([1, 2, 1])
         if btn_col.button("✅ ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
             st.session_state.disclaimer_accepted = True
@@ -1671,7 +1624,6 @@ def main_app():
         deputy_names = filtered_deputies['informacion_personal_nombre_y_apellidos'].tolist()
         
         with random_col:
-            # Enhanced random button with special styling
             st.markdown('<div class="random-button-container">', unsafe_allow_html=True)
             if st.button("🎲", use_container_width=True, help="Seleccionar un diputado aleatorio", key="random_deputy"):
                 if deputy_names:
@@ -1683,17 +1635,14 @@ def main_app():
         if not deputy_names:
             st.warning("🔍 No se encontraron diputados con ese criterio de búsqueda")
         else:
-            # Initialize session state if it's the first run or if the selected deputy is no longer in the filtered list
             if 'selected_deputy_name' not in st.session_state or st.session_state.selected_deputy_name not in deputy_names:
                 st.session_state.selected_deputy_name = deputy_names[0]
 
-            # Find the index for the selectbox based on session state
             try:
                 selected_index = deputy_names.index(st.session_state.selected_deputy_name)
             except (ValueError, IndexError):
                 selected_index = 0
 
-            # Deputy selector with salary information
             def format_deputy_option(name):
                 try:
                     deputy_row = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'] == name]
@@ -1715,13 +1664,10 @@ def main_app():
                 format_func=format_deputy_option
             )
             
-            # Update session state with the current selection (from user or from random button)
             st.session_state.selected_deputy_name = selected_deputy_name
             
-            # Get all declarations for selected deputy
             deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name].sort_values(by='source_file', ascending=True)
             
-            # Declaration selector (if multiple)
             if len(deputy_declarations) > 1:
                 st.info(f"📋 Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
                 
@@ -1767,7 +1713,6 @@ def main_app():
             
             st.markdown("---")
             
-            # Layout
             col_left, col_right = st.columns([1.5, 2])
             
             with col_left:
@@ -1814,7 +1759,6 @@ def main_app():
             with col_right:
                 st.markdown(f"## 👤 {deputy_data['informacion_personal_nombre_y_apellidos']}")
                 
-                # Display salary if available
                 salary = deputy_data.get('scraped_salary', None)
                 if pd.notna(salary) and salary:
                     formatted_salary = f"{float(salary):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -1826,7 +1770,6 @@ def main_app():
                 
                 metric1, metric2, metric3, metric4, metric5 = st.columns(5)
                 
-                # Display annual salary
                 salary = deputy_data.get('scraped_salary', None)
                 if pd.notna(salary) and salary:
                     formatted_salary = f"{float(salary):,.0f}".replace(",", ".")
@@ -1834,7 +1777,7 @@ def main_app():
                 else:
                     metric1.metric("Salario Anual", "N/D")
                 
-                irpf = extract_currency_value(deputy_data.get('irpf_cantidad_pagada', 0))
+                irpf = extract_irpf_value(deputy_data.get('irpf_cantidad_pagada', 0))
                 metric2.metric("IRPF Pagado", format_currency(irpf))
                 
                 urban_properties = len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos']))
@@ -1864,7 +1807,7 @@ def main_app():
                                 if isinstance(salary, dict):
                                     concepto = salary.get('concepto', f'Ingreso #{i+1}')
                                     if str(concepto).lower() == 'nan': concepto = f'Ingreso #{i+1}'
-                                    amount = extract_currency_value(salary.get('euros'))
+                                    amount = extract_debt_account_value(salary.get('euros'))
                                     st.info(f"💰 **{concepto}**")
                                     st.markdown(f"→ **{format_currency_full(amount)}**")
                         else: st.info("Sin salarios declarados")
@@ -1874,7 +1817,8 @@ def main_app():
                         if otras:
                             for item in otras:
                                 if isinstance(item, dict):
-                                    concepto = item.get('concepto', 'Otra renta'); importe = extract_currency_value(item.get('euros', 0))
+                                    concepto = item.get('concepto', 'Otra renta')
+                                    importe = extract_debt_account_value(item.get('euros', 0))
                                     if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
                         else: st.info("Sin otras rentas")
                     
@@ -1887,7 +1831,7 @@ def main_app():
                                     concepto = div.get('concepto', 'Inversión')
                                     if str(concepto).lower() == 'nan': concepto = 'Inversión'
                                     st.markdown(f"**📊 {concepto}**")
-                                    rendimientos = extract_currency_value(div.get('euros'))
+                                    rendimientos = extract_debt_account_value(div.get('euros'))
                                     if rendimientos > 0: st.markdown(f"→ **{format_currency_full(rendimientos)}**")
                         else: st.info("Sin dividendos")
                         
@@ -1896,7 +1840,8 @@ def main_app():
                         if intereses:
                             for item in intereses:
                                 if isinstance(item, dict):
-                                    concepto = item.get('concepto', 'Interés'); importe = extract_currency_value(item.get('euros', 0))
+                                    concepto = item.get('concepto', 'Interés')
+                                    importe = extract_debt_account_value(item.get('euros', 0))
                                     if importe > 0: st.markdown(f"**{concepto}**: {format_currency_full(importe)}")
                         else: st.info("Sin intereses financieros")
                 
@@ -1959,13 +1904,13 @@ def main_app():
                         st.markdown("##### 🏦 Cuentas y Depósitos")
                         accounts = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
                         if accounts:
-                            total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
+                            total_accounts = sum(extract_debt_account_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
                             if total_accounts > 0: st.success(f"💰 **Total en cuentas: {format_currency_full(total_accounts)}**")
                             for account in accounts:
                                 if isinstance(account, dict):
                                     desc = account.get('descripcion', 'Cuenta')
                                     if str(desc).lower() == 'nan': desc = 'Cuenta'
-                                    saldo = extract_currency_value(account.get('saldo'))
+                                    saldo = extract_debt_account_value(account.get('saldo'))
                                     if saldo > 0:
                                         st.markdown(f"**🏦 {desc}**"); st.markdown(f"Saldo: **{format_currency_full(saldo)}**")
                         else: st.info("Sin cuentas declaradas")
@@ -2010,7 +1955,7 @@ def main_app():
                 
                 with tabs[5]:
                     st.markdown("#### 💸 Deudas y Obligaciones")
-                    total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
+                    total_debt = sum(extract_debt_account_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
                     if debts:
                         st.error(f"💰 **Total Pendiente: {format_currency_full(total_debt)}**")
                         for i, debt in enumerate(debts):
@@ -2018,8 +1963,8 @@ def main_app():
                                 desc = debt.get('descripcion', f'Deuda #{i+1}')
                                 if str(desc).lower() == 'nan': desc = f'Deuda #{i+1}'
                                 st.markdown(f"**📄 {desc}**")
-                                original = extract_currency_value(debt.get('importe_concedido'))
-                                pending = extract_currency_value(debt.get('saldo_pendiente'))
+                                original = extract_debt_account_value(debt.get('importe_concedido'))
+                                pending = extract_debt_account_value(debt.get('saldo_pendiente'))
                                 tcol1, tcol2 = st.columns(2)
                                 with tcol1:
                                     if original > 0: st.markdown(f"Original: **{format_currency_full(original)}**")
@@ -2035,7 +1980,6 @@ def main_app():
                 
                 with tabs[6]:
                     st.markdown("#### 📋 Actividades e Intereses")
-                    # Match and display interests data using both ID and name
                     deputy_id = deputy_data.get('deputy_id')
                     deputy_interests = match_deputy_interests(selected_deputy_name, deputy_id, interests_df)
                     
