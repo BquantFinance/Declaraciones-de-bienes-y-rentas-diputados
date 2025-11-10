@@ -1036,102 +1036,6 @@ def format_currency_full(value):
         formatted = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return f"{formatted} €"
 
-def extract_currency_value(value_str):
-    """Extract numeric value from currency string - handles all cases correctly"""
-    # PRIORITY 1: Already a clean number (like IRPF values)
-    if pd.isna(value_str) or value_str == '':
-        return 0
-    
-    if isinstance(value_str, (int, float)):
-        # Already a number - return as is (this fixes IRPF)
-        return float(value_str)
-    
-    # PRIORITY 2: It's a string, needs parsing
-    value_str = str(value_str).strip()
-    
-    # Remove currency symbols and whitespace
-    value_str = re.sub(r'[€$£\s]', '', value_str)
-    
-    # Find numeric part
-    numeric_part = re.search(r'[\d.,]+', value_str)
-    if not numeric_part:
-        return 0
-    
-    try:
-        num_str = numeric_part.group(0)
-        
-        # Count separators
-        dot_count = num_str.count('.')
-        comma_count = num_str.count(',')
-        
-        # CASE 1: No separators (simple integer)
-        if dot_count == 0 and comma_count == 0:
-            return float(num_str)
-        
-        # CASE 2: Only commas
-        if dot_count == 0 and comma_count > 0:
-            # Check if last comma has 1-2 digits after (European decimal)
-            if re.search(r',\d{1,2}$', num_str):
-                # European decimal: 10.803,87 or 1.234.567,89
-                return float(num_str.replace('.', '').replace(',', '.'))
-            else:
-                # US thousands: 1,234,567
-                return float(num_str.replace(',', ''))
-        
-        # CASE 3: Only dots
-        if comma_count == 0 and dot_count > 0:
-            # Multiple dots = European thousands (137.739.51 corrupted data)
-            if dot_count > 1:
-                parts = num_str.split('.')
-                # If last part is 1-2 digits, it's decimal
-                if len(parts[-1]) <= 2:
-                    integer_part = ''.join(parts[:-1])
-                    decimal_part = parts[-1]
-                    return float(f"{integer_part}.{decimal_part}")
-                else:
-                    # All dots are thousands
-                    return float(num_str.replace('.', ''))
-            
-            # Single dot - need to determine if decimal or thousands
-            else:
-                # Pattern: digits.3-5digits (corrupted like 13.15250)
-                if re.match(r'^\d+\.\d{3,5}$', num_str):
-                    # Corrupted format: last 2 digits are decimal
-                    match = re.match(r'^(\d+)\.(\d+)$', num_str)
-                    integer_part = match.group(1)
-                    decimal_full = match.group(2)
-                    new_integer = integer_part + decimal_full[:-2]
-                    new_decimal = decimal_full[-2:]
-                    return float(f"{new_integer}.{new_decimal}")
-                
-                # Normal decimal (1-2 digits after dot)
-                elif re.search(r'\.\d{1,2}$', num_str):
-                    return float(num_str)
-                
-                # Thousands separator (3+ digits after dot)
-                else:
-                    return float(num_str.replace('.', ''))
-        
-        # CASE 4: Both dots and commas
-        if dot_count > 0 and comma_count > 0:
-            last_dot_pos = num_str.rfind('.')
-            last_comma_pos = num_str.rfind(',')
-            
-            if last_comma_pos > last_dot_pos:
-                # European: 1.234.567,89 (dots=thousands, comma=decimal)
-                return float(num_str.replace('.', '').replace(',', '.'))
-            else:
-                # US: 1,234,567.89 (commas=thousands, dot=decimal)
-                return float(num_str.replace(',', ''))
-        
-        # Fallback
-        return float(num_str.replace('.', '').replace(',', '.'))
-        
-    except (ValueError, TypeError):
-        return 0
-    
-    return 0
-
 def create_image_gallery(deputy_data):
     """Create enhanced image gallery with effects"""
     gallery_html = '<div class="image-gallery">'
@@ -1191,13 +1095,130 @@ def get_deputy_photo_html(photo_path, size="small"):
     else:
         return '<div class="screener-photo-placeholder">👤</div>'
 
+def extract_irpf_value(value):
+    """Extract IRPF value with corruption detection and correction"""
+    if pd.isna(value) or value == '':
+        return 0
+    
+    if isinstance(value, (int, float)):
+        value = float(value)
+        
+        # Detect and fix corrupted values
+        # Normal IRPF range for deputies: 5,000 - 150,000 euros
+        
+        # Case 1: Value too high with suspicious decimal precision (like 3213560.321356)
+        # Pattern: 7+ digits with 5-6 decimal places
+        if value > 200000:
+            value_str = str(value)
+            if '.' in value_str:
+                parts = value_str.split('.')
+                # If we have something like "3213560.321356"
+                # Extract middle digits: 31135.60
+                full_digits = parts[0] + parts[1]
+                if len(full_digits) >= 7:
+                    # Take positions that make sense: skip first digit, take next 5, then 2 for decimal
+                    # "3213560321356" -> "31135" + "60"
+                    middle_start = 1
+                    middle_end = 6
+                    if len(full_digits) >= middle_end + 2:
+                        corrected = full_digits[middle_start:middle_end] + '.' + full_digits[middle_end:middle_end+2]
+                        return float(corrected)
+        
+        # Case 2: Value too high without suspicious decimals (like 1849074.0)
+        # Probably decimal point was removed: 1849074 -> 18490.74
+        if value > 200000:
+            value_str = str(int(value))
+            if len(value_str) >= 5:
+                # Insert decimal point 2 positions from the right
+                corrected = value_str[:-2] + '.' + value_str[-2:]
+                return float(corrected)
+        
+        # Case 3: Small value with dot as thousands (like 23.117)
+        # This is Spanish format where dot is thousands separator
+        if 20 < value < 100 and '.' in str(value):
+            # Remove the dot (thousands separator)
+            return float(str(value).replace('.', ''))
+        
+        # Value seems normal
+        return value
+    
+    # If it's a string, parse it
+    value_str = str(value).strip()
+    value_str = re.sub(r'[€$£\s]', '', value_str)
+    numeric_part = re.search(r'[\d.,]+', value_str)
+    
+    if numeric_part:
+        num_str = numeric_part.group(0)
+        # European format with comma as decimal
+        if ',' in num_str:
+            return float(num_str.replace('.', '').replace(',', '.'))
+        # US format or simple number
+        else:
+            return float(num_str.replace(',', ''))
+    
+    return 0
+
+
+def extract_debt_account_value(value_str):
+    """Extract currency value from debt/account fields (comes as strings with European format)"""
+    if pd.isna(value_str) or value_str == '':
+        return 0
+    
+    # If already a number (shouldn't happen for debts/accounts but just in case)
+    if isinstance(value_str, (int, float)):
+        return float(value_str)
+    
+    # It's a string with European format
+    value_str = str(value_str).strip()
+    value_str = re.sub(r'[€$£\s]', '', value_str)
+    
+    numeric_part = re.search(r'[\d.,]+', value_str)
+    if not numeric_part:
+        return 0
+    
+    try:
+        num_str = numeric_part.group(0)
+        dot_count = num_str.count('.')
+        comma_count = num_str.count(',')
+        
+        # European format: dots=thousands, comma=decimal (67.230,26)
+        if comma_count > 0:
+            return float(num_str.replace('.', '').replace(',', '.'))
+        
+        # Only dots - multiple dots means European thousands
+        if dot_count > 1:
+            parts = num_str.split('.')
+            if len(parts[-1]) <= 2:
+                # Last part is decimal
+                integer_part = ''.join(parts[:-1])
+                decimal_part = parts[-1]
+                return float(f"{integer_part}.{decimal_part}")
+            else:
+                # All are thousands
+                return float(num_str.replace('.', ''))
+        
+        # Single dot - check if decimal or thousands
+        if dot_count == 1:
+            if re.search(r'\.\d{1,2}$', num_str):
+                return float(num_str)
+            else:
+                return float(num_str.replace('.', ''))
+        
+        # No separators
+        return float(num_str)
+        
+    except (ValueError, TypeError):
+        return 0
+    
+    return 0
+
+
+# Update the prepare_screener_data function to use the correct function for each field
 def prepare_screener_data(df):
     """Prepare data for screener with all metrics calculated - properly deduplicated"""
-    # Create a normalized name column for grouping
     df_copy = df.copy()
     df_copy['normalized_name'] = df_copy['informacion_personal_nombre_y_apellidos'].apply(normalize_name)
     
-    # Get unique deputies (latest declaration for each, using normalized names)
     df_sorted = df_copy.sort_values('source_file', ascending=True)
     unique_deputies = df_sorted.groupby('normalized_name').last().reset_index()
     
@@ -1228,27 +1249,27 @@ def prepare_screener_data(df):
             except:
                 deputy_info['salary'] = 0
         
-        # IRPF
-        irpf = extract_currency_value(row.get('irpf_cantidad_pagada', 0))
+        # IRPF - USE SPECIFIC FUNCTION
+        irpf = extract_irpf_value(row.get('irpf_cantidad_pagada', 0))
         deputy_info['irpf'] = irpf
         
-        # Properties - just count
+        # Properties
         urban_properties = parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos'])
         rustic_properties = parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))
         deputy_info['properties_count'] = len(urban_properties) + len(rustic_properties)
         
-        # Vehicles - just count
+        # Vehicles
         vehicles = parse_json_field(row['vehiculos'])
         deputy_info['vehicles_count'] = len(vehicles)
         
-        # Debts - get total, max pending, and max original
+        # Debts - USE SPECIFIC FUNCTION FOR DEBT/ACCOUNT FIELDS
         debts = parse_json_field(row['deudas_y_obligaciones'])
         debt_pending = []
         debt_original = []
         for debt in debts:
             if isinstance(debt, dict):
-                pending = extract_currency_value(debt.get('saldo_pendiente', 0))
-                original = extract_currency_value(debt.get('importe_concedido', 0))
+                pending = extract_debt_account_value(debt.get('saldo_pendiente', 0))
+                original = extract_debt_account_value(debt.get('importe_concedido', 0))
                 if pending > 0:
                     debt_pending.append(pending)
                 if original > 0:
@@ -1258,12 +1279,12 @@ def prepare_screener_data(df):
         deputy_info['max_debt'] = max(debt_pending) if debt_pending else 0
         deputy_info['max_debt_original'] = max(debt_original) if debt_original else 0
         
-        # Accounts - get total and max
+        # Accounts - USE SPECIFIC FUNCTION
         accounts = parse_json_field(row['depositos_y_cuentas_cuentas'])
         account_balances = []
         for account in accounts:
             if isinstance(account, dict):
-                saldo = extract_currency_value(account.get('saldo', 0))
+                saldo = extract_debt_account_value(account.get('saldo', 0))
                 if saldo > 0:
                     account_balances.append(saldo)
         
@@ -1277,13 +1298,13 @@ def prepare_screener_data(df):
         acciones = parse_json_field(row.get('otros_bienes_y_derechos_acciones_y_participaciones', ''))
         for accion in acciones:
             if isinstance(accion, dict):
-                valor = extract_currency_value(accion.get('valor', 0))
+                valor = extract_debt_account_value(accion.get('valor', 0))
                 total_assets += valor
         
         deuda_publica = parse_json_field(row.get('otros_bienes_y_derechos_deuda_publica_y_valores', ''))
         for valor in deuda_publica:
             if isinstance(valor, dict):
-                val = extract_currency_value(valor.get('valor', 0))
+                val = extract_debt_account_value(valor.get('valor', 0))
                 total_assets += val
         
         deputy_info['total_assets'] = total_assets
