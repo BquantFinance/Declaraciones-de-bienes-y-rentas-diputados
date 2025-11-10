@@ -1178,7 +1178,6 @@ def prepare_screener_data(df):
     df_copy['normalized_name'] = df_copy['informacion_personal_nombre_y_apellidos'].apply(normalize_name)
     
     # Get unique deputies (latest declaration for each, using normalized names)
-    # Sort by source_file to get the most recent declaration
     df_sorted = df_copy.sort_values('source_file', ascending=True)
     unique_deputies = df_sorted.groupby('normalized_name').last().reset_index()
     
@@ -1186,15 +1185,20 @@ def prepare_screener_data(df):
     
     for idx, row in unique_deputies.iterrows():
         deputy_info = {
-            'name': row['informacion_personal_nombre_y_apellidos'],  # Use original name for display
+            'name': row['informacion_personal_nombre_y_apellidos'],
             'photo_path': row.get('photo_path', ''),
             'party': row.get('informacion_personal_cargo', 'Diputado'),
             'salary': 0,
             'irpf': 0,
-            'properties': 0,
-            'vehicles': 0,
-            'debt': 0,
-            'accounts_balance': 0
+            'properties_count': 0,
+            'vehicles_count': 0,
+            'debt_total': 0,
+            'accounts_balance': 0,
+            'max_account': 0,
+            'max_debt': 0,
+            'total_assets': 0,
+            'max_property_desc': '',
+            'max_vehicle_desc': ''
         }
         
         # Salary
@@ -1210,30 +1214,266 @@ def prepare_screener_data(df):
         deputy_info['irpf'] = irpf
         
         # Properties
-        urban_properties = len(parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos']))
-        rustic_properties = len(parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]')))
-        deputy_info['properties'] = urban_properties + rustic_properties
+        urban_properties = parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos'])
+        rustic_properties = parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))
+        all_properties = urban_properties + rustic_properties
+        deputy_info['properties_count'] = len(all_properties)
+        
+        # Get most "valuable" property description (heuristic based on keywords)
+        if all_properties:
+            property_scores = []
+            for prop in all_properties:
+                if isinstance(prop, dict):
+                    desc = str(prop.get('clase_y_caracteristicas', '') or prop.get('clase', '')).lower()
+                    score = 0
+                    # Score based on property type keywords
+                    if any(word in desc for word in ['chalet', 'villa', 'unifamiliar', 'pareado']):
+                        score += 10
+                    if any(word in desc for word in ['piso', 'vivienda', 'casa']):
+                        score += 5
+                    if any(word in desc for word in ['local', 'garaje', 'trastero', 'almacen']):
+                        score += 2
+                    if any(word in desc for word in ['rustico', 'finca', 'terreno', 'parcela']):
+                        score += 3
+                    property_scores.append((score, desc))
+            
+            if property_scores:
+                property_scores.sort(reverse=True)
+                deputy_info['max_property_desc'] = property_scores[0][1].title()[:50]
         
         # Vehicles
         vehicles = parse_json_field(row['vehiculos'])
-        deputy_info['vehicles'] = len(vehicles)
+        deputy_info['vehicles_count'] = len(vehicles)
         
-        # Debt
+        # Get most "valuable" vehicle description (heuristic based on brand)
+        if vehicles:
+            vehicle_scores = []
+            luxury_brands = ['mercedes', 'bmw', 'audi', 'porsche', 'lexus', 'tesla', 'jaguar', 
+                           'maserati', 'ferrari', 'lamborghini', 'bentley', 'rolls', 'range rover',
+                           'volvo', 'alfa romeo', 'land rover', 'infiniti', 'cadillac']
+            premium_brands = ['volkswagen', 'ford', 'toyota', 'honda', 'mazda', 'hyundai', 
+                            'kia', 'nissan', 'peugeot', 'renault', 'citroen', 'seat', 'opel', 'fiat']
+            
+            for vehicle in vehicles:
+                if isinstance(vehicle, dict):
+                    desc = str(vehicle.get('descripcion', '')).lower()
+                    score = 1
+                    
+                    # Check for luxury brands
+                    for brand in luxury_brands:
+                        if brand in desc:
+                            score = 10
+                            break
+                    
+                    # Check for premium brands if not luxury
+                    if score == 1:
+                        for brand in premium_brands:
+                            if brand in desc:
+                                score = 5
+                                break
+                    
+                    # Check for vehicle type
+                    if any(word in desc for word in ['suv', '4x4', 'todoterreno']):
+                        score += 2
+                    if any(word in desc for word in ['deportivo', 'sport', 'gt']):
+                        score += 3
+                    if 'electrico' in desc or 'eléctrico' in desc or 'hybrid' in desc or 'hibrido' in desc:
+                        score += 2
+                    
+                    vehicle_scores.append((score, vehicle.get('descripcion', 'Vehículo')))
+            
+            if vehicle_scores:
+                vehicle_scores.sort(reverse=True)
+                deputy_info['max_vehicle_desc'] = vehicle_scores[0][1][:50]
+        
+        # Debts - get both total and max individual debt
         debts = parse_json_field(row['deudas_y_obligaciones'])
-        total_debt = sum(extract_currency_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
-        deputy_info['debt'] = total_debt
+        debt_amounts = []
+        for debt in debts:
+            if isinstance(debt, dict):
+                pending = extract_currency_value(debt.get('saldo_pendiente', 0))
+                if pending > 0:
+                    debt_amounts.append(pending)
         
-        # Accounts balance
+        deputy_info['debt_total'] = sum(debt_amounts)
+        deputy_info['max_debt'] = max(debt_amounts) if debt_amounts else 0
+        
+        # Accounts - get both total and max individual account
         accounts = parse_json_field(row['depositos_y_cuentas_cuentas'])
-        total_accounts = sum(extract_currency_value(a.get('saldo', 0)) for a in accounts if isinstance(a, dict))
-        deputy_info['accounts_balance'] = total_accounts
+        account_balances = []
+        for account in accounts:
+            if isinstance(account, dict):
+                saldo = extract_currency_value(account.get('saldo', 0))
+                if saldo > 0:
+                    account_balances.append(saldo)
+        
+        deputy_info['accounts_balance'] = sum(account_balances)
+        deputy_info['max_account'] = max(account_balances) if account_balances else 0
+        
+        # Calculate total liquid assets (accounts + investments)
+        total_assets = deputy_info['accounts_balance']
+        
+        # Add other financial assets
+        acciones = parse_json_field(row.get('otros_bienes_y_derechos_acciones_y_participaciones', ''))
+        for accion in acciones:
+            if isinstance(accion, dict):
+                valor = extract_currency_value(accion.get('valor', 0))
+                total_assets += valor
+        
+        deuda_publica = parse_json_field(row.get('otros_bienes_y_derechos_deuda_publica_y_valores', ''))
+        for valor in deuda_publica:
+            if isinstance(valor, dict):
+                val = extract_currency_value(valor.get('valor', 0))
+                total_assets += val
+        
+        deputy_info['total_assets'] = total_assets
         
         screener_data.append(deputy_info)
     
     return pd.DataFrame(screener_data)
 
-def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class=""):
-    """Display a single screener card"""
+def show_screener(df):
+    """Display the screener interface"""
+    st.markdown('<h1 style="text-align: center;">🔍 Screening de Diputados</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #94a3b8;">Explora y compara las métricas financieras de los diputados</p>', unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # Prepare screener data
+    screener_df = prepare_screener_data(df)
+    
+    # Controls
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        metric_options = {
+            '💰 Salario Anual': ('salary', 'positive', 'currency'),
+            '💵 IRPF Pagado': ('irpf', 'positive', 'currency'),
+            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number'),
+            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number'),
+            '💳 Deuda Total': ('debt_total', 'negative', 'currency'),
+            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency'),
+            '💎 Cuenta Individual Más Grande': ('max_account', 'positive', 'currency'),
+            '⚠️ Deuda Individual Más Alta': ('max_debt', 'negative', 'currency'),
+            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency'),
+        }
+        
+        selected_metric_name = st.selectbox(
+            "Seleccionar Métrica:",
+            list(metric_options.keys())
+        )
+    
+    with col2:
+        ranking_type = st.radio(
+            "Tipo de Ranking:",
+            ["🔝 Top 10", "🔻 Bottom 10"],
+            horizontal=True
+        )
+    
+    metric_column, value_class, format_type = metric_options[selected_metric_name]
+    
+    st.markdown("---")
+    
+    # Sort and filter
+    ascending = ranking_type == "🔻 Bottom 10"
+    top_deputies = screener_df.nlargest(10, metric_column) if not ascending else screener_df.nsmallest(10, metric_column)
+    
+    # Display header
+    if ranking_type == "🔝 Top 10":
+        st.markdown(f"### 🏆 Top 10 Diputados - {selected_metric_name}")
+    else:
+        st.markdown(f"### 📊 Bottom 10 Diputados - {selected_metric_name}")
+    
+    # Display summary statistics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        avg_value = screener_df[metric_column].mean()
+        if format_type == 'currency':
+            st.metric("Promedio", format_currency(avg_value))
+        else:
+            st.metric("Promedio", f"{avg_value:.1f}")
+    
+    with col2:
+        max_value = screener_df[metric_column].max()
+        if format_type == 'currency':
+            st.metric("Máximo", format_currency(max_value))
+        else:
+            st.metric("Máximo", f"{int(max_value)}")
+    
+    with col3:
+        min_value = screener_df[metric_column].min()
+        if format_type == 'currency':
+            st.metric("Mínimo", format_currency(min_value))
+        else:
+            st.metric("Mínimo", f"{int(min_value)}")
+    
+    st.markdown("---")
+    
+    # Display cards with additional context
+    for idx, (_, deputy) in enumerate(top_deputies.iterrows(), 1):
+        metric_val = deputy[metric_column]
+        
+        # Format the metric value
+        if format_type == 'currency':
+            formatted_value = format_currency_full(metric_val)
+        else:
+            formatted_value = f"{int(metric_val)}"
+        
+        # Add description for certain metrics
+        description = ""
+        if metric_column == 'max_vehicle_desc' and deputy['max_vehicle_desc']:
+            description = f"🚗 {deputy['max_vehicle_desc']}"
+        elif metric_column == 'max_property_desc' and deputy['max_property_desc']:
+            description = f"🏠 {deputy['max_property_desc']}"
+        elif metric_column == 'vehicles_count' and deputy['max_vehicle_desc']:
+            description = f"<br><span style='color: #94a3b8; font-size: 0.85rem;'>🚗 Vehículo destacado: {deputy['max_vehicle_desc']}</span>"
+        elif metric_column == 'properties_count' and deputy['max_property_desc']:
+            description = f"<br><span style='color: #94a3b8; font-size: 0.85rem;'>🏠 Inmueble destacado: {deputy['max_property_desc']}</span>"
+        
+        display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class, description)
+    
+    st.markdown("---")
+    
+    # Add visualization
+    st.markdown("### 📊 Visualización Comparativa")
+    
+    fig = go.Figure()
+    
+    # Format text for chart
+    if format_type == 'currency':
+        text_values = top_deputies[metric_column].apply(lambda x: format_currency(x))
+    else:
+        text_values = top_deputies[metric_column].apply(lambda x: f"{int(x)}")
+    
+    fig.add_trace(go.Bar(
+        x=top_deputies['name'],
+        y=top_deputies[metric_column],
+        marker=dict(
+            color=top_deputies[metric_column],
+            colorscale='Viridis',
+            showscale=True
+        ),
+        text=text_values,
+        textposition='auto',
+    ))
+    
+    fig.update_layout(
+        title=f"{selected_metric_name} - {ranking_type}",
+        xaxis_title="Diputado",
+        yaxis_title=selected_metric_name,
+        template="plotly_dark",
+        height=500,
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#ffffff'),
+        xaxis=dict(tickangle=-45)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class="", description=""):
+    """Display a single screener card with optional description"""
     rank_class = ""
     medal = ""
     if rank == 1:
@@ -1256,129 +1496,12 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
             <div class="screener-name">{deputy_info['name']}</div>
             <div class="screener-party">{deputy_info['party']}</div>
             <div class="screener-value {value_class}">{metric_value}</div>
+            {description}
         </div>
     </div>
     '''
     st.markdown(card_html, unsafe_allow_html=True)
 
-def show_screener(df):
-    """Display the screener interface"""
-    st.markdown('<h1 style="text-align: center;">🔍 Screening de Diputados</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center; color: #94a3b8;">Explora y compara las métricas financieras de los diputados</p>', unsafe_allow_html=True)
-    st.markdown("---")
-    
-    # Prepare screener data
-    screener_df = prepare_screener_data(df)
-    
-    # Controls
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        metric_options = {
-            '💰 Salario Anual': ('salary', 'positive'),
-            '💵 IRPF Pagado': ('irpf', 'positive'),
-            '🏠 Número de Inmuebles': ('properties', 'positive'),
-            '🚗 Número de Vehículos': ('vehicles', 'positive'),
-            '💳 Deuda Total': ('debt', 'negative'),
-            '🏦 Saldo en Cuentas': ('accounts_balance', 'positive')
-        }
-        
-        selected_metric_name = st.selectbox(
-            "Seleccionar Métrica:",
-            list(metric_options.keys())
-        )
-    
-    with col2:
-        ranking_type = st.radio(
-            "Tipo de Ranking:",
-            ["🔝 Top 10", "🔻 Bottom 10"],
-            horizontal=True
-        )
-    
-    metric_column, value_class = metric_options[selected_metric_name]
-    
-    st.markdown("---")
-    
-    # Sort and filter
-    ascending = ranking_type == "🔻 Bottom 10"
-    top_deputies = screener_df.nlargest(10, metric_column) if not ascending else screener_df.nsmallest(10, metric_column)
-    
-    # Display header
-    if ranking_type == "🔝 Top 10":
-        st.markdown(f"### 🏆 Top 10 Diputados - {selected_metric_name}")
-    else:
-        st.markdown(f"### 📊 Bottom 10 Diputados - {selected_metric_name}")
-    
-    # Display summary statistics
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        avg_value = screener_df[metric_column].mean()
-        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
-            st.metric("Promedio", format_currency(avg_value))
-        else:
-            st.metric("Promedio", f"{avg_value:.1f}")
-    
-    with col2:
-        max_value = screener_df[metric_column].max()
-        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
-            st.metric("Máximo", format_currency(max_value))
-        else:
-            st.metric("Máximo", f"{int(max_value)}")
-    
-    with col3:
-        min_value = screener_df[metric_column].min()
-        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
-            st.metric("Mínimo", format_currency(min_value))
-        else:
-            st.metric("Mínimo", f"{int(min_value)}")
-    
-    st.markdown("---")
-    
-    # Display cards
-    for idx, (_, deputy) in enumerate(top_deputies.iterrows(), 1):
-        # Format the metric value
-        metric_val = deputy[metric_column]
-        if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance']:
-            formatted_value = format_currency_full(metric_val)
-        else:
-            formatted_value = f"{int(metric_val)}"
-        
-        display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class)
-    
-    st.markdown("---")
-    
-    # Add visualization
-    st.markdown("### 📊 Visualización Comparativa")
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        x=top_deputies['name'],
-        y=top_deputies[metric_column],
-        marker=dict(
-            color=top_deputies[metric_column],
-            colorscale='Viridis',
-            showscale=True
-        ),
-        text=top_deputies[metric_column].apply(lambda x: format_currency(x) if metric_column in ['salary', 'irpf', 'debt', 'accounts_balance'] else f"{int(x)}"),
-        textposition='auto',
-    ))
-    
-    fig.update_layout(
-        title=f"{selected_metric_name} - {ranking_type}",
-        xaxis_title="Diputado",
-        yaxis_title=selected_metric_name,
-        template="plotly_dark",
-        height=500,
-        showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#ffffff'),
-        xaxis=dict(tickangle=-45)
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
 
 def show_disclaimer():
     """Show the comprehensive legal disclaimer page using native Streamlit components."""
