@@ -1196,12 +1196,8 @@ def prepare_screener_data(df):
             'accounts_balance': 0,
             'max_account': 0,
             'max_debt': 0,
+            'max_debt_original': 0,
             'total_assets': 0,
-            'max_property_score': 0,
-            'max_property_desc': '',
-            'max_vehicle_score': 0,
-            'max_vehicle_desc': '',
-            'max_debt_desc': ''
         }
         
         # Salary
@@ -1216,138 +1212,33 @@ def prepare_screener_data(df):
         irpf = extract_currency_value(row.get('irpf_cantidad_pagada', 0))
         deputy_info['irpf'] = irpf
         
-        # Properties with scoring
+        # Properties - just count
         urban_properties = parse_json_field(row['bienes_patrimoniales_inmuebles_urbanos'])
         rustic_properties = parse_json_field(row.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))
-        all_properties = urban_properties + rustic_properties
-        deputy_info['properties_count'] = len(all_properties)
+        deputy_info['properties_count'] = len(urban_properties) + len(rustic_properties)
         
-        # Score properties to find the most valuable
-        if all_properties:
-            property_scores = []
-            for prop in all_properties:
-                if isinstance(prop, dict):
-                    desc = str(prop.get('clase_y_caracteristicas', '') or prop.get('clase', '')).lower()
-                    situacion = str(prop.get('situacion', '')).lower()
-                    score = 0
-                    
-                    # Property type scoring
-                    if any(word in desc for word in ['chalet', 'villa', 'palacio', 'mansion']):
-                        score += 100
-                    elif any(word in desc for word in ['unifamiliar', 'adosado', 'pareado']):
-                        score += 50
-                    elif any(word in desc for word in ['piso', 'vivienda', 'casa', 'apartamento']):
-                        score += 30
-                    elif any(word in desc for word in ['local', 'oficina']):
-                        score += 20
-                    elif any(word in desc for word in ['garaje', 'parking', 'plaza']):
-                        score += 5
-                    elif any(word in desc for word in ['trastero', 'almacen']):
-                        score += 3
-                    elif any(word in desc for word in ['rustico', 'finca', 'terreno', 'parcela']):
-                        score += 25
-                    
-                    # Location premium (major cities)
-                    if any(city in situacion for city in ['madrid', 'barcelona', 'valencia', 'sevilla', 'bilbao', 'málaga']):
-                        score += 30
-                    
-                    # Additional features
-                    if any(word in desc for word in ['piscina', 'jardin', 'jardín']):
-                        score += 10
-                    if 'duplex' in desc or 'dúplex' in desc or 'ático' in desc or 'atico' in desc:
-                        score += 15
-                    
-                    full_desc = f"{desc.title()}"
-                    if situacion:
-                        full_desc += f" ({situacion.title()})"
-                    
-                    property_scores.append((score, full_desc[:80]))
-            
-            if property_scores:
-                property_scores.sort(reverse=True, key=lambda x: x[0])
-                deputy_info['max_property_score'] = property_scores[0][0]
-                deputy_info['max_property_desc'] = property_scores[0][1]
-        
-        # Vehicles with scoring
+        # Vehicles - just count
         vehicles = parse_json_field(row['vehiculos'])
         deputy_info['vehicles_count'] = len(vehicles)
         
-        # Score vehicles to find the most valuable
-        if vehicles:
-            vehicle_scores = []
-            luxury_brands = {
-                'ferrari': 150, 'lamborghini': 150, 'bugatti': 150, 'mclaren': 150,
-                'bentley': 140, 'rolls': 140, 'rolls-royce': 140, 'aston': 140,
-                'porsche': 120, 'maserati': 120, 'tesla': 110,
-                'mercedes': 100, 'bmw': 95, 'audi': 90, 'lexus': 85,
-                'jaguar': 80, 'land rover': 75, 'range rover': 90, 'volvo': 70,
-                'alfa romeo': 65, 'infiniti': 60, 'cadillac': 60, 'lincoln': 55
-            }
-            premium_brands = {
-                'volkswagen': 40, 'ford': 35, 'toyota': 40, 'honda': 35, 
-                'mazda': 35, 'hyundai': 30, 'kia': 30, 'nissan': 35, 
-                'peugeot': 30, 'renault': 30, 'citroen': 30, 'seat': 25, 
-                'opel': 25, 'fiat': 20, 'skoda': 30
-            }
-            
-            for vehicle in vehicles:
-                if isinstance(vehicle, dict):
-                    desc = str(vehicle.get('descripcion', '')).lower()
-                    score = 10  # Base score
-                    
-                    # Check for luxury brands
-                    for brand, brand_score in luxury_brands.items():
-                        if brand in desc:
-                            score = brand_score
-                            break
-                    
-                    # Check for premium brands if not luxury
-                    if score == 10:
-                        for brand, brand_score in premium_brands.items():
-                            if brand in desc:
-                                score = brand_score
-                                break
-                    
-                    # Vehicle type bonuses
-                    if any(word in desc for word in ['suv', '4x4', 'todoterreno']):
-                        score += 15
-                    if any(word in desc for word in ['deportivo', 'sport', 'gt', 'coupe', 'coupé']):
-                        score += 25
-                    if any(word in desc for word in ['electrico', 'eléctrico', 'electric']):
-                        score += 20
-                    if any(word in desc for word in ['hybrid', 'hibrido', 'híbrido', 'phev']):
-                        score += 10
-                    if 'turbo' in desc:
-                        score += 10
-                    
-                    # Model indicators
-                    if any(word in desc for word in ['amg', 'm sport', 's line', 'rs', 'gtd', 'gti']):
-                        score += 20
-                    
-                    vehicle_scores.append((score, vehicle.get('descripcion', 'Vehículo')[:60]))
-            
-            if vehicle_scores:
-                vehicle_scores.sort(reverse=True, key=lambda x: x[0])
-                deputy_info['max_vehicle_score'] = vehicle_scores[0][0]
-                deputy_info['max_vehicle_desc'] = vehicle_scores[0][1]
-        
-        # Debts - get both total and max individual debt with description
+        # Debts - get total, max pending, and max original
         debts = parse_json_field(row['deudas_y_obligaciones'])
-        debt_amounts = []
+        debt_pending = []
+        debt_original = []
         for debt in debts:
             if isinstance(debt, dict):
                 pending = extract_currency_value(debt.get('saldo_pendiente', 0))
+                original = extract_currency_value(debt.get('importe_concedido', 0))
                 if pending > 0:
-                    desc = debt.get('descripcion', 'Préstamo')
-                    debt_amounts.append((pending, desc))
+                    debt_pending.append(pending)
+                if original > 0:
+                    debt_original.append(original)
         
-        deputy_info['debt_total'] = sum(d[0] for d in debt_amounts)
-        if debt_amounts:
-            debt_amounts.sort(reverse=True, key=lambda x: x[0])
-            deputy_info['max_debt'] = debt_amounts[0][0]
-            deputy_info['max_debt_desc'] = debt_amounts[0][1][:60]
+        deputy_info['debt_total'] = sum(debt_pending)
+        deputy_info['max_debt'] = max(debt_pending) if debt_pending else 0
+        deputy_info['max_debt_original'] = max(debt_original) if debt_original else 0
         
-        # Accounts - get both total and max individual account
+        # Accounts - get total and max
         accounts = parse_json_field(row['depositos_y_cuentas_cuentas'])
         account_balances = []
         for account in accounts:
@@ -1395,17 +1286,16 @@ def show_screener(df):
     
     with col1:
         metric_options = {
-            '💰 Salario Anual': ('salary', 'positive', 'currency', None),
-            '💵 IRPF Pagado': ('irpf', 'positive', 'currency', None),
-            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number', 'max_property_desc'),
-            '🏰 Inmueble Más Valioso': ('max_property_score', 'positive', 'score', 'max_property_desc'),
-            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number', 'max_vehicle_desc'),
-            '🏎️ Vehículo Más Valioso': ('max_vehicle_score', 'positive', 'score', 'max_vehicle_desc'),
-            '💳 Deuda Total': ('debt_total', 'negative', 'currency', None),
-            '⚠️ Deuda Individual Más Alta': ('max_debt', 'negative', 'currency', 'max_debt_desc'),
-            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency', None),
-            '💎 Cuenta Individual Más Grande': ('max_account', 'positive', 'currency', None),
-            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency', None),
+            '💰 Salario Anual': ('salary', 'positive', 'currency'),
+            '💵 IRPF Pagado': ('irpf', 'positive', 'currency'),
+            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number'),
+            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number'),
+            '💳 Deuda Total Pendiente': ('debt_total', 'negative', 'currency'),
+            '⚠️ Préstamo Individual Más Alto (Pendiente)': ('max_debt', 'negative', 'currency'),
+            '📊 Préstamo Individual Más Alto (Original)': ('max_debt_original', 'negative', 'currency'),
+            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency'),
+            '💎 Cuenta Individual Más Grande': ('max_account', 'positive', 'currency'),
+            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency'),
         }
         
         selected_metric_name = st.selectbox(
@@ -1420,7 +1310,7 @@ def show_screener(df):
             horizontal=True
         )
     
-    metric_column, value_class, format_type, desc_field = metric_options[selected_metric_name]
+    metric_column, value_class, format_type = metric_options[selected_metric_name]
     
     st.markdown("---")
     
@@ -1441,8 +1331,6 @@ def show_screener(df):
         avg_value = screener_df[metric_column].mean()
         if format_type == 'currency':
             st.metric("Promedio", format_currency(avg_value))
-        elif format_type == 'score':
-            st.metric("Promedio", f"{avg_value:.0f} pts")
         else:
             st.metric("Promedio", f"{avg_value:.1f}")
     
@@ -1450,31 +1338,22 @@ def show_screener(df):
         max_value = screener_df[metric_column].max()
         if format_type == 'currency':
             st.metric("Máximo", format_currency(max_value))
-        elif format_type == 'score':
-            st.metric("Máximo", f"{int(max_value)} pts")
         else:
             st.metric("Máximo", f"{int(max_value)}")
     
     st.markdown("---")
     
-    # Display cards with additional context
+    # Display cards
     for idx, (_, deputy) in enumerate(top_deputies.iterrows(), 1):
         metric_val = deputy[metric_column]
         
         # Format the metric value
         if format_type == 'currency':
             formatted_value = format_currency_full(metric_val)
-        elif format_type == 'score':
-            formatted_value = f"{int(metric_val)} puntos"
         else:
             formatted_value = f"{int(metric_val)}"
         
-        # Get description if available
-        description = ""
-        if desc_field and deputy.get(desc_field):
-            description = str(deputy[desc_field])
-        
-        display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class, description)
+        display_screener_card(idx, deputy, selected_metric_name, formatted_value, value_class)
     
     st.markdown("---")
     
@@ -1486,8 +1365,6 @@ def show_screener(df):
     # Format text for chart
     if format_type == 'currency':
         text_values = top_deputies[metric_column].apply(lambda x: format_currency(x))
-    elif format_type == 'score':
-        text_values = top_deputies[metric_column].apply(lambda x: f"{int(x)} pts")
     else:
         text_values = top_deputies[metric_column].apply(lambda x: f"{int(x)}")
     
@@ -1518,8 +1395,8 @@ def show_screener(df):
     
     st.plotly_chart(fig, use_container_width=True)
 
-def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class="", description=""):
-    """Display a single screener card with optional description"""
+def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class=""):
+    """Display a single screener card - FIXED VERSION"""
     rank_class = ""
     medal = ""
     if rank == 1:
@@ -1534,11 +1411,6 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
     
     photo_html = get_deputy_photo_html(deputy_info['photo_path'])
     
-    # Build description HTML properly if provided
-    description_html = ""
-    if description:
-        description_html = f'<div class="screener-party" style="margin-top: 0.3rem; font-style: italic; color: #10b981;">{description}</div>'
-    
     card_html = f'''
     <div class="screener-card">
         <div class="screener-rank {rank_class}">{medal}#{rank}</div>
@@ -1547,12 +1419,10 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
             <div class="screener-name">{deputy_info['name']}</div>
             <div class="screener-party">{deputy_info['party']}</div>
             <div class="screener-value {value_class}">{metric_value}</div>
-            {description_html}
         </div>
     </div>
     '''
     st.markdown(card_html, unsafe_allow_html=True)
-
 
 def show_disclaimer():
     """Show the comprehensive legal disclaimer page using native Streamlit components."""
