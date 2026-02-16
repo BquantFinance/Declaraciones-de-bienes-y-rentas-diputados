@@ -1185,6 +1185,7 @@ def main_app():
             if st.button("🎲", use_container_width=True, help="Aleatorio", key="random_deputy"):
                 if deputy_names:
                     st.session_state.selected_deputy_name = random.choice(deputy_names)
+                    st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("---")
         if not deputy_names:
@@ -1466,6 +1467,7 @@ def main_app():
                                     if pending > 0: st.markdown(f"Pendiente: **{format_currency_full(pending)}**")
                                     if original > 0 and pending > 0:
                                         pct = ((original - pending) / original) * 100
+                                        pct = max(0, min(100, pct))
                                         st.progress(int(pct), text=f"Pagado: {pct:.1f}%")
                                 st.markdown("---")
                     else: st.success("✅ No se han declarado deudas")
