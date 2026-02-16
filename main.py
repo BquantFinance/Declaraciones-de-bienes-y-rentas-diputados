@@ -164,14 +164,8 @@ def apply_css():
         }
         
         /* ══════════════════════════════════════ */
-        /* NAVIGATION — fixed radio buttons       */
+        /* NAVIGATION — radio buttons             */
         /* ══════════════════════════════════════ */
-        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] .stRadio > div {
-            display: flex !important;
-            gap: 0 !important;
-            justify-content: center !important;
-        }
-        
         .stRadio > div {
             gap: 0 !important;
             background: var(--bg-card) !important;
@@ -179,7 +173,8 @@ def apply_css():
             padding: 4px !important;
             border: 1px solid var(--border) !important;
             box-shadow: var(--shadow-sm) !important;
-            display: inline-flex !important;
+            display: flex !important;
+            flex-wrap: nowrap !important;
         }
         
         .stRadio > div > label {
@@ -202,16 +197,19 @@ def apply_css():
             background: var(--bg-warm) !important;
         }
         
-        .stRadio > div > label[data-checked="true"] {
+        /* Hide the radio circle but keep the element functional */
+        .stRadio > div > label > div:first-child {
+            display: none !important;
+        }
+        
+        /* Selected radio option */
+        .stRadio > div > label[data-checked="true"],
+        .stRadio > div > label[aria-checked="true"],
+        .stRadio > div > label:has(input:checked) {
             background: var(--ink) !important;
             color: #fff !important;
             font-weight: 600 !important;
             box-shadow: var(--shadow-sm) !important;
-        }
-
-        /* Target the radio's internal checked state */
-        .stRadio [data-baseweb="radio"] {
-            display: none !important;
         }
         
         /* ══════════════════════════════════════ */
