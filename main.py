@@ -444,9 +444,10 @@ div[data-testid="metric-container"] div[data-testid="stMetricValue"] > div {
 .masthead-title {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: clamp(2rem, 4vw, 3rem); font-weight: 700;
-    color: #ffffff; line-height: 1.1; margin: 0; position: relative;
+    color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;
+    line-height: 1.1; margin: 0; position: relative;
 }
-.masthead-title .accent-dot { color: var(--gold); }
+.masthead-title .accent-dot { color: var(--gold) !important; -webkit-text-fill-color: var(--gold) !important; }
 .masthead-subtitle {
     font-family: 'Source Sans 3', sans-serif; font-size: 0.82rem;
     color: rgba(255,255,255,0.45); margin-top: 0.5rem;
