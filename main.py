@@ -285,36 +285,58 @@ div[data-testid="metric-container"] div[data-testid="stMetricValue"] > div {
 .stButton > button:active,
 .stButton > button:focus {
     border-color: var(--gold) !important;
-    box-shadow: 0 0 0 3px var(--gold-pale) !important;
+    box-shadow: 0 0 0 3px rgba(184,134,11,0.12) !important;
     background: var(--bg-card) !important;
     color: var(--ink) !important;
+    transform: none !important;
 }
 /* Primary variant */
 .stButton > button[kind="primary"],
 .stButton > button[data-testid="baseButton-primary"] {
-    background: var(--ink) !important;
+    background: var(--gold) !important;
     color: #fff !important;
-    border-color: var(--ink) !important;
+    border-color: var(--gold) !important;
 }
 .stButton > button[kind="primary"]:hover,
 .stButton > button[data-testid="baseButton-primary"]:hover {
-    background: var(--ink-soft) !important;
+    background: var(--gold-hover) !important;
+    border-color: var(--gold-hover) !important;
+}
+.stButton > button[kind="primary"]:active,
+.stButton > button[kind="primary"]:focus,
+.stButton > button[data-testid="baseButton-primary"]:active,
+.stButton > button[data-testid="baseButton-primary"]:focus {
+    background: var(--gold) !important;
+    border-color: var(--gold) !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 3px rgba(184,134,11,0.2) !important;
 }
 
 /* Random dice */
 .random-button-container { margin-top: 27px; }
 .random-button-container > div > button {
-    background: linear-gradient(135deg, var(--gold), var(--gold-hover)) !important;
-    border: none !important;
-    color: white !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--gold) !important;
+    color: var(--gold) !important;
     font-weight: 700 !important;
     font-size: 1.3rem !important;
     border-radius: var(--r-md) !important;
-    box-shadow: 0 4px 12px rgba(184,134,11,0.25) !important;
+    box-shadow: var(--sh-xs) !important;
+    padding: 0.4rem 0.8rem !important;
 }
 .random-button-container > div > button:hover {
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 8px 24px rgba(184,134,11,0.35) !important;
+    background: var(--gold-pale) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--sh-sm) !important;
+    color: var(--gold-hover) !important;
+    border-color: var(--gold-hover) !important;
+}
+.random-button-container > div > button:active,
+.random-button-container > div > button:focus {
+    background: var(--gold-pale) !important;
+    color: var(--gold) !important;
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 3px rgba(184,134,11,0.12) !important;
 }
 
 /* ── ALERT BOXES ── */
@@ -373,6 +395,17 @@ div[data-testid="metric-container"] div[data-testid="stMetricValue"] > div {
     font-family: 'Source Sans 3', sans-serif !important;
     font-weight: 600 !important;
     color: var(--ink) !important;
+    background: var(--bg-card) !important;
+}
+[data-testid="stExpander"] summary:hover {
+    background: var(--bg-warm) !important;
+}
+/* Kill any dark backgrounds on expander elements */
+[data-testid="stExpander"] [data-testid="stExpanderToggleIcon"],
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary div {
+    color: var(--ink) !important;
+    background: transparent !important;
 }
 
 /* ── PROGRESS BAR ── */
