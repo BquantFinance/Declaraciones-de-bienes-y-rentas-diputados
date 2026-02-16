@@ -736,16 +736,16 @@ def parse_json_field(field_value):
 def format_currency(value):
     if not isinstance(value, (int, float)): return "0E"
     if value == int(value):
-        return f"{int(value):,}E".replace(",", ".").replace("E", "\u20ac")
+        return f"{int(value):,}E".replace(",", ".").replace("E", "€")
     else:
-        return f"{value:,.2f}E".replace(",", "X").replace(".", ",").replace("X", ".").replace("E", "\u20ac")
+        return f"{value:,.2f}E".replace(",", "X").replace(".", ",").replace("X", ".").replace("E", "€")
 
 def format_currency_full(value):
-    if not isinstance(value, (int, float)): return "0,00 \u20ac"
+    if not isinstance(value, (int, float)): return "0,00 €"
     if value == int(value):
-        return f"{int(value):,} \u20ac".replace(",", ".")
+        return f"{int(value):,} €".replace(",", ".")
     else:
-        return f"{value:,.2f} \u20ac".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{value:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def extract_irpf_value(value):
     if pd.isna(value) or value == '': return 0
@@ -775,7 +775,7 @@ def extract_irpf_value(value):
         if 20 < value < 100 and '.' in value_str: return float(value_str.replace('.', ''))
         return value
     value_str = str(value).strip()
-    value_str = re.sub(r'[\u20ac$\u00a3\\s]', '', value_str)
+    value_str = re.sub(r'[€$£\s]', '', value_str)
     numeric_part = re.search(r'[\d.,]+', value_str)
     if numeric_part:
         num_str = numeric_part.group(0)
@@ -795,7 +795,7 @@ def extract_debt_account_value(value_str):
                 if corrected_value < 500000 and value > 500000: return corrected_value
         return value
     value_str = str(value_str).strip()
-    value_str = re.sub(r'[\u20ac$\u00a3\\s]', '', value_str)
+    value_str = re.sub(r'[€$£\s]', '', value_str)
     numeric_part = re.search(r'[\d.,]+', value_str)
     if not numeric_part: return 0
     try:
@@ -826,10 +826,10 @@ def extract_debt_account_value(value_str):
 def render_masthead():
     st.markdown("""
     <div class="masthead">
-        <div class="masthead-overline">Congreso de los Diputados \u00b7 XV Legislatura</div>
-        <h1 class="masthead-title">Declaraci\u00f3n de Bienes<span class="accent-dot">.</span></h1>
-        <div class="masthead-subtitle">An\u00e1lisis Interactivo de Transparencia Financiera Parlamentaria</div>
-        <div class="masthead-edition">Datos P\u00fablicos \u00b7 Informaci\u00f3n Oficial</div>
+        <div class="masthead-overline">Congreso de los Diputados · XV Legislatura</div>
+        <h1 class="masthead-title">Declaración de Bienes<span class="accent-dot">.</span></h1>
+        <div class="masthead-subtitle">Análisis Interactivo de Transparencia Financiera Parlamentaria</div>
+        <div class="masthead-edition">Datos Públicos · Información Oficial</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -837,7 +837,7 @@ def render_footer():
     st.markdown("""
     <div class="app-footer">
         <div class="app-footer-text">
-            Desarrollado por <a href="https://x.com/Gsnchez" target="_blank">@Gsnchez</a> \u00b7 
+            Desarrollado por <a href="https://x.com/Gsnchez" target="_blank">@Gsnchez</a> · 
             Fuente: <a href="https://www.congreso.es" target="_blank">Congreso de los Diputados</a>
         </div>
     </div>
@@ -851,7 +851,7 @@ def create_image_gallery(deputy_data):
             img_data = base64.b64encode(f.read()).decode()
             gallery_html += f'<div class="photo-frame"><img src="data:image/jpeg;base64,{img_data}" alt="Foto del diputado"></div>'
     else:
-        gallery_html += '<div class="no-photo">\U0001f464<span>Sin Foto</span></div>'
+        gallery_html += '<div class="no-photo">👤<span>Sin Foto</span></div>'
     gallery_html += '<div class="badges-container">'
     logo_path = deputy_data.get('logo_path', '')
     if pd.notna(logo_path) and str(logo_path).lower() != 'nan' and os.path.exists(str(logo_path)):
@@ -862,7 +862,7 @@ def create_image_gallery(deputy_data):
     if pd.notna(hemiciclo_path) and str(hemiciclo_path).lower() != 'nan' and os.path.exists(str(hemiciclo_path)):
         with open(hemiciclo_path, "rb") as f:
             img_data = base64.b64encode(f.read()).decode()
-            gallery_html += f'<div class="badge-frame"><img src="data:image/png;base64,{img_data}" alt="Posici\u00f3n en hemiciclo"></div>'
+            gallery_html += f'<div class="badge-frame"><img src="data:image/png;base64,{img_data}" alt="Posición en hemiciclo"></div>'
     gallery_html += '</div></div>'
     return gallery_html
 
@@ -873,21 +873,21 @@ def get_deputy_photo_html(photo_path):
                 img_data = base64.b64encode(f.read()).decode()
                 return f'<img src="data:image/jpeg;base64,{img_data}" class="screener-photo" alt="Foto">'
         except: pass
-    return '<div class="screener-photo-placeholder">\U0001f464</div>'
+    return '<div class="screener-photo-placeholder">👤</div>'
 
 def display_interests_section(deputy_interests):
     if deputy_interests.empty:
-        st.info("No hay informaci\u00f3n de registro de intereses disponible para este diputado.")
+        st.info("No hay información de registro de intereses disponible para este diputado.")
         return
-    st.markdown(f'<div class="section-heading">\U0001f4cb Registro de Intereses \u2014 {len(deputy_interests)} Registros</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-heading">📋 Registro de Intereses — {len(deputy_interests)} Registros</div>', unsafe_allow_html=True)
     for section_name, section_data in deputy_interests.groupby('seccion'):
         section_titles = {
-            'actividades': '\U0001f3db Actividades',
-            'donaciones': '\U0001f381 Donaciones y Obsequios',
-            'fundaciones': '\U0001f3e2 Fundaciones y Asociaciones',
-            'otros_intereses': '\U0001f4dd Otros Intereses'
+            'actividades': '🏛 Actividades',
+            'donaciones': '🎁 Donaciones y Obsequios',
+            'fundaciones': '🏢 Fundaciones y Asociaciones',
+            'otros_intereses': '📝 Otros Intereses'
         }
-        section_title = section_titles.get(section_name, f'\U0001f4cc {section_name.replace("_", " ").title()}')
+        section_title = section_titles.get(section_name, f'📌 {section_name.replace("_", " ").title()}')
         with st.expander(f"{section_title} ({len(section_data)})", expanded=(section_name == 'actividades')):
             if section_name == 'actividades':
                 for idx, row in section_data.iterrows():
@@ -898,17 +898,17 @@ def display_interests_section(deputy_interests):
                     badge_class = 'badge-otros'
                     if pd.notna(sector):
                         s = str(sector).lower()
-                        if 'cargo' in s and 'p\u00fablico' in s: badge_class = 'badge-cargo'
+                        if 'cargo' in s and 'público' in s: badge_class = 'badge-cargo'
                         elif 'partido' in s or 'grupo parlamentario' in s: badge_class = 'badge-partido'
                         elif 'privada' in s or 'docente' in s: badge_class = 'badge-actividad'
                     c = f'<div class="activity-card">'
                     c += f'<div class="activity-badge {badge_class}">{html.escape(str(sector)) if pd.notna(sector) else "Sin especificar"}</div>'
                     if pd.notna(empleador) and str(empleador).strip():
-                        c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;font-size:0.9rem;">\U0001f3e2 {html.escape(str(empleador))}</p>'
+                        c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;font-size:0.9rem;">🏢 {html.escape(str(empleador))}</p>'
                     if pd.notna(desc) and str(desc).strip():
                         c += f'<p style="color:var(--ink-soft);margin:0.25rem 0;font-size:0.85rem;">{html.escape(str(desc))}</p>'
                     if pd.notna(periodo) and str(periodo).strip():
-                        c += f'<p style="color:var(--ink-faint);font-size:0.78rem;margin-top:0.25rem;font-family:JetBrains Mono,monospace;">\U0001f4c5 {html.escape(str(periodo))}</p>'
+                        c += f'<p style="color:var(--ink-faint);font-size:0.78rem;margin-top:0.25rem;font-family:JetBrains Mono,monospace;">📅 {html.escape(str(periodo))}</p>'
                     c += '</div>'
                     st.markdown(c, unsafe_allow_html=True)
             elif section_name == 'otros_intereses':
@@ -921,9 +921,9 @@ def display_interests_section(deputy_interests):
                     benefactor = row.get('donacion_benefactor', '')
                     descripcion = row.get('donacion_descripcion', '')
                     if pd.notna(benefactor) or pd.notna(descripcion):
-                        c = '<div class="activity-card"><div class="activity-badge badge-otros">Donaci\u00f3n</div>'
+                        c = '<div class="activity-card"><div class="activity-badge badge-otros">Donación</div>'
                         if pd.notna(benefactor) and str(benefactor).strip():
-                            c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;">\U0001f381 De: {html.escape(str(benefactor))}</p>'
+                            c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;">🎁 De: {html.escape(str(benefactor))}</p>'
                         if pd.notna(descripcion) and str(descripcion).strip():
                             c += f'<p style="color:var(--ink-soft);margin:0.25rem 0;font-size:0.85rem;">{html.escape(str(descripcion))}</p>'
                         c += '</div>'
@@ -933,9 +933,9 @@ def display_interests_section(deputy_interests):
                     destinatario = row.get('fundacion_destinatario', '')
                     descripcion = row.get('fundacion_descripcion', '')
                     if pd.notna(destinatario) or pd.notna(descripcion):
-                        c = '<div class="activity-card"><div class="activity-badge badge-actividad">Fundaci\u00f3n</div>'
+                        c = '<div class="activity-card"><div class="activity-badge badge-actividad">Fundación</div>'
                         if pd.notna(destinatario) and str(destinatario).strip():
-                            c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;">\U0001f3e2 {html.escape(str(destinatario))}</p>'
+                            c += f'<p style="color:var(--ink);font-weight:600;margin:0.35rem 0;">🏢 {html.escape(str(destinatario))}</p>'
                         if pd.notna(descripcion) and str(descripcion).strip():
                             c += f'<p style="color:var(--ink-soft);margin:0.25rem 0;font-size:0.85rem;">{html.escape(str(descripcion))}</p>'
                         c += '</div>'
@@ -997,9 +997,9 @@ def prepare_screener_data(df):
 def display_screener_card(rank, deputy_info, metric_name, metric_value, value_class=""):
     rank_class = ""
     medal = ""
-    if rank == 1: rank_class = "gold"; medal = "\U0001f947"
-    elif rank == 2: rank_class = "silver"; medal = "\U0001f948"
-    elif rank == 3: rank_class = "bronze"; medal = "\U0001f949"
+    if rank == 1: rank_class = "gold"; medal = "🥇"
+    elif rank == 2: rank_class = "silver"; medal = "🥈"
+    elif rank == 3: rank_class = "bronze"; medal = "🥉"
     rank_display = medal if medal else f"#{rank}"
     photo_html = get_deputy_photo_html(deputy_info['photo_path'])
     st.markdown(f'''
@@ -1015,29 +1015,29 @@ def display_screener_card(rank, deputy_info, metric_name, metric_value, value_cl
     ''', unsafe_allow_html=True)
 
 def show_screener(df):
-    st.markdown('<div class="section-heading" style="font-size:1.3rem;justify-content:center;">\U0001f50d Screening de Diputados</div>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align:center;color:var(--ink-faint);font-size:0.85rem;margin-bottom:1rem;">Explora y compara las m\u00e9tricas financieras de los diputados</p>', unsafe_allow_html=True)
+    st.markdown('<div class="section-heading" style="font-size:1.3rem;justify-content:center;">🔍 Screening de Diputados</div>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align:center;color:var(--ink-faint);font-size:0.85rem;margin-bottom:1rem;">Explora y compara las métricas financieras de los diputados</p>', unsafe_allow_html=True)
     screener_df = prepare_screener_data(df)
     col1, col2 = st.columns([2, 1])
     with col1:
         metric_options = {
-            '\U0001f4b0 Salario Anual': ('salary', 'positive', 'currency'),
-            '\U0001f4b5 IRPF Pagado': ('irpf', 'positive', 'currency'),
-            '\U0001f3e0 N\u00famero de Inmuebles': ('properties_count', 'positive', 'number'),
-            '\U0001f697 N\u00famero de Veh\u00edculos': ('vehicles_count', 'positive', 'number'),
-            '\U0001f4b3 Deuda Total Pendiente': ('debt_total', 'negative', 'currency'),
-            '\u26a0\ufe0f Pr\u00e9stamo M\u00e1s Alto (Pendiente)': ('max_debt', 'negative', 'currency'),
-            '\U0001f4ca Pr\u00e9stamo M\u00e1s Alto (Original)': ('max_debt_original', 'negative', 'currency'),
-            '\U0001f3e6 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency'),
-            '\U0001f48e Cuenta M\u00e1s Grande': ('max_account', 'positive', 'currency'),
-            '\U0001f4bc Total Activos L\u00edquidos': ('total_assets', 'positive', 'currency'),
+            '💰 Salario Anual': ('salary', 'positive', 'currency'),
+            '💵 IRPF Pagado': ('irpf', 'positive', 'currency'),
+            '🏠 Número de Inmuebles': ('properties_count', 'positive', 'number'),
+            '🚗 Número de Vehículos': ('vehicles_count', 'positive', 'number'),
+            '💳 Deuda Total Pendiente': ('debt_total', 'negative', 'currency'),
+            '⚠ Préstamo Más Alto (Pendiente)': ('max_debt', 'negative', 'currency'),
+            '📊 Préstamo Más Alto (Original)': ('max_debt_original', 'negative', 'currency'),
+            '🏦 Saldo Total en Cuentas': ('accounts_balance', 'positive', 'currency'),
+            '💎 Cuenta Más Grande': ('max_account', 'positive', 'currency'),
+            '💼 Total Activos Líquidos': ('total_assets', 'positive', 'currency'),
         }
-        selected_metric_name = st.selectbox("Seleccionar M\u00e9trica:", list(metric_options.keys()))
+        selected_metric_name = st.selectbox("Seleccionar Métrica:", list(metric_options.keys()))
     with col2:
-        ranking_type = st.radio("Ranking:", ["\U0001f51d Top 10", "\U0001f53b Bottom 10"], horizontal=True)
+        ranking_type = st.radio("Ranking:", ["🔝 Top 10", "🔻 Bottom 10"], horizontal=True)
     metric_column, value_class, format_type = metric_options[selected_metric_name]
     st.markdown("---")
-    ascending = ranking_type == "\U0001f53b Bottom 10"
+    ascending = ranking_type == "🔻 Bottom 10"
     top_deputies = screener_df.nlargest(10, metric_column) if not ascending else screener_df.nsmallest(10, metric_column)
     c1, c2 = st.columns(2)
     with c1:
@@ -1045,14 +1045,14 @@ def show_screener(df):
         st.metric("Promedio", format_currency(avg) if format_type == 'currency' else f"{avg:.1f}")
     with c2:
         mx = screener_df[metric_column].max()
-        st.metric("M\u00e1ximo", format_currency(mx) if format_type == 'currency' else f"{int(mx)}")
+        st.metric("Máximo", format_currency(mx) if format_type == 'currency' else f"{int(mx)}")
     st.markdown("---")
     for idx, (_, deputy) in enumerate(top_deputies.iterrows(), 1):
         val = deputy[metric_column]
         fv = format_currency_full(val) if format_type == 'currency' else f"{int(val)}"
         display_screener_card(idx, deputy, selected_metric_name, fv, value_class)
     st.markdown("---")
-    st.markdown('<div class="section-heading">\U0001f4ca Visualizaci\u00f3n Comparativa</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-heading">📊 Visualización Comparativa</div>', unsafe_allow_html=True)
     fig = go.Figure()
     text_vals = top_deputies[metric_column].apply(lambda x: format_currency(x) if format_type == 'currency' else f"{int(x)}")
     fig.add_trace(go.Bar(
@@ -1086,32 +1086,32 @@ def show_disclaimer():
     _, col2, _ = st.columns([1, 4, 1])
     with col2:
         st.markdown('<div class="disclaimer-box">', unsafe_allow_html=True)
-        st.markdown('<h1 class="disclaimer-title">\u2696\ufe0f Descargo de Responsabilidad Legal</h1>', unsafe_allow_html=True)
-        st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACI\u00d3N**")
-        st.write('Esta aplicaci\u00f3n web de consulta de informaci\u00f3n p\u00fablica ("la Aplicaci\u00f3n") recopila, procesa y presenta datos obtenidos de fuentes p\u00fablicas disponibles en la p\u00e1gina web oficial del Congreso de los Diputados de Espa\u00f1a.')
-        st.markdown('<h3 class="disclaimer-section-title">\U0001f4cb Naturaleza y Origen de la Informaci\u00f3n</h3>', unsafe_allow_html=True)
-        st.write("La informaci\u00f3n proviene exclusivamente de:")
-        st.markdown("- Declaraciones de bienes y rentas del Portal de Transparencia del Congreso\n- Registros p\u00fablicos de actividades e intereses parlamentarios\n- Documentaci\u00f3n oficial de acceso p\u00fablico en www.congreso.es")
-        st.markdown('<h3 class="disclaimer-section-title">\u26a0\ufe0f Descargo de Responsabilidad</h3>', unsafe_allow_html=True)
-        st.write("**La Aplicaci\u00f3n no pertenece, no est\u00e1 vinculada, afiliada, patrocinada, avalada ni autorizada por el Congreso de los Diputados**, ni por ninguna instituci\u00f3n gubernamental espa\u00f1ola.")
+        st.markdown('<h1 class="disclaimer-title">⚖ Descargo de Responsabilidad Legal</h1>', unsafe_allow_html=True)
+        st.write("**IMPORTANTE: LEA ATENTAMENTE ANTES DE USAR ESTA APLICACIÓN**")
+        st.write('Esta aplicación web de consulta de información pública ("la Aplicación") recopila, procesa y presenta datos obtenidos de fuentes públicas disponibles en la página web oficial del Congreso de los Diputados de España.')
+        st.markdown('<h3 class="disclaimer-section-title">📋 Naturaleza y Origen de la Información</h3>', unsafe_allow_html=True)
+        st.write("La información proviene exclusivamente de:")
+        st.markdown("- Declaraciones de bienes y rentas del Portal de Transparencia del Congreso\n- Registros públicos de actividades e intereses parlamentarios\n- Documentación oficial de acceso público en www.congreso.es")
+        st.markdown('<h3 class="disclaimer-section-title">⚠ Descargo de Responsabilidad</h3>', unsafe_allow_html=True)
+        st.write("**La Aplicación no pertenece, no está vinculada, afiliada, patrocinada, avalada ni autorizada por el Congreso de los Diputados**, ni por ninguna institución gubernamental española.")
         st.write("El contenido se ofrece con fines informativos y educativos:")
         st.markdown("- Puede contener **errores, inexactitudes u omisiones**\n- Los datos pueden no reflejar cambios recientes\n- El procesamiento automatizado puede introducir errores involuntarios")
-        st.markdown('<h3 class="disclaimer-section-title">\U0001f4cc Limitaci\u00f3n de Responsabilidad</h3>', unsafe_allow_html=True)
-        st.markdown("- No se garantiza exactitud, integridad o idoneidad de la informaci\u00f3n\n- No se asume responsabilidad por decisiones basadas en estos datos\n- Se reserva el derecho de modificar o discontinuar el servicio")
-        st.markdown('<h3 class="disclaimer-section-title">\u2705 Fuente Oficial</h3>', unsafe_allow_html=True)
-        st.info("\U0001f517 **Portal de Transparencia:** [www.congreso.es](https://www.congreso.es)")
-        st.markdown('<h3 class="disclaimer-section-title">\U0001f464 Privacidad</h3>', unsafe_allow_html=True)
-        st.write("Solo se muestra informaci\u00f3n de dominio p\u00fablico publicada oficialmente por el Congreso.")
-        st.markdown('<h3 class="disclaimer-section-title">\u2696\ufe0f Aceptaci\u00f3n de T\u00e9rminos</h3>', unsafe_allow_html=True)
+        st.markdown('<h3 class="disclaimer-section-title">📌 Limitación de Responsabilidad</h3>', unsafe_allow_html=True)
+        st.markdown("- No se garantiza exactitud, integridad o idoneidad de la información\n- No se asume responsabilidad por decisiones basadas en estos datos\n- Se reserva el derecho de modificar o discontinuar el servicio")
+        st.markdown('<h3 class="disclaimer-section-title">✅ Fuente Oficial</h3>', unsafe_allow_html=True)
+        st.info("🔗 **Portal de Transparencia:** [www.congreso.es](https://www.congreso.es)")
+        st.markdown('<h3 class="disclaimer-section-title">👤 Privacidad</h3>', unsafe_allow_html=True)
+        st.write("Solo se muestra información de dominio público publicada oficialmente por el Congreso.")
+        st.markdown('<h3 class="disclaimer-section-title">⚖ Aceptación de Términos</h3>', unsafe_allow_html=True)
         st.write('Al aceptar, usted reconoce que:')
-        st.markdown("- Ha le\u00eddo y comprendido este descargo\n- Acepta usar la Aplicaci\u00f3n bajo su propio riesgo\n- Se compromete a verificar informaci\u00f3n cr\u00edtica en fuentes oficiales")
-        st.warning("**El uso de esta aplicaci\u00f3n es responsabilidad exclusiva del usuario.**")
+        st.markdown("- Ha leído y comprendido este descargo\n- Acepta usar la Aplicación bajo su propio riesgo\n- Se compromete a verificar información crítica en fuentes oficiales")
+        st.warning("**El uso de esta aplicación es responsabilidad exclusiva del usuario.**")
         st.markdown('</div>', unsafe_allow_html=True)
         _, btn_col, _ = st.columns([1, 2, 1])
-        if btn_col.button("\u2705 ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
+        if btn_col.button("✅ ACEPTO Y ENTIENDO", type="primary", use_container_width=True):
             st.session_state.disclaimer_accepted = True
             st.rerun()
-        st.error("Para usar esta aplicaci\u00f3n debe aceptar los t\u00e9rminos y condiciones.")
+        st.error("Para usar esta aplicación debe aceptar los términos y condiciones.")
         st.markdown("---")
         render_footer()
 
@@ -1127,19 +1127,19 @@ def main_app():
     if df.empty: st.stop()
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
     main_tab = st.radio(
-        "Navegaci\u00f3n:",
-        ["\U0001f464 Consulta Individual", "\U0001f50d Screening Comparativo"],
+        "Navegación:",
+        ["👤 Consulta Individual", "🔍 Screening Comparativo"],
         horizontal=True,
         label_visibility="collapsed"
     )
     st.markdown("---")
-    if main_tab == "\U0001f50d Screening Comparativo":
+    if main_tab == "🔍 Screening Comparativo":
         show_screener(df)
     else:
         unique_deputies = df.groupby('informacion_personal_nombre_y_apellidos').first().reset_index()
         search_col, metric_col, random_col = st.columns([8, 2, 1])
         with search_col:
-            search_term = st.text_input("Buscar diputado", placeholder="\U0001f50d Buscar diputado por nombre...", key="search", label_visibility="collapsed")
+            search_term = st.text_input("Buscar diputado", placeholder="🔍 Buscar diputado por nombre...", key="search", label_visibility="collapsed")
         filtered_deputies = unique_deputies.copy()
         if search_term:
             filtered_deputies = filtered_deputies[filtered_deputies['informacion_personal_nombre_y_apellidos'].str.contains(search_term, case=False, na=False)]
@@ -1148,13 +1148,13 @@ def main_app():
         deputy_names = filtered_deputies['informacion_personal_nombre_y_apellidos'].tolist()
         with random_col:
             st.markdown('<div class="random-button-container">', unsafe_allow_html=True)
-            if st.button("\U0001f3b2", use_container_width=True, help="Aleatorio", key="random_deputy"):
+            if st.button("🎲", use_container_width=True, help="Aleatorio", key="random_deputy"):
                 if deputy_names:
                     st.session_state.selected_deputy_name = random.choice(deputy_names)
             st.markdown('</div>', unsafe_allow_html=True)
         st.markdown("---")
         if not deputy_names:
-            st.warning("\U0001f50d No se encontraron diputados con ese criterio de b\u00fasqueda")
+            st.warning("🔍 No se encontraron diputados con ese criterio de búsqueda")
         else:
             if 'selected_deputy_name' not in st.session_state or st.session_state.selected_deputy_name not in deputy_names:
                 st.session_state.selected_deputy_name = deputy_names[0]
@@ -1166,17 +1166,17 @@ def main_app():
                     if not row.empty:
                         s = row['scraped_salary'].iloc[0]
                         if pd.notna(s) and s:
-                            return f"{name}  \u00b7  {float(s):,.0f}\u20ac".replace(",", ".")
+                            return f"{name}  ·  {float(s):,.0f}€".replace(",", ".")
                 except: pass
                 return name
             selected_deputy_name = st.selectbox("Seleccionar Diputado:", deputy_names, index=selected_index, format_func=format_deputy_option)
             st.session_state.selected_deputy_name = selected_deputy_name
             deputy_declarations = df[df['informacion_personal_nombre_y_apellidos'] == selected_deputy_name].sort_values(by='source_file', ascending=True)
             if len(deputy_declarations) > 1:
-                st.info(f"\U0001f4cb Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
+                st.info(f"📋 Este diputado tiene **{len(deputy_declarations)} declaraciones** disponibles")
                 declaration_options = []
                 for i, (idx, row) in enumerate(deputy_declarations.iterrows()):
-                    label_parts = [f"Declaraci\u00f3n {i+1}"]
+                    label_parts = [f"Declaración {i+1}"]
                     cargo = row.get('informacion_personal_cargo', '')
                     if pd.notna(cargo): label_parts.append(f"({cargo.strip()})")
                     doc_date_str = "Fecha Desconocida"
@@ -1188,13 +1188,13 @@ def main_app():
                             months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
                             doc_date_str = f"{doc_date.day} {months[doc_date.month-1]} {doc_date.year}"
                         except ValueError: pass
-                    label_parts.append(f"\u00b7 {doc_date_str}")
+                    label_parts.append(f"· {doc_date_str}")
                     obs = row.get('observaciones', '')
-                    if pd.notna(obs) and any(w in obs.lower() for w in ['modificaci\u00f3n', 'remito a', 'actualizar']):
+                    if pd.notna(obs) and any(w in obs.lower() for w in ['modificación', 'remito a', 'actualizar']):
                         label_parts.append("[Mod.]")
                     declaration_options.append((idx, " ".join(label_parts)))
                 selected_idx = st.selectbox(
-                    "Seleccionar Declaraci\u00f3n:",
+                    "Seleccionar Declaración:",
                     [opt[0] for opt in declaration_options],
                     format_func=lambda x: next((opt[1] for opt in declaration_options if opt[0] == x), "Seleccionar")
                 )
@@ -1205,14 +1205,14 @@ def main_app():
             col_left, col_right = st.columns([1.5, 2])
             with col_left:
                 st.markdown(create_image_gallery(deputy_data), unsafe_allow_html=True)
-                st.markdown('<div class="section-heading">\U0001f4cb Informaci\u00f3n Personal</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-heading">📋 Información Personal</div>', unsafe_allow_html=True)
                 info_html = '<div class="info-grid">'
                 for label, field, default in [
                     ('Cargo', 'informacion_personal_cargo', 'Diputado'),
-                    ('Circunscripci\u00f3n', 'informacion_personal_circunscripcion', None),
+                    ('Circunscripción', 'informacion_personal_circunscripcion', None),
                     ('Estado Civil', 'informacion_personal_estado_civil', None),
-                    ('R\u00e9gimen Econ\u00f3mico', 'informacion_personal_regimen_economico_matrimonial', None),
-                    ('Fecha Elecci\u00f3n', 'informacion_personal_fecha_eleccion', None),
+                    ('Régimen Económico', 'informacion_personal_regimen_economico_matrimonial', None),
+                    ('Fecha Elección', 'informacion_personal_fecha_eleccion', None),
                     ('Credencial', 'informacion_personal_fecha_presentacion_credencial', None),
                 ]:
                     value = deputy_data.get(field, default)
@@ -1221,11 +1221,11 @@ def main_app():
                         info_html += f'<div class="info-chip"><div class="info-chip-label">{label}</div><div class="info-chip-value">{value}</div></div>'
                 info_html += '</div>'
                 st.markdown(info_html, unsafe_allow_html=True)
-                social_links = {"\U0001d54f": deputy_data.get('twitter'), "\U0001f4d8": deputy_data.get('facebook'), "\U0001f4f8": deputy_data.get('instagram'), "\U0001f310": deputy_data.get('website')}
+                social_links = {"𝕏": deputy_data.get('twitter'), "📘": deputy_data.get('facebook'), "📸": deputy_data.get('instagram'), "🌐": deputy_data.get('website')}
                 valid_links = {e: u for e, u in social_links.items() if pd.notna(u) and str(u).lower() != 'nan'}
                 if valid_links:
-                    st.markdown('<div class="section-heading-light">\U0001f310 Redes Sociales</div>', unsafe_allow_html=True)
-                    titles = {"\U0001d54f": "X (Twitter)", "\U0001f4d8": "Facebook", "\U0001f4f8": "Instagram", "\U0001f310": "Web"}
+                    st.markdown('<div class="section-heading-light">🌐 Redes Sociales</div>', unsafe_allow_html=True)
+                    titles = {"𝕏": "X (Twitter)", "📘": "Facebook", "📸": "Instagram", "🌐": "Web"}
                     social_html = '<div class="social-row">'
                     for emoji, url in valid_links.items():
                         social_html += f'<a href="{url}" target="_blank" class="social-btn" title="{titles.get(emoji, "")}">{emoji}</a>'
@@ -1233,7 +1233,7 @@ def main_app():
                     st.markdown(social_html, unsafe_allow_html=True)
                 obs = deputy_data.get('observaciones', '')
                 if obs and str(obs).lower() != 'nan':
-                    st.markdown('<div class="section-heading-light">\U0001f4dd Observaciones</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading-light">📝 Observaciones</div>', unsafe_allow_html=True)
                     st.info(obs)
             with col_right:
                 name = deputy_data['informacion_personal_nombre_y_apellidos']
@@ -1244,7 +1244,7 @@ def main_app():
                     st.markdown(f'''
                     <div class="salary-card">
                         <div class="salary-label">Salario Anual</div>
-                        <div class="salary-amount">{fs} \u20ac</div>
+                        <div class="salary-amount">{fs} €</div>
                     </div>''', unsafe_allow_html=True)
                 else:
                     st.markdown('''
@@ -1252,22 +1252,22 @@ def main_app():
                         <div class="salary-label">Salario Anual</div>
                         <div class="salary-amount salary-na">No disponible</div>
                     </div>''', unsafe_allow_html=True)
-                st.markdown('<div class="section-heading">\U0001f4ca Datos Clave</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-heading">📊 Datos Clave</div>', unsafe_allow_html=True)
                 m1, m2, m3, m4, m5 = st.columns(5)
                 if pd.notna(deputy_data.get('scraped_salary')) and deputy_data.get('scraped_salary'):
-                    m1.metric("Salario", f"{float(deputy_data['scraped_salary']):,.0f}\u20ac".replace(",", "."))
+                    m1.metric("Salario", f"{float(deputy_data['scraped_salary']):,.0f}€".replace(",", "."))
                 else:
                     m1.metric("Salario", "N/D")
                 irpf = extract_irpf_value(deputy_data.get('irpf_cantidad_pagada', 0))
                 m2.metric("IRPF", format_currency(irpf))
                 m3.metric("Inmuebles", len(parse_json_field(deputy_data['bienes_patrimoniales_inmuebles_urbanos'])) + len(parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', '[]'))))
-                m4.metric("Veh\u00edculos", len(parse_json_field(deputy_data['vehiculos'])))
+                m4.metric("Vehículos", len(parse_json_field(deputy_data['vehiculos'])))
                 debts = parse_json_field(deputy_data['deudas_y_obligaciones'])
                 m5.metric("Deudas", len(debts))
                 st.markdown("---")
-                tabs = st.tabs(["\U0001f4b5 Ingresos", "\U0001f3e0 Inmuebles", "\U0001f4bc Sociedades", "\U0001f4b0 Activos", "\U0001f697 Veh\u00edculos", "\U0001f4b3 Deudas", "\U0001f4cb Actividades", "\U0001f4c4 Otros"])
+                tabs = st.tabs(["💵 Ingresos", "🏠 Inmuebles", "💼 Sociedades", "💰 Activos", "🚗 Vehículos", "💳 Deudas", "📋 Actividades", "📄 Otros"])
                 with tabs[0]:
-                    st.markdown('<div class="section-heading">\U0001f4b5 Fuentes de Ingresos</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">💵 Fuentes de Ingresos</div>', unsafe_allow_html=True)
                     st.info(f"**IRPF Pagado (Declarado): {format_currency_full(irpf)}**")
                     tc1, tc2 = st.columns(2)
                     with tc1:
@@ -1279,7 +1279,7 @@ def main_app():
                                     c = s.get('concepto', f'Ingreso #{i+1}')
                                     if str(c).lower() == 'nan': c = f'Ingreso #{i+1}'
                                     a = extract_debt_account_value(s.get('euros'))
-                                    st.info(f"**{c}**"); st.markdown(f"\u2192 **{format_currency_full(a)}**")
+                                    st.info(f"**{c}**"); st.markdown(f"→ **{format_currency_full(a)}**")
                         else: st.info("Sin salarios declarados")
                         st.markdown("##### Otras Rentas")
                         otras = parse_json_field(deputy_data.get('rentas_percibidas_otras_rentas', ''))
@@ -1295,11 +1295,11 @@ def main_app():
                         if divs:
                             for d in divs:
                                 if isinstance(d, dict):
-                                    c = d.get('concepto', 'Inversi\u00f3n')
-                                    if str(c).lower() == 'nan': c = 'Inversi\u00f3n'
-                                    st.markdown(f"**\U0001f4ca {c}**")
+                                    c = d.get('concepto', 'Inversión')
+                                    if str(c).lower() == 'nan': c = 'Inversión'
+                                    st.markdown(f"**📊 {c}**")
                                     r = extract_debt_account_value(d.get('euros'))
-                                    if r > 0: st.markdown(f"\u2192 **{format_currency_full(r)}**")
+                                    if r > 0: st.markdown(f"→ **{format_currency_full(r)}**")
                         else: st.info("Sin dividendos")
                         st.markdown("##### Intereses Financieros")
                         ints = parse_json_field(deputy_data.get('rentas_percibidas_intereses_financieros', ''))
@@ -1307,10 +1307,10 @@ def main_app():
                             for item in ints:
                                 if isinstance(item, dict):
                                     imp = extract_debt_account_value(item.get('euros', 0))
-                                    if imp > 0: st.markdown(f"**{item.get('concepto', 'Inter\u00e9s')}**: {format_currency_full(imp)}")
+                                    if imp > 0: st.markdown(f"**{item.get('concepto', 'Interés')}**: {format_currency_full(imp)}")
                         else: st.info("Sin intereses financieros")
                 with tabs[1]:
-                    st.markdown('<div class="section-heading">\U0001f3e0 Bienes Inmuebles</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">🏠 Bienes Inmuebles</div>', unsafe_allow_html=True)
                     tc1, tc2 = st.columns(2)
                     with tc1:
                         st.markdown("##### Inmuebles Urbanos")
@@ -1318,24 +1318,24 @@ def main_app():
                         if urban:
                             for i, p in enumerate(urban):
                                 if isinstance(p, dict):
-                                    st.markdown(f"**\U0001f4cd Inmueble #{i+1}**")
+                                    st.markdown(f"**📍 Inmueble #{i+1}**")
                                     for k, v in p.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                                     st.markdown("")
                         else: st.info("Sin inmuebles urbanos")
                     with tc2:
-                        st.markdown("##### Inmuebles R\u00fasticos")
+                        st.markdown("##### Inmuebles Rústicos")
                         rust = parse_json_field(deputy_data.get('bienes_patrimoniales_inmuebles_rusticos', ''))
                         if rust:
                             for i, p in enumerate(rust):
                                 if isinstance(p, dict):
-                                    st.markdown(f"**\U0001f69c Inmueble #{i+1}**")
+                                    st.markdown(f"**🚜 Inmueble #{i+1}**")
                                     for k, v in p.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                                     st.markdown("")
-                        else: st.info("Sin inmuebles r\u00fasticos")
+                        else: st.info("Sin inmuebles rústicos")
                 with tabs[2]:
-                    st.markdown('<div class="section-heading">\U0001f4bc Sociedades y Participaciones</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">💼 Sociedades y Participaciones</div>', unsafe_allow_html=True)
                     tc1, tc2 = st.columns(2)
                     with tc1:
                         st.markdown("##### Sociedades No Cotizadas")
@@ -1343,9 +1343,9 @@ def main_app():
                         if socs:
                             for i, s in enumerate(socs):
                                 if isinstance(s, dict):
-                                    st.markdown(f"**\U0001f3ed Sociedad #{i+1}**")
+                                    st.markdown(f"**🏭 Sociedad #{i+1}**")
                                     for k, v in s.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                                     st.markdown("")
                         else: st.info("Sin sociedades no cotizadas")
                     with tc2:
@@ -1354,16 +1354,16 @@ def main_app():
                         if parts:
                             for i, p in enumerate(parts):
                                 if isinstance(p, dict):
-                                    st.markdown(f"**\U0001f4c8 Participaci\u00f3n #{i+1}**")
+                                    st.markdown(f"**📈 Participación #{i+1}**")
                                     for k, v in p.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                                     st.markdown("")
                         else: st.info("Sin participaciones superiores al 5%")
                 with tabs[3]:
-                    st.markdown('<div class="section-heading">\U0001f4b0 Activos Financieros</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">💰 Activos Financieros</div>', unsafe_allow_html=True)
                     tc1, tc2 = st.columns(2)
                     with tc1:
-                        st.markdown("##### Cuentas y Dep\u00f3sitos")
+                        st.markdown("##### Cuentas y Depósitos")
                         accs = parse_json_field(deputy_data['depositos_y_cuentas_cuentas'])
                         if accs:
                             total_accs = sum(extract_debt_account_value(a.get('saldo', 0)) for a in accs if isinstance(a, dict))
@@ -1374,45 +1374,45 @@ def main_app():
                                     if str(desc).lower() == 'nan': desc = 'Cuenta'
                                     saldo = extract_debt_account_value(a.get('saldo'))
                                     if saldo > 0:
-                                        st.markdown(f"**\U0001f3e6 {desc}**"); st.markdown(f"Saldo: **{format_currency_full(saldo)}**")
+                                        st.markdown(f"**🏦 {desc}**"); st.markdown(f"Saldo: **{format_currency_full(saldo)}**")
                         else: st.info("Sin cuentas declaradas")
                         st.markdown("##### Acciones y Participaciones")
                         accs2 = parse_json_field(deputy_data.get('otros_bienes_y_derechos_acciones_y_participaciones', ''))
                         if accs2:
                             for i, a in enumerate(accs2):
                                 if isinstance(a, dict):
-                                    st.markdown(f"**\U0001f4ca Acci\u00f3n #{i+1}**")
+                                    st.markdown(f"**📊 Acción #{i+1}**")
                                     for k, v in a.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                         else: st.info("Sin acciones declaradas")
                     with tc2:
-                        st.markdown("##### Deuda P\u00fablica y Valores")
+                        st.markdown("##### Deuda Pública y Valores")
                         dp = parse_json_field(deputy_data.get('otros_bienes_y_derechos_deuda_publica_y_valores', ''))
                         if dp:
                             for i, item in enumerate(dp):
                                 if isinstance(item, dict):
-                                    st.markdown(f"**\U0001f4bc Valor #{i+1}**")
+                                    st.markdown(f"**💼 Valor #{i+1}**")
                                     for k, v in item.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
-                        else: st.info("Sin deuda p\u00fablica o valores")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
+                        else: st.info("Sin deuda pública o valores")
                 with tabs[4]:
-                    st.markdown('<div class="section-heading">\U0001f697 Veh\u00edculos</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">🚗 Vehículos</div>', unsafe_allow_html=True)
                     vehicles = parse_json_field(deputy_data['vehiculos'])
                     if vehicles:
-                        st.info(f"**Total veh\u00edculos: {len(vehicles)}**")
+                        st.info(f"**Total vehículos: {len(vehicles)}**")
                         cols = st.columns(2)
                         for i, v in enumerate(vehicles):
                             if isinstance(v, dict):
                                 with cols[i % 2]:
-                                    desc = v.get('descripcion', f'Veh\u00edculo #{i+1}')
-                                    if str(desc).lower() == 'nan': desc = f'Veh\u00edculo #{i+1}'
-                                    st.markdown(f"**\U0001f697 {desc}**")
+                                    desc = v.get('descripcion', f'Vehículo #{i+1}')
+                                    if str(desc).lower() == 'nan': desc = f'Vehículo #{i+1}'
+                                    st.markdown(f"**🚗 {desc}**")
                                     f2 = v.get('fecha_adquisicion', '')
                                     if f2 and str(f2).lower() != 'nan': st.markdown(f"Adquirido: {f2}")
                                     st.markdown("")
-                    else: st.info("Sin veh\u00edculos declarados")
+                    else: st.info("Sin vehículos declarados")
                 with tabs[5]:
-                    st.markdown('<div class="section-heading">\U0001f4b8 Deudas y Obligaciones</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">💸 Deudas y Obligaciones</div>', unsafe_allow_html=True)
                     total_debt = sum(extract_debt_account_value(d.get('saldo_pendiente', 0)) for d in debts if isinstance(d, dict))
                     if debts:
                         st.error(f"**Total Pendiente: {format_currency_full(total_debt)}**")
@@ -1420,7 +1420,7 @@ def main_app():
                             if isinstance(debt, dict):
                                 desc = debt.get('descripcion', f'Deuda #{i+1}')
                                 if str(desc).lower() == 'nan': desc = f'Deuda #{i+1}'
-                                st.markdown(f"**\U0001f4c4 {desc}**")
+                                st.markdown(f"**📄 {desc}**")
                                 original = extract_debt_account_value(debt.get('importe_concedido'))
                                 pending = extract_debt_account_value(debt.get('saldo_pendiente'))
                                 tc1, tc2 = st.columns(2)
@@ -1434,14 +1434,14 @@ def main_app():
                                         pct = ((original - pending) / original) * 100
                                         st.progress(int(pct), text=f"Pagado: {pct:.1f}%")
                                 st.markdown("---")
-                    else: st.success("\u2705 No se han declarado deudas")
+                    else: st.success("✅ No se han declarado deudas")
                 with tabs[6]:
-                    st.markdown('<div class="section-heading">\U0001f4cb Actividades e Intereses</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">📋 Actividades e Intereses</div>', unsafe_allow_html=True)
                     deputy_id = deputy_data.get('deputy_id')
                     deputy_interests = match_deputy_interests(deputy_id, interests_df)
                     display_interests_section(deputy_interests)
                 with tabs[7]:
-                    st.markdown('<div class="section-heading">\U0001f4c4 Otros Bienes y Derechos</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="section-heading">📄 Otros Bienes y Derechos</div>', unsafe_allow_html=True)
                     otros = deputy_data.get('otros_bienes_no_declarados_anteriormente', '')
                     if otros and str(otros).lower() != 'nan':
                         st.markdown("##### Otros Bienes No Declarados Anteriormente")
@@ -1451,7 +1451,7 @@ def main_app():
                                 if isinstance(item, dict):
                                     st.markdown(f"**Item #{i+1}**")
                                     for k, v in item.items():
-                                        if v and str(v).lower() != 'nan': st.markdown(f"\u2022 {k.replace('_',' ').title()}: {v}")
+                                        if v and str(v).lower() != 'nan': st.markdown(f"• {k.replace('_',' ').title()}: {v}")
                         else: st.write(otros)
                     else: st.info("No hay otros bienes declarados")
     st.markdown("---")
